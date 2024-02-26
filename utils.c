@@ -1,9 +1,15 @@
+#include "quantum.h"
 #include "utils.h"
 #include "send_string.h"
-#include "quantum.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
+#define KC_MAGIC_0 0x0100
+#define KC_MAGIC_1 (KC_MAGIC_0+1)
+#define KC_MAGIC_2 (KC_MAGIC_0+2)
+#define KC_MAGIC_3 (KC_MAGIC_0+3)
+
+static const char magic_chars[] = {'M', 'R', ' ', ' '};
 
 const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D
@@ -45,6 +51,8 @@ const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 ////////////////////////////////////////////////////////////////////////////////
 char keycode_to_char(uint16_t keycode)
 {
+    if (keycode >= KC_MAGIC_0 && keycode <= KC_MAGIC_3)
+		return magic_chars[keycode - KC_MAGIC_0];
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
     if (keycode >= KC_A && keycode <= KC_SLASH) {
@@ -52,9 +60,8 @@ char keycode_to_char(uint16_t keycode)
         return shifted ? pgm_read_byte(&shifted_keycode_to_ascii_lut[keycode]) :
                          pgm_read_byte(&unshifted_keycode_to_ascii_lut[keycode]);
     }
-    return ' ';
+    return '?';
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 uint16_t char_to_keycode(char c)
 {
@@ -65,18 +72,18 @@ uint16_t char_to_keycode(char c)
     return k;
 }
 ////////////////////////////////////////////////////////////////////////////////
-// removes mod or layer info from a keycode
-uint16_t normalize_keycode(uint16_t keycode)
-{
-    if (IS_QK_MOD_TAP(keycode))
-		return QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
-    if (IS_QK_LAYER_TAP(keycode))
-		return QK_LAYER_TAP_GET_TAP_KEYCODE(keycode);
-    return keycode;
-}
-////////////////////////////////////////////////////////////////////////////////
 void multi_tap(uint16_t keycode, int count)
 {
     for (int i = 0; i < count; ++i)
         tap_code16(keycode);
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+void send_key(uint16_t keycode)
+{
+    // Apply shift to sent key if caps word is enabled.
+#ifdef CAPS_WORD_ENABLED
+    if (is_caps_word_on() && IS_ALPHA_KEYCODE(keycode))
+        add_weak_mods(MOD_BIT(KC_LSFT));
+#endif
+    tap_code16(keycode);
 }
