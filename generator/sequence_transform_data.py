@@ -360,7 +360,7 @@ def generate_sequence_transform_data():
     wordbreak_char = config['wordbreak_char']
     comment_str = config['comment_str']
     sep_str = config['separator_str']
-    out_file = config["out_file_name"]
+    out_file = THIS_FOLDER / config["out_file_name"]
 
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
