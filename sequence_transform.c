@@ -14,7 +14,6 @@
 #include "keycode_config.h"
 #include "send_string.h"
 #include "action_util.h"
-#include "../general/custom_keys.h"
 #include "print.h"
 #include "utils.h"
 
@@ -49,16 +48,6 @@ static uint16_t key_buffer_size = 1;
 static trie_t trie = {
     SEQUENCE_TRANSFORM_DICTIONARY_SIZE,  sequence_transform_data,  COMPLETIONS_SIZE, sequence_transform_completions_data
 };
-
-
-// Default implementation of sequence_transform_map_key_user().
-__attribute__((weak)) bool sequence_transform_map_key_user(uint16_t* keycode, keyrecord_t* record, uint8_t* mods) {
-    // Assume that special keys have keycodes ranging from SEQUENCE_TRANSFORM_SPECIAL_KEY_0 to SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_COUNT - 1
-    if (*keycode >= SEQUENCE_TRANSFORM_SPECIAL_KEY_0 && *keycode < SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_COUNT) {
-        *keycode = *keycode - SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_TRIECODE_0;
-    }
-    return true;
-}
 
 /**
  * @brief determine if context_magic should process this keypress,
@@ -161,7 +150,8 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
         reset_buffer();
         return false;
     }
-    return sequence_transform_map_key_user(keycode, record, mods);
+
+    return true;
 }
 
 /**
@@ -363,7 +353,7 @@ bool perform_magic()
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_context_magic(uint16_t keycode, keyrecord_t *record)
+bool process_context_magic(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
 {
 
     uprintf("Process_context_magic for keycode: %d", keycode);
@@ -377,6 +367,10 @@ bool process_context_magic(uint16_t keycode, keyrecord_t *record)
 
     if (!record->event.pressed)
         return true;
+
+    if (keycode >= special_key_start && keycode < special_key_start + SPECIAL_KEY_COUNT) {
+        keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
+    }
 
     // keycode verification and extraction
     if (!process_check(&keycode, record, &mods))

@@ -6,7 +6,7 @@
 
 //////////////////////////////////////////////////////////////////
 // Public API
-bool process_context_magic(uint16_t keycode, keyrecord_t *record);
+bool process_context_magic(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
 
 #if MAGIC_IDLE_TIMEOUT > 0
 void context_magic_task(void);
