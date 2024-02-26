@@ -26,7 +26,7 @@ Example:
   widht         -> width
 For full documentation, see QMK Docs
 """
-
+import os.path
 import sys
 import textwrap
 import json
@@ -357,7 +357,7 @@ def generate_sequence_transform_data():
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
 
-    autocorrections = parse_file(config['rules_file_name'], char_map, sep_str, comment_str)
+    autocorrections = parse_file(THIS_FOLDER / config['rules_file_name'], char_map, sep_str, comment_str)
     trie = make_trie(autocorrections, output_func_char_map)
     outputs = complete_trie(trie, wordbreak_char)
     quiet_print(json.dumps(trie, indent=4))
@@ -403,9 +403,10 @@ def generate_sequence_transform_data():
         '};',
     ])
 
-    with open(OUT_FILE, "r", encoding="utf-8") as file:
-        if file.read() == "\n".join(sequence_transform_data_h_lines):
-            return
+    if os.path.exists(OUT_FILE):
+        with open(OUT_FILE, "r", encoding="utf-8") as file:
+            if file.read() == "\n".join(sequence_transform_data_h_lines):
+                return
 
     # Show the results
     with open(OUT_FILE, "w", encoding="utf-8") as file:
