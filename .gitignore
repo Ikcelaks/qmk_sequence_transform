@@ -50,5 +50,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-
-sequence_transform_data.h
+/.vs
+/sequence_transform_data.h

@@ -12,28 +12,27 @@
 #include "quantum.h"
 #include "quantum_keycodes.h"
 #include "keycode_config.h"
-#include "send_string.h"
-#include "action_util.h"
 #include "print.h"
 #include "utils.h"
 
-// todo: compute max in script
-#define SEQUENCE_TRANSFORM_DICTIONARY_SIZE DICTIONARY_SIZE
-#define SPECIAL_KEY_COUNT SEQUENCE_TRANSFORM_COUNT
-#define SPECIAL_KEY_TRIECODE_0 0x0100
 #define TDATA(L) pgm_read_word(&trie->data[L])
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
-#define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
+
+// todo: script should define these directly in generated .h
+#define SPECIAL_KEY_TRIECODE_0 0x0100
+#define TRIE_MATCH_BIT      0x8000
+#define TRIE_BRANCH_BIT     0x4000
+#define TRIE_CODE_MASK      0x3FFF
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add KC_SPC on timeout
-#if MAGIC_IDLE_TIMEOUT > 0
-static uint32_t magic_timer = 0;
-void context_magic_task(void)
+#if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
+static uint32_t sequence_timer = 0;
+void sequence_transform_task(void)
 {
-    if (timer_elapsed32(magic_timer) > MAGIC_IDLE_TIMEOUT) {
+    if (timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         reset_buffer();
-        magic_timer = timer_read32();
+        sequence_timer = timer_read32();
     }
 }
 #endif
@@ -44,9 +43,12 @@ static uint16_t key_buffer[SEQUENCE_MAX_LENGTH] = {KC_SPC};
 static uint16_t key_buffer_size = 1;
 
 //////////////////////////////////////////////////////////////////
-// List of tries
+// Trie node and completion data
 static trie_t trie = {
-    SEQUENCE_TRANSFORM_DICTIONARY_SIZE,  sequence_transform_data,  COMPLETIONS_SIZE, sequence_transform_completions_data
+    DICTIONARY_SIZE,
+    sequence_transform_data,
+    COMPLETIONS_SIZE,
+    sequence_transform_completions_data
 };
 
 /**
@@ -147,6 +149,9 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
     }
     // Disable autocorrect while a mod other than shift is active.
     if ((*mods & ~MOD_MASK_SHIFT) != 0) {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("clearing buffer (mods: 0x%04X)\n", *mods);
+#endif
         reset_buffer();
         return false;
     }
@@ -172,6 +177,13 @@ void enqueue_keycode(uint16_t keycode)
         key_buffer_size = SEQUENCE_MAX_LENGTH - 1;
     }
     key_buffer[key_buffer_size++] = keycode;
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("buffer: |");
+    for (int i = 0; i < key_buffer_size; ++i) {
+        uprintf("%c", keycode_to_char(key_buffer[i]));
+    }
+    uprintf("| (%d)\n", key_buffer_size);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////
@@ -201,51 +213,44 @@ void dequeue_keycodes(uint8_t num)
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool find_longest_chain(trie_t *trie, trie_search_result_t *res, int offset, int depth)
+bool find_longest_chain(trie_t *trie, trie_search_result_t *res, uint16_t offset, uint8_t depth)
 {
     // Sanity checks
     if (offset >= trie->data_size) {
-        uprintf("find_longest_chain() Error: tried reading outside trie data! Offset: %d", offset);
+        uprintf("find_longest_chain() Error: tried reading outside trie data! Offset: %d\n", offset);
         return false;
     }
     uint16_t code = TDATA(offset);
     if (!code) {
-        uprintf("find_longest_chain() Error: unexpected null code! Offset: %d", offset);
+        uprintf("find_longest_chain() Error: unexpected null code! Offset: %d\n", offset);
         return false;
     }
-    uprintf("FIND_LONGEST_CHAIN (%d, %d)", offset, code);
 	// Match Node if bit 15 is set
-	if (code & 0x8000) {
-        uprintf("Match found at Offset: %d", offset);
+	if (code & TRIE_MATCH_BIT) {
         // match nodes are side attachments, so decrease depth
-		depth--;
+        depth--;
         // If bit 14 is also set, there is a child node after the completion string
-        if ((code & 0x4000) && find_longest_chain(trie, res, offset+2, depth+1)) {
-            uprintf("Looking for deeper match at Offset: %d", offset+2);
+        if ((code & TRIE_BRANCH_BIT) && find_longest_chain(trie, res, offset+2, depth+1))
             return true;
-        }
         // If no better match found deeper, this is the result!
-        // char buf[20];
-        // sprintf(buf, "|0x%04x|", code);
-        // send_string(buf);
-		res->completion_offset = TDATA(offset + 1);
-        res->func_code = (code >> 11 & 0x0007);
-        res->complete_len = code & 127;
+        res->completion_offset = TDATA(offset + 1);
+        res->func_code = (code >> 11) & 7;
         res->num_backspaces = (code >> 7) & 15;
+        res->complete_len = code & 127;        
         // Found a match so return true!
-		return true;
+        return true;
 	}
 	// Branch Node (with multiple children) if bit 14 is set
-	if (code & 0x4000) {
+	if (code & TRIE_BRANCH_BIT) {
         if (depth > key_buffer_size)
 			return false;
-		code &= 0x3FFF;
+		code &= TRIE_CODE_MASK;
         // Find child that matches our current buffer location
         const uint16_t cur_key = key_buffer[key_buffer_size - depth];
 		for (; code; offset += 2, code = TDATA(offset)) {
             if (code == cur_key) {
                 // 16bit offset to child node is built from next uint16_t
-                const int child_offset = TDATA(offset+1);
+                const uint16_t child_offset = TDATA(offset+1);
                 // Traverse down child node
                 return find_longest_chain(trie, res, child_offset, depth+1);
             }
@@ -267,12 +272,7 @@ bool find_longest_chain(trie_t *trie, trie_search_result_t *res, int offset, int
 void record_send_key(uint16_t keycode)
 {
     enqueue_keycode(keycode);
-    // Apply shift to sent key if caps word is enabled.
-#ifdef CAPS_WORD_ENABLED
-    if (is_caps_word_on() && IS_ALPHA_KEYCODE(keycode))
-        add_weak_mods(MOD_BIT(KC_LSFT));
-#endif
-    tap_code16(keycode);
+    send_key(keycode);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void handle_repeat_key()
@@ -284,30 +284,36 @@ void handle_repeat_key()
             break;
         }
     }
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("repeat keycode: 0x%04X\n", keycode);
+#endif
     if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
         dequeue_keycodes(1);
         enqueue_keycode(keycode);
-        // Apply shift to sent key if caps word is enabled.
-#ifdef CAPS_WORD_ENABLED
-        if (is_caps_word_on() && IS_ALPHA_KEYCODE(keycode))
-            add_weak_mods(MOD_BIT(KC_LSFT));
-#endif
-        tap_code16(keycode);
+        send_key(keycode);
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void handle_result(trie_t *trie, trie_search_result_t *res)
 {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("search res: offset: %d, len: %d, bspaces: %d, func: %d\n",
+            res->completion_offset, res->complete_len, res->num_backspaces, res->func_code);
+#endif
+    // bounds check completion data
+    if (res->completion_offset + res->complete_len > trie->completions_size) {
+        uprintf("ERROR: trying to read past end of completion data buffer! offset: %d, len: %d\n",
+                res->completion_offset, res->complete_len);
+        return;
+    }
     // Send backspaces
     multi_tap(KC_BSPC, res->num_backspaces);
     // Send completion string
-    bool ends_with_wordbreak;
-    ends_with_wordbreak = (res->complete_len > 0 && CDATA(res->completion_offset + res->complete_len - 1) == ' ');
-    for (int i = res->completion_offset; i < res->completion_offset + res->complete_len && i < trie->completions_size; ++i) {
+    bool ends_with_wordbreak = (res->complete_len > 0 && CDATA(res->completion_offset + res->complete_len - 1) == ' ');
+    for (uint16_t i = res->completion_offset, end = i+res->complete_len; i < end; ++i) {
         char ascii_code = CDATA(i);
-        tap_code16(char_to_keycode(ascii_code));
+        send_key(char_to_keycode(ascii_code));
     }
-
     switch (res->func_code) {
         case 1:  // repeat
             handle_repeat_key();
@@ -318,26 +324,24 @@ void handle_result(trie_t *trie, trie_search_result_t *res)
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-
     if (ends_with_wordbreak) {
         enqueue_keycode(KC_SPC);
     }
 }
 
 /**
- * @brief Handles magic/repeat key press
+ * @brief Performs sequence transform if a match is found in the trie
  *
- * @param keycode Keycode registered by matrix press, per keymap
- * @return false if keycode isn't a registered magic key
+ * @return true if sequence transform was performed
  */
-bool perform_magic()
+bool perform_sequence_transform()
 {
     // Do nothing if key buffer is empty
     if (!key_buffer_size)
         return false;
 
     // Look for chain matching our buffer in the trie.
-    trie_search_result_t res  = {0, 0};
+    trie_search_result_t res  = {0, 0, 0, 0};
     if (find_longest_chain(&trie, &res, 0, 1)) {
         handle_result(&trie, &res);
         return true;
@@ -346,48 +350,47 @@ bool perform_magic()
 }
 
 /**
- * @brief Process handler for context_magic feature.
+ * @brief Process handler for sequence_transform feature.
  *
  * @param keycode Keycode registered by matrix press, per keymap
  * @param record keyrecord_t structure
+ * @param special_key_start starting keycode index for special keys used in rules
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_context_magic(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
 {
-
-    uprintf("Process_context_magic for keycode: %d", keycode);
-#if MAGIC_IDLE_TIMEOUT > 0
-    magic_timer = timer_read32();
+#if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
+    sequence_timer = timer_read32();
 #endif
+    if (!record->event.pressed)
+        return true;
     uint8_t mods = get_mods();
 #ifndef NO_ACTION_ONESHOT
     mods |= get_oneshot_mods();
 #endif
-
-    if (!record->event.pressed)
-        return true;
-
-    if (keycode >= special_key_start && keycode < special_key_start + SPECIAL_KEY_COUNT) {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("pst keycode: 0x%04X\n", keycode);
+#endif
+    // If this is one of the special keycodes, convert to our internal trie code
+    if (keycode >= special_key_start && keycode < special_key_start + SEQUENCE_TRANSFORM_COUNT) {
         keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
     }
-
     // keycode verification and extraction
     if (!process_check(&keycode, record, &mods))
         return true;
 
     // keycode buffer check
     switch (keycode) {
-        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT:
+        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT:
         case KC_A ... KC_0:
-        case S(KC_1) ... S(KC_0):
-        case KC_MINUS ...KC_SLASH:
+        case S(KC_1)... S(KC_0):
+        case KC_MINUS ... KC_SLASH:
             // process normally
             break;
-        case S(KC_MINUS) ...S(KC_SLASH):
+        case S(KC_MINUS)... S(KC_SLASH):
             // treat " (shifted ') as a word boundary
-            if (keycode == S(KC_QUOTE))
-                keycode = KC_SPC;
+            if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
             break;
         case KC_BSPC:
             // remove last character from the buffer
@@ -396,15 +399,16 @@ bool process_context_magic(uint16_t keycode, keyrecord_t *record, uint16_t speci
         default:
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
-     }
-    // append `keycode` to buffer
+    }
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("  translated keycode: 0x%04X (%c)\n", keycode, keycode_to_char(keycode));
+#endif
     enqueue_keycode(keycode);
-
-    uprintf("  translated keycode: %d", keycode);
-
-    // perform magic action if this is one of our registered keycodes
-    if (perform_magic())
+    if (perform_sequence_transform()) {
+        // tell QMK to not process this key
         return false;
-
+    } else {
+        // TODO: search for rules
+    }
     return true;
 }
