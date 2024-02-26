@@ -169,7 +169,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
                 match_output = match['RESULT']['OUTPUT']
                 del(expanded_context[-(match_backspaces+1):])
                 expanded_context.extend(match_output)
-                quiet_print(c, expanded_context)
+                # quiet_print(c, expanded_context)
         if expanded_context and expanded_context[0] == wordbreak_char:
             del(expanded_context[0])
         target = completion['TARGET']
