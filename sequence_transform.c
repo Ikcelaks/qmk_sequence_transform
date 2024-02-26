@@ -14,12 +14,13 @@
 #include "keycode_config.h"
 #include "send_string.h"
 #include "action_util.h"
-#include "../general/custom_keys.h"
 #include "print.h"
 #include "utils.h"
 
 // todo: compute max in script
 #define SEQUENCE_TRANSFORM_DICTIONARY_SIZE DICTIONARY_SIZE
+#define SPECIAL_KEY_COUNT SEQUENCE_TRANSFORM_COUNT
+#define SPECIAL_KEY_TRIECODE_0 0x0100
 #define TDATA(L) pgm_read_word(&trie->data[L])
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 #define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
@@ -149,6 +150,7 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
         reset_buffer();
         return false;
     }
+
     return true;
 }
 
@@ -278,11 +280,11 @@ void handle_repeat_key()
     uint16_t keycode = KC_NO;
     for (int i = key_buffer_size - 1; i >= 0; --i) {
         keycode = key_buffer[i];
-        if (!(keycode & 0x0100)) {
+        if (!(keycode & SPECIAL_KEY_TRIECODE_0)) {
             break;
         }
     }
-    if (keycode && !(keycode & 0x0100)) {
+    if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
         dequeue_keycodes(1);
         enqueue_keycode(keycode);
         // Apply shift to sent key if caps word is enabled.
@@ -351,7 +353,7 @@ bool perform_magic()
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_context_magic(uint16_t keycode, keyrecord_t *record)
+bool process_context_magic(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
 {
 
     uprintf("Process_context_magic for keycode: %d", keycode);
@@ -366,16 +368,17 @@ bool process_context_magic(uint16_t keycode, keyrecord_t *record)
     if (!record->event.pressed)
         return true;
 
+    if (keycode >= special_key_start && keycode < special_key_start + SPECIAL_KEY_COUNT) {
+        keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
+    }
+
     // keycode verification and extraction
     if (!process_check(&keycode, record, &mods))
         return true;
 
     // keycode buffer check
     switch (keycode) {
-        case US_MAG1 ... US_MAG4:
-            // convert to special 0x01nn code
-            keycode = 0x0100 + keycode - US_MAG1;
-            break;
+        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT:
         case KC_A ... KC_0:
         case S(KC_1) ... S(KC_0):
         case KC_MINUS ...KC_SLASH:
