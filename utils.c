@@ -4,12 +4,11 @@
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
-#define KC_MAGIC_0 0x0100
-#define KC_MAGIC_1 (KC_MAGIC_0+1)
-#define KC_MAGIC_2 (KC_MAGIC_0+2)
-#define KC_MAGIC_3 (KC_MAGIC_0+3)
 
-static const char magic_chars[] = {'M', 'R', ' ', ' '};
+// todo: include generated .h file for these defines and magic key chars
+#define SPECIAL_KEY_COUNT 2
+#define SPECIAL_KEY_TRIECODE_0 0x0100
+static const char magic_chars[] = {'M', 'R'};
 
 const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D
@@ -51,8 +50,8 @@ const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 ////////////////////////////////////////////////////////////////////////////////
 char keycode_to_char(uint16_t keycode)
 {
-    if (keycode >= KC_MAGIC_0 && keycode <= KC_MAGIC_3)
-		return magic_chars[keycode - KC_MAGIC_0];
+    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT)
+		return magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
     if (keycode >= KC_A && keycode <= KC_SLASH) {

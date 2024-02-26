@@ -12,19 +12,19 @@
 #include "quantum.h"
 #include "quantum_keycodes.h"
 #include "keycode_config.h"
-#include "send_string.h"
-#include "action_util.h"
-#include "../general/custom_keys.h"
 #include "print.h"
 #include "utils.h"
 
-#define SEQUENCE_MAX_LENGTH MAGICKEY_MAX_LENGTH
 #define TDATA(L) pgm_read_word(&trie->data[L])
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
+
+// todo: script should define these directly in generated .h
+#define SEQUENCE_MAX_LENGTH MAGICKEY_MAX_LENGTH
+#define SPECIAL_KEY_COUNT 2
+#define SPECIAL_KEY_TRIECODE_0 0x0100
 #define TRIE_MATCH_BIT      0x8000
 #define TRIE_BRANCH_BIT     0x4000
 #define TRIE_CODE_MASK      0x3FFF
-#define MAGIC_KEYCODE_BASE  0x0100
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add KC_SPC on timeout
@@ -281,14 +281,14 @@ void handle_repeat_key()
     uint16_t keycode = KC_NO;
     for (int i = key_buffer_size - 1; i >= 0; --i) {
         keycode = key_buffer[i];
-        if (!(keycode & MAGIC_KEYCODE_BASE)) {
+        if (!(keycode & SPECIAL_KEY_TRIECODE_0)) {
             break;
         }
     }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("repeat keycode: 0x%04X\n", keycode);
 #endif
-    if (keycode && !(keycode & MAGIC_KEYCODE_BASE)) {
+    if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
         dequeue_keycodes(1);
         enqueue_keycode(keycode);
         send_key(keycode);
@@ -355,10 +355,11 @@ bool perform_sequence_transform()
  *
  * @param keycode Keycode registered by matrix press, per keymap
  * @param record keyrecord_t structure
+ * @param special_key_start starting keycode index for special keys used in rules
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record)
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
 {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
@@ -372,17 +373,17 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record)
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("pst keycode: 0x%04X\n", keycode);
 #endif
-
+    // If this is one of the special keycodes, convert to our internal trie code
+    if (keycode >= special_key_start && keycode < special_key_start + SPECIAL_KEY_COUNT) {
+        keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
+    }
     // keycode verification and extraction
     if (!process_check(&keycode, record, &mods))
         return true;
 
     // keycode buffer check
     switch (keycode) {
-        case US_MAG1 ... US_MAG1 + 3:
-            // convert to special 0x01nn code
-            keycode = MAGIC_KEYCODE_BASE + keycode - US_MAG1;
-            break;
+        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT:
         case KC_A ... KC_0:
         case S(KC_1)... S(KC_0):
         case KC_MINUS ... KC_SLASH:
