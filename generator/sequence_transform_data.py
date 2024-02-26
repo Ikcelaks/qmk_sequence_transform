@@ -26,21 +26,26 @@ Example:
   widht         -> width
 For full documentation, see QMK Docs
 """
-
+import os.path
 import sys
 import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple
-from string import ascii_letters, digits
+from string import digits
+from pathlib import Path
+from argparse import ArgumentParser
 
-from milc import cli
+parser = ArgumentParser()
 
-from qmk.commands import dump_lines
-from qmk.constants import GPL2_HEADER_C_LIKE, GENERATED_HEADER_C_LIKE
-from qmk.keyboard import keyboard_completer, keyboard_folder
-from qmk.keymap import keymap_completer, locate_keymap
-from qmk.path import normpath
+parser.add_argument(
+    "-c", "--config", type=str,
+    help="config file path", default="../../sequence_transform_config.json"
+)
 
+parser.add_argument("-q", "--quiet", action="store_true")
+args = parser.parse_args()
+
+THIS_FOLDER = Path(__file__).parent
 
 KC_A = 0x04
 KC_SPC = 0x2c
@@ -51,27 +56,41 @@ MOD_LSFT = 0x0200
 KC_MAGIC_0 = 0x0100
 qmk_digits = digits[1:] + digits[0]
 
+
+S = lambda code: MOD_LSFT | code
+
+
 def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
     return [(char, start + i) for i, char in enumerate(chars)]
+
 
 def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
     return dict([
         *generate_range(KC_SEMICOLON, ";'`,./"),
-        *generate_range(MOD_LSFT | KC_SEMICOLON, ":\"~<>?"),
+        *generate_range(S(KC_SEMICOLON), ":\"~<>?"),
         *generate_range(KC_MINUS, "-=[]\\"),
-        *generate_range(MOD_LSFT | KC_MINUS, "_+\{\}|"),
+        *generate_range(S(KC_MINUS), "_+\{\}|"),
         *generate_range(KC_1, qmk_digits),
-        *generate_range(MOD_LSFT | KC_1, "!@#$%^&*()"),
+        *generate_range(S(KC_1), "!@#$%^&*()"),
         *generate_range(KC_MAGIC_0, magic_chars),
         (wordbreak_char, KC_SPC),  # "Word break" character.
     ] + [(chr(c), c + KC_A - ord('a')) for c in range(ord('a'), ord('z') + 1)])
 
+
 OUTPUT_FUNC_1 = 1
 OUTPUT_FUNC_COUNT_MAX = 7
 
+
+def quiet_print(*args, **kwargs):
+    if config["quiet"]:
+        return
+
+    print(*args, **kwargs)
+
+
 def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
     if len(output_func_chars) > OUTPUT_FUNC_COUNT_MAX:
-        cli.log.error('{fg_red}Error:{fg_reset} More than %d ({fg_cyan}%d{fg_reset}) output_func_chars were listed %s', OUTPUT_FUNC_COUNT_MAX, len(output_func_chars), output_func_chars)
+        quiet_print('{fg_red}Error:{fg_reset} More than %d ({fg_cyan}%d{fg_reset}) output_func_chars were listed %s', OUTPUT_FUNC_COUNT_MAX, len(output_func_chars), output_func_chars)
         sys.exit(1)
     return dict([(char, OUTPUT_FUNC_1 + i) for i, char in enumerate(output_func_chars)])
 
@@ -92,15 +111,15 @@ def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment
     context_set = set()
     for line_number, context, correction in parse_file_lines(file_name, separator, comment):
         if context in context_set:
-            cli.log.warning('{fg_red}Error:%d:{fg_reset} Ignoring duplicate typo: "{fg_cyan}%s{fg_reset}"', line_number, context)
+            quiet_print('{fg_red}Error:%d:{fg_reset} Ignoring duplicate typo: "{fg_cyan}%s{fg_reset}"', line_number, context)
             continue
 
         # Check that `context` is valid.
         if not  all([(c in char_map) for c in context[:-1]]):
-            cli.log.error('{fg_red}Error:%d:{fg_reset} Typo "{fg_cyan}%s{fg_reset}" has invalid characters', line_number, context)
+            quiet_print('{fg_red}Error:%d:{fg_reset} Typo "{fg_cyan}%s{fg_reset}" has invalid characters', line_number, context)
             sys.exit(1)
         if len(context) > 127:
-            cli.log.error('{fg_red}Error:%d:{fg_reset} Typo exceeds 127 chars: "{fg_cyan}%s{fg_reset}"', line_number, context)
+            quiet_print('{fg_red}Error:%d:{fg_reset} Typo exceeds 127 chars: "{fg_cyan}%s{fg_reset}"', line_number, context)
             sys.exit(1)
 
         rules.append((context, correction))
@@ -130,6 +149,7 @@ def make_trie(magicons: List[Tuple[str, str]], output_func_char_map: Dict[str, i
         node['MATCH'] = (context, {'TARGET': target, 'RESULT': {'BACKSPACES': -1, 'FUNC': output_func, 'OUTPUT': ""}})
 
     return trie
+
 
 def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
     outputs = set()
@@ -166,7 +186,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
         trienode = trie
         for c in reversed(buffer):
             if c in trienode:
-                print(c)
+                quiet_print(c)
                 trienode = trienode[c]
                 if 'MATCH' in trienode:
                     context, completion = trienode['MATCH']
@@ -192,7 +212,7 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
     """Parses lines read from `file_name` into context-correction pairs."""
 
     line_number = 0
-    with open(file_name, 'rt') as file:
+    with open(file_name, 'rt', encoding="utf-8") as file:
         for line in file:
             line_number += 1
             line = line.strip()
@@ -200,29 +220,30 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
                 # Parse syntax "typo -> correction", using strip to ignore indenting.
                 tokens = [token.strip() for token in line.split(separator, 1)]
                 if len(tokens) != 2 or not tokens[0]:
-                    print(f'Error:{line_number}: Invalid syntax: "{line}"')
+                    quiet_print(f'Error:{line_number}: Invalid syntax: "{line}"')
                     sys.exit(1)
 
                 context, correction = tokens
 
                 yield line_number, context, correction
 
+
 def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int]]:
-    #print(sorted(outputs, key=len, reverse=True))
+    quiet_print(sorted(outputs, key=len, reverse=True))
     completions_str = ''
     completions_map = {}
     completions_offset = 0
     for output in sorted(outputs, key=len, reverse=True):
         i = completions_str.find(output)
         if i == -1:
-            #print(f'{output} added at {completions_offset}')
+            quiet_print(f'{output} added at {completions_offset}')
             completions_map[output] = completions_offset
             completions_str += output
             completions_offset += len(output)
         else:
-            #print(f'{output} found at {i}')
+            quiet_print(f'{output} found at {i}')
             completions_map[output] = i
-    #print(completions_str)
+    quiet_print(completions_str)
     return (list(bytes(completions_str, 'ascii')), completions_map)
 
 
@@ -259,7 +280,7 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
             code += clen
             # First output word stores coded info, second stores completion data offset index
             data = [code, output_index]
-            # cli.log.error('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, data)
+            quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, data)
             del trie_node['MATCH']
         else:
             data = []
@@ -284,15 +305,15 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
             table.append(entry)
             entry['links'] = [traverse(trie_node[c]) for c in entry['chars']]
 
-        # cli.log.error('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, entry['data'])
+        quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, entry['data'])
         return entry
 
     traverse(trie)
-    # cli.log.error('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, table)
+    quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, table)
 
     def serialize(e: Dict[str, Any]) -> List[int]:
         data = e['data']
-        # cli.log.error('{fg_red}Error:%d:{fg_reset} Serialize Data "{fg_cyan}%s{fg_reset}"', 0, data)
+        quiet_print('{fg_red}Error:%d:{fg_reset} Serialize Data "{fg_cyan}%s{fg_reset}"', 0, data)
         if not e['links']:  # Handle a leaf table entry.
             return data
         elif len(e['links']) == 1:  # Handle a chain table entry.
@@ -316,7 +337,7 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
     uint16_offset = link['uint16_offset']
     if not (0 <= uint16_offset <= 0xffff):
-        cli.log.error('{fg_red}Error:{fg_reset} The autocorrection table is too large, a node link exceeds 64KB limit. Try reducing the autocorrection dict to fewer entries.')
+        quiet_print('{fg_red}Error:{fg_reset} The autocorrection table is too large, a node link exceeds 64KB limit. Try reducing the autocorrection dict to fewer entries.')
         sys.exit(1)
     return [uint16_offset]
 
@@ -333,35 +354,29 @@ def uint16_to_hex(b: int) -> str:
     return f'0x{b:04X}'
 
 
-@cli.argument('config', type=normpath, help='File with character configuration and path to rules file')
-@cli.argument('-kb', '--keyboard', type=keyboard_folder, completer=keyboard_completer, help='The keyboard to build a firmware for. Ignored when a configurator export is supplied.')
-@cli.argument('-km', '--keymap', completer=keymap_completer, help='The keymap to build a firmware for. Ignored when a configurator export is supplied.')
-@cli.argument('-o', '--output', arg_only=True, type=normpath, help='File to write to')
-@cli.argument('-q', '--quiet', arg_only=True, action='store_true', help="Quiet mode, only output error messages")
-@cli.subcommand('Generate the autocorrection data file from a dictionary file with longest match semantics.')
-def generate_sequence_transform_data(cli):
-    config = json.load(open(cli.args.config, 'rt'))
+def generate_sequence_transform_data():
     magic_chars = config['magic_chars']
     output_func_chars = config['output_func_chars']
     wordbreak_char = config['wordbreak_char']
     comment_str = config['comment_str']
     sep_str = config['separator_str']
+    out_file = THIS_FOLDER / "../sequence_transform_data.h"
 
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
 
-    autocorrections = parse_file(cli.args.config.parent / config['rules_file_name'], char_map, sep_str, comment_str)
+    autocorrections = parse_file(THIS_FOLDER / "../../" / config['rules_file_name'], char_map, sep_str, comment_str)
     trie = make_trie(autocorrections, output_func_char_map)
     outputs = complete_trie(trie, wordbreak_char)
-    print(json.dumps(trie, indent = 4))
+    quiet_print(json.dumps(trie, indent=4))
     completions_data, completions_map = serialize_outputs(outputs)
     trie_data = serialize_trie(char_map, wordbreak_char, trie, completions_map)
 
-    current_keyboard = cli.args.keyboard or cli.config.user.keyboard or cli.config.generate_sequence_transform_data.keyboard
-    current_keymap = cli.args.keymap or cli.config.user.keymap or cli.config.generate_sequence_transform_data.keymap
+    # current_keyboard = cli.args.keyboard or cli.config.user.keyboard or cli.config.generate_sequence_transform_data.keyboard
+    # current_keymap = cli.args.keymap or cli.config.user.keymap or cli.config.generate_sequence_transform_data.keymap
 
-    if current_keyboard and current_keymap:
-        cli.args.output = locate_keymap(current_keyboard, current_keymap).parent / 'sequence_transform_data.h'
+    # if current_keyboard and current_keymap:
+    #     cli.args.output = locate_keymap(current_keyboard, current_keymap).parent / 'sequence_transform_data.h'
 
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
@@ -370,7 +385,8 @@ def generate_sequence_transform_data(cli):
     max_typo = max(autocorrections, key=typo_len)[0]
 
     # Build the sequence_transform_data.h file.
-    sequence_transform_data_h_lines = [GPL2_HEADER_C_LIKE, GENERATED_HEADER_C_LIKE, '#pragma once', '']
+    # sequence_transform_data_h_lines = [GPL2_HEADER_C_LIKE, GENERATED_HEADER_C_LIKE, '#pragma once', '']
+    sequence_transform_data_h_lines = ['#pragma once', '']
 
     sequence_transform_data_h_lines.append(f'// Autocorrection dictionary with longest match semantics:')
     sequence_transform_data_h_lines.append(f'// Autocorrection dictionary ({len(autocorrections)} entries):')
@@ -378,20 +394,40 @@ def generate_sequence_transform_data(cli):
         correction_escape_backslash = correction.replace("\\", "\\ [escape]")
         sequence_transform_data_h_lines.append(f'//   {typo:<{len(max_typo)}} -> {correction_escape_backslash}')
 
-    sequence_transform_data_h_lines.append('')
-    sequence_transform_data_h_lines.append(f'#define SEQUENCE_MIN_LENGTH {len(min_typo)} // "{min_typo}"')
-    sequence_transform_data_h_lines.append(f'#define SEQUENCE_MAX_LENGTH {len(max_typo)} // "{max_typo}"')
-    sequence_transform_data_h_lines.append(f'#define DICTIONARY_SIZE {len(trie_data)}')
-    sequence_transform_data_h_lines.append(f'#define COMPLETIONS_SIZE {len(completions_data)}')
-    sequence_transform_data_h_lines.append(f'#define SEQUENCE_TRANSFORM_COUNT {len(magic_chars)}')
-    sequence_transform_data_h_lines.append('')
-    sequence_transform_data_h_lines.append('static const uint16_t sequence_transform_data[DICTIONARY_SIZE] PROGMEM = {')
-    sequence_transform_data_h_lines.append(textwrap.fill('    %s' % (', '.join(map(uint16_to_hex, trie_data))), width=135, subsequent_indent='    '))
-    sequence_transform_data_h_lines.append('};')
-    sequence_transform_data_h_lines.append('')
-    sequence_transform_data_h_lines.append('static const uint8_t sequence_transform_completions_data[COMPLETIONS_SIZE] PROGMEM = {')
-    sequence_transform_data_h_lines.append(textwrap.fill('    %s' % (', '.join(map(byte_to_hex, completions_data))), width=100, subsequent_indent='    '))
-    sequence_transform_data_h_lines.append('};')
+    sequence_transform_data_h_lines.extend([
+        ''
+        f'#define SEQUENCE_MIN_LENGTH {len(min_typo)} // "{min_typo}"',
+        f'#define SEQUENCE_MAX_LENGTH {len(max_typo)} // "{max_typo}"',
+        f'#define DICTIONARY_SIZE {len(trie_data)}',
+        f'#define COMPLETIONS_SIZE {len(completions_data)}',
+        f'#define SEQUENCE_TRANSFORM_COUNT {len(magic_chars)}',
+        '',
+        'static const uint16_t sequence_transform_data[DICTIONARY_SIZE] PROGMEM = {',
+        textwrap.fill('    %s' % (', '.join(map(uint16_to_hex, trie_data))), width=135, subsequent_indent='    '),
+        '};',
+        '',
+        'static const uint8_t sequence_transform_completions_data[COMPLETIONS_SIZE] PROGMEM = {',
+        textwrap.fill('    %s' % (', '.join(map(byte_to_hex, completions_data))), width=100, subsequent_indent='    '),
+        '};',
+    ])
+
+    if os.path.exists(out_file):
+        with open(out_file, "r", encoding="utf-8") as file:
+            if file.read() == "\n".join(sequence_transform_data_h_lines):
+                return
 
     # Show the results
-    dump_lines(cli.args.output, sequence_transform_data_h_lines, cli.args.quiet)
+    with open(out_file, "w", encoding="utf-8") as file:
+        file.write("\n".join(sequence_transform_data_h_lines))
+
+    # Show the results
+    # dump_lines(cli.args.output, sequence_transform_data_h_lines, cli.args.quiet)
+
+
+if __name__ == '__main__':
+    config = json.load(open(THIS_FOLDER / args.config, 'rt', encoding="utf-8"))
+
+    if args.quiet:
+        config["quiet"] = True
+
+    generate_sequence_transform_data()

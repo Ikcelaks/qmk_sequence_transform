@@ -157,6 +157,7 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
         reset_buffer();
         return false;
     }
+
     return true;
 }
 
