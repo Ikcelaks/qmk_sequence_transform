@@ -20,6 +20,8 @@
 
 // todo: compute max in script
 #define SEQUENCE_TRANSFORM_DICTIONARY_SIZE DICTIONARY_SIZE
+#define SPECIAL_KEY_COUNT SEQUENCE_TRANSFORM_COUNT
+#define SPECIAL_KEY_TRIECODE_0 0x0100
 #define TDATA(L) pgm_read_word(&trie->data[L])
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 #define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
@@ -47,6 +49,16 @@ static uint16_t key_buffer_size = 1;
 static trie_t trie = {
     SEQUENCE_TRANSFORM_DICTIONARY_SIZE,  sequence_transform_data,  COMPLETIONS_SIZE, sequence_transform_completions_data
 };
+
+
+// Default implementation of sequence_transform_map_key_user().
+__attribute__((weak)) bool sequence_transform_map_key_user(uint16_t* keycode, keyrecord_t* record, uint8_t* mods) {
+    // Assume that special keys have keycodes ranging from SEQUENCE_TRANSFORM_SPECIAL_KEY_0 to SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_COUNT - 1
+    if (*keycode >= SEQUENCE_TRANSFORM_SPECIAL_KEY_0 && *keycode < SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_COUNT) {
+        *keycode = *keycode - SEQUENCE_TRANSFORM_SPECIAL_KEY_0 + SPECIAL_KEY_TRIECODE_0;
+    }
+    return true;
+}
 
 /**
  * @brief determine if context_magic should process this keypress,
@@ -149,7 +161,7 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
         reset_buffer();
         return false;
     }
-    return true;
+    return sequence_transform_map_key_user(keycode, record, mods);
 }
 
 /**
@@ -278,11 +290,11 @@ void handle_repeat_key()
     uint16_t keycode = KC_NO;
     for (int i = key_buffer_size - 1; i >= 0; --i) {
         keycode = key_buffer[i];
-        if (!(keycode & 0x0100)) {
+        if (!(keycode & SPECIAL_KEY_TRIECODE_0)) {
             break;
         }
     }
-    if (keycode && !(keycode & 0x0100)) {
+    if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
         dequeue_keycodes(1);
         enqueue_keycode(keycode);
         // Apply shift to sent key if caps word is enabled.
@@ -372,10 +384,7 @@ bool process_context_magic(uint16_t keycode, keyrecord_t *record)
 
     // keycode buffer check
     switch (keycode) {
-        case US_MAG1 ... US_MAG4:
-            // convert to special 0x01nn code
-            keycode = 0x0100 + keycode - US_MAG1;
-            break;
+        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT:
         case KC_A ... KC_0:
         case S(KC_1) ... S(KC_0):
         case KC_MINUS ...KC_SLASH:
