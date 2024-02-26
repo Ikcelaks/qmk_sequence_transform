@@ -33,12 +33,19 @@ import json
 from typing import Any, Dict, Iterator, List, Tuple
 from string import digits
 from pathlib import Path
+from argparse import ArgumentParser
 
+parser = ArgumentParser()
+
+parser.add_argument(
+    "-c", "--config", type=str,
+    help="config file path", default="../../sequence_transform_config.json"
+)
+
+parser.add_argument("-q", "--quiet", action="store_true")
+args = parser.parse_args()
 
 THIS_FOLDER = Path(__file__).parent
-
-OUT_FILE = THIS_FOLDER / "magic_data.h"
-CONFIG_FILE = THIS_FOLDER / "sequence_transform_config_sample.json"
 
 KC_A = 0x04
 KC_SPC = 0x2c
@@ -353,6 +360,7 @@ def generate_sequence_transform_data():
     wordbreak_char = config['wordbreak_char']
     comment_str = config['comment_str']
     sep_str = config['separator_str']
+    out_file = config["out_file_name"]
 
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
@@ -403,13 +411,13 @@ def generate_sequence_transform_data():
         '};',
     ])
 
-    if os.path.exists(OUT_FILE):
-        with open(OUT_FILE, "r", encoding="utf-8") as file:
+    if os.path.exists(out_file):
+        with open(out_file, "r", encoding="utf-8") as file:
             if file.read() == "\n".join(sequence_transform_data_h_lines):
                 return
 
     # Show the results
-    with open(OUT_FILE, "w", encoding="utf-8") as file:
+    with open(out_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
 
     # Show the results
@@ -417,9 +425,9 @@ def generate_sequence_transform_data():
 
 
 if __name__ == '__main__':
-    config = json.load(open(CONFIG_FILE, 'rt', encoding="utf-8"))
+    config = json.load(open(THIS_FOLDER / args.config, 'rt', encoding="utf-8"))
 
-    if len(sys.argv) == 2 and sys.argv[1] in ["-quiet", "-q"]:
+    if args.quiet:
         config["quiet"] = True
 
     generate_sequence_transform_data()
