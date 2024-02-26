@@ -301,7 +301,7 @@ void handle_result(trie_t *trie, trie_search_result_t *res)
     // Send completion string
     bool ends_with_wordbreak;
     ends_with_wordbreak = (res->complete_len > 0 && CDATA(res->completion_offset + res->complete_len - 1) == ' ');
-    for (int i = res->completion_offset; i < res->complete_len && i < trie->completions_size; ++i) {
+    for (int i = res->completion_offset; i < res->completion_offset + res->complete_len && i < trie->completions_size; ++i) {
         char ascii_code = CDATA(i);
         tap_code16(char_to_keycode(ascii_code));
     }
