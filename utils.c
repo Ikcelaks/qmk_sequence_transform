@@ -1,12 +1,12 @@
 #include "quantum.h"
 #include "utils.h"
 #include "send_string.h"
+#include "sequence_transform_data.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
 // todo: include generated .h file for these defines and magic key chars
-#define SPECIAL_KEY_COUNT 2
 #define SPECIAL_KEY_TRIECODE_0 0x0100
 static const char magic_chars[] = {'M', 'R'};
 
@@ -50,7 +50,7 @@ const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 ////////////////////////////////////////////////////////////////////////////////
 char keycode_to_char(uint16_t keycode)
 {
-    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SPECIAL_KEY_COUNT)
+    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT)
 		return magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
