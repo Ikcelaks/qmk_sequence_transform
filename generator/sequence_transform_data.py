@@ -365,7 +365,7 @@ def generate_sequence_transform_data():
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
 
-    autocorrections = parse_file(THIS_FOLDER / config['rules_file_name'], char_map, sep_str, comment_str)
+    autocorrections = parse_file(THIS_FOLDER / "../../" / config['rules_file_name'], char_map, sep_str, comment_str)
     trie = make_trie(autocorrections, output_func_char_map)
     outputs = complete_trie(trie, wordbreak_char)
     quiet_print(json.dumps(trie, indent=4))
