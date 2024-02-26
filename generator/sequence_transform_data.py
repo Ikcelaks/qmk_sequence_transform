@@ -169,6 +169,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
                 match_output = match['RESULT']['OUTPUT']
                 del(expanded_context[-(match_backspaces+1):])
                 expanded_context.extend(match_output)
+                quiet_print(c, expanded_context)
         if expanded_context and expanded_context[0] == wordbreak_char:
             del(expanded_context[0])
         target = completion['TARGET']
@@ -186,13 +187,15 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
         trienode = trie
         for c in reversed(buffer):
             if c in trienode:
-                quiet_print(c)
+                # quiet_print(c)
                 trienode = trienode[c]
                 if 'MATCH' in trienode:
                     context, completion = trienode['MATCH']
                     if completion['RESULT']['BACKSPACES'] == -1:
                         complete_node(context, completion)
                     longest_match = completion
+            else:
+                break
         return longest_match
 
     def traverse_trienode(trinode: Dict[str, Any]):
@@ -280,7 +283,7 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
             code += clen
             # First output word stores coded info, second stores completion data offset index
             data = [code, output_index]
-            quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, data)
+            # quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, data)
             del trie_node['MATCH']
         else:
             data = []
@@ -305,15 +308,15 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
             table.append(entry)
             entry['links'] = [traverse(trie_node[c]) for c in entry['chars']]
 
-        quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, entry['data'])
+        # quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, entry['data'])
         return entry
 
     traverse(trie)
-    quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, table)
+    # quiet_print('{fg_red}Error:%d:{fg_reset} Data "{fg_cyan}%s{fg_reset}"', 0, table)
 
     def serialize(e: Dict[str, Any]) -> List[int]:
         data = e['data']
-        quiet_print('{fg_red}Error:%d:{fg_reset} Serialize Data "{fg_cyan}%s{fg_reset}"', 0, data)
+        # quiet_print('{fg_red}Error:%d:{fg_reset} Serialize Data "{fg_cyan}%s{fg_reset}"', 0, data)
         if not e['links']:  # Handle a leaf table entry.
             return data
         elif len(e['links']) == 1:  # Handle a chain table entry.
