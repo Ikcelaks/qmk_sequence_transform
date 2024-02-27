@@ -12,23 +12,71 @@
 #include "utils.h"
 #include "print.h"
 
+
+//////////////////////////////////////////////////////////////////
+// Private helper functions
+int get_real_index(key_buffer_t *buf, int index)
+{
+    if (index < 0) {
+        index += buf->context_len;
+    }
+    if (index > buf->context_len || index < 0) {
+        uprintf("Accessing index (%d) outside valid range (-%d, %d)!", index, buf->context_len, buf->context_len);
+        return -1;
+    }
+    index = buf->cur_pos - index;
+    if (index < 0) {
+        index += buf->size;
+    }
+    return index;
+}
+
+void resize_context(key_buffer_t *buf, int delta)
+{
+    if (delta < -buf->size || delta > buf->size) {
+        uprintf("ABS of buffer resize request (%d) exceeds total available space index (%d)!", delta, buf->size);
+        // do nothing; should never happen;
+        return;
+    }
+    const int new_context_len = buf->context_len + delta;
+    if (new_context_len < 0) {
+        buf->context_len = 0;
+    } else if (new_context_len > buf->size) {
+        buf->context_len = buf->size;
+    } else {
+        buf->context_len = new_context_len;
+    }
+    const int new_pos = buf->cur_pos + delta;
+    if (new_pos < 0) {
+        buf->cur_pos = new_pos + buf->size;
+    } else if (new_pos > buf->size) {
+        buf->cur_pos = new_pos - buf->size;
+    } else {
+        buf->cur_pos = new_pos;
+    }
+    // We do not initialize the key_action_t item at the new cur_pos,
+    // because the calling function will immediately fill it with data.
+}
+
+//////////////////////////////////////////////////////////////////
+// Public
 //////////////////////////////////////////////////////////////////
 // buffer indexing from start or end (with negative index)
 // returns 0 if index is out of bounds
 //
-uint16_t st_key_buffer_get(st_key_buffer_t *buf, int index)
+struct key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
 {
-    if (index > 0) {
-        return index < buf->context_len ? buf->data[index] : 0;
-    } else {
-        return -index <= buf->context_len ? buf->data[buf->context_len + index] : 0;
+    int real_index = get_real_index(buf, index);
+    if (real_index < 0) { // index was out of bounds
+        return NULL;
     }
+    return &buf->data[index];
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_reset(st_key_buffer_t *buf)
 {
-    buf->data[0] = KC_SPC;
-    buf->context_len = 1;
+    buf->context_len = 0;
+    key_buffer_push(buf, KC_SPC);
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
@@ -38,12 +86,12 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
     const uint8_t lowkey = keycode & 0xFF;
     if (shifted && IS_ALPHA_KEYCODE(lowkey))
         keycode = lowkey;
-    // Rotate oldest character if buffer is full.
-    if (buf->context_len >= buf->size) {
-        memmove(buf->data, buf->data + 1, sizeof(uint16_t) * (buf->size - 1));
-        buf->context_len = buf->size - 1;
+    if (buf->context_len < buf->size) {
+        buf->context_len++;
     }
-    buf->data[buf->context_len++] = keycode;
+    resize_context(buf, 1);
+    buf->data[buf->cur_pos].keypressed = keycode;
+    buf->data[buf->cur_pos].match_offset = 0xffff;
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_key_buffer_print(buf);
 #endif
@@ -51,9 +99,7 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 {
-    buf->context_len -= MIN(num, buf->context_len);
-    if (!buf->context_len)
-        st_key_buffer_reset(buf);
+    resize_context(buf, -num);
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_print(st_key_buffer_t *buf)
