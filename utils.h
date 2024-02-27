@@ -12,8 +12,6 @@
 // Public API
 
 #define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
-// TODO: script should define this directly in generated .h
-#define SPECIAL_KEY_TRIECODE_0 0x0100
 
 uint16_t char_to_keycode(char c);
 char keycode_to_char(uint16_t keycode);

@@ -402,6 +402,7 @@ def generate_sequence_transform_data():
 
     sequence_transform_data_h_lines.extend([
         ''
+        f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_typo)} // "{min_typo}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_typo)} // "{max_typo}"',
         f'#define DICTIONARY_SIZE {len(trie_data)}',
