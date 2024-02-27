@@ -28,8 +28,8 @@ static inline void sequence_transform_task(void) {}
 //////////////////////////////////////////////////////////////////
 // Internal
 
-bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods);
-void record_send_key(uint16_t keycode);
-void handle_repeat_key(void);
-void handle_result(trie_t *trie, trie_payload_t *res);
-bool perform_sequence_transform(void);
+bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods);
+void st_record_send_key(uint16_t keycode);
+void st_handle_repeat_key(void);
+void st_handle_result(st_trie_t *trie, st_trie_payload_t *res);
+bool st_perform(void);

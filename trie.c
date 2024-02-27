@@ -20,12 +20,12 @@
 #define TDATA(L) pgm_read_word(&trie->data[L])
 
 //////////////////////////////////////////////////////////////////
-bool trie_get_completion(trie_t *trie, key_buffer_t *search, trie_payload_t *res)
+bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res)
 {
-    return find_longest_chain(trie, search, res, 0, 1);
+    return st_find_longest_chain(trie, search, res, 0, 1);
 }
 //////////////////////////////////////////////////////////////////
-void get_payload_from_code(trie_payload_t *payload, uint16_t code, uint16_t completion_index)
+void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
 {
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
@@ -46,7 +46,7 @@ void get_payload_from_code(trie_payload_t *payload, uint16_t code, uint16_t comp
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool find_longest_chain(trie_t *trie, key_buffer_t *search, trie_payload_t *res, uint16_t offset, uint8_t depth)
+bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth)
 {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
     if (offset >= trie->data_size) {
@@ -66,10 +66,10 @@ bool find_longest_chain(trie_t *trie, key_buffer_t *search, trie_payload_t *res,
         // match nodes are side attachments, so decrease depth
         depth--;
         // If bit 14 is also set, there is a child node after the completion string
-        if ((code & TRIE_BRANCH_BIT) && find_longest_chain(trie, search, res, offset+2, depth+1))
+        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, res, offset+2, depth+1))
             return true;
         // If no better match found deeper, so recordd the payload result!
-        get_payload_from_code(res, code, TDATA(offset + 1));
+        st_get_payload_from_code(res, code, TDATA(offset + 1));
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
          // bounds check completion data
         if (res->completion_index + res->completion_len > trie->completions_size) {
@@ -87,13 +87,13 @@ bool find_longest_chain(trie_t *trie, key_buffer_t *search, trie_payload_t *res,
 			return false;
 		code &= TRIE_CODE_MASK;
         // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = key_buffer_get(search, -depth);
+        const uint16_t cur_key = st_key_buffer_get(search, -depth);
 		for (; code; offset += 2, code = TDATA(offset)) {
             if (code == cur_key) {
                 // 16bit offset to child node is built from next uint16_t
                 const uint16_t child_offset = TDATA(offset+1);
                 // Traverse down child node
-                return find_longest_chain(trie, search, res, child_offset, depth+1);
+                return st_find_longest_chain(trie, search, res, child_offset, depth+1);
             }
         }
         // Couldn't go deeper, so return false.
@@ -103,9 +103,9 @@ bool find_longest_chain(trie_t *trie, key_buffer_t *search, trie_payload_t *res,
 	// Travel down chain until we reach a zero byte, or we no longer match our buffer
 	for (; code; depth++, code = TDATA(++offset)) {
 		if (depth > search->context_len ||
-            code != key_buffer_get(search, -depth))
+            code != st_key_buffer_get(search, -depth))
 			return false;
 	}
 	// After a chain, there should be a leaf or branch
-	return find_longest_chain(trie, search, res, offset+1, depth);
+	return st_find_longest_chain(trie, search, res, offset+1, depth);
 }
