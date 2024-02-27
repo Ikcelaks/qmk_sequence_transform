@@ -13,6 +13,10 @@
 #include "sequence_transform_data.h"
 #include "utils.h"
 
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0
+    #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#endif
+
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
 //////////////////////////////////////////////////////////////////
