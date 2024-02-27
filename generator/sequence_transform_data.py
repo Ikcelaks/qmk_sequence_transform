@@ -63,6 +63,7 @@ qmk_digits = digits[1:] + digits[0]
 
 S = lambda code: MOD_LSFT | code
 
+max_backspaces = 0
 
 def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
     return [(char, start + i) for i, char in enumerate(chars)]
@@ -266,10 +267,12 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
 
     # Traverse trie in depth first order.
     def traverse(trie_node):
+        global max_backspaces
         if 'MATCH' in trie_node:  # Handle a MATCH trie node.
             sequence, completion = trie_node['MATCH']
             sequence = sequence.strip(wordbreak_char)
             backspaces = completion['RESULT']['BACKSPACES']
+            max_backspaces = max(max_backspaces, backspaces)
             func = completion['RESULT']['FUNC']
             output = completion['RESULT']['OUTPUT']
             output_index = completions_map[output]
@@ -410,6 +413,7 @@ def generate_sequence_transform_data():
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
+        f'#define MAX_BACKSPACES {max_backspaces}',
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TRANSFORM_COUNT {len(magic_chars)}',
