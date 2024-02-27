@@ -1,4 +1,7 @@
 # Copyright 2021 Google LLC
+# Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+# Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+# Copyright 2024 QKekos <q.kekos.q@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

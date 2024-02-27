@@ -11,11 +11,15 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-#define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
-// TODO: script should define this directly in generated .h
-#define SPECIAL_KEY_TRIECODE_0 0x0100
+typedef struct
+{
+    uint16_t    *data;       // array of keycodes
+    uint8_t     size;        // buffer size
+    uint8_t     context_len; // number of current keys in buffer
+} key_buffer_t;
 
-uint16_t char_to_keycode(char c);
-char keycode_to_char(uint16_t keycode);
-void multi_tap(uint16_t keycode, int count);
-void send_key(uint16_t keycode);
+uint16_t    key_buffer_get(key_buffer_t *buf, int index);
+void        key_buffer_reset(key_buffer_t *buf);
+void        key_buffer_enqueue(key_buffer_t *buf, uint16_t keycode);
+void        key_buffer_dequeue(key_buffer_t *buf, uint8_t num);
+void        key_buffer_print(key_buffer_t *buf);
