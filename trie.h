@@ -17,6 +17,8 @@ typedef struct
     const uint16_t  *data;              // serialized trie node data
     size_t          completions_size;   // size in bytes of completions data buffer
     const uint8_t   *completions;       // packed completions strings buffer
+    uint8_t         completion_max_len; // max len of all completion strings
+    uint8_t         max_backspaces;     // max backspaces for all completions
 } trie_t;
 
 typedef struct

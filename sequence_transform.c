@@ -43,7 +43,9 @@ static trie_t trie = {
     DICTIONARY_SIZE,
     sequence_transform_data,
     COMPLETIONS_SIZE,
-    sequence_transform_completions_data
+    sequence_transform_completions_data,
+    COMPLETION_MAX_LENGTH,
+    MAX_BACKSPACES
 };
 
 /**
