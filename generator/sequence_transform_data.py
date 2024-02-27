@@ -59,16 +59,18 @@ KC_MAGIC_0 = 0x0100
 TRIE_MATCH_BIT = 0x8000
 TRIE_BRANCH_BIT = 0x4000
 qmk_digits = digits[1:] + digits[0]
-
+OUTPUT_FUNC_1 = 1
+OUTPUT_FUNC_COUNT_MAX = 7
 
 S = lambda code: MOD_LSFT | code
 
 max_backspaces = 0
 
+###############################################################################
 def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
     return [(char, start + i) for i, char in enumerate(chars)]
 
-
+###############################################################################
 def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
     return dict([
         *generate_range(KC_SEMICOLON, ";'`,./"),
@@ -81,25 +83,20 @@ def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
         (wordbreak_char, KC_SPC),  # "Word break" character.
     ] + [(chr(c), c + KC_A - ord('a')) for c in range(ord('a'), ord('z') + 1)])
 
-
-OUTPUT_FUNC_1 = 1
-OUTPUT_FUNC_COUNT_MAX = 7
-
-
+###############################################################################
 def quiet_print(*args, **kwargs):
     if config["quiet"]:
         return
-
     print(*args, **kwargs)
 
-
+###############################################################################
 def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
     if len(output_func_chars) > OUTPUT_FUNC_COUNT_MAX:
         print('{fg_red}Error:{fg_reset} More than %d ({fg_cyan}%d{fg_reset}) output_func_chars were listed %s', OUTPUT_FUNC_COUNT_MAX, len(output_func_chars), output_func_chars)
         sys.exit(1)
     return dict([(char, OUTPUT_FUNC_1 + i) for i, char in enumerate(output_func_chars)])
 
-
+###############################################################################
 def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment: str) -> List[Tuple[str, str]]:
     """Parses sequence dictionary file.
   Each line of the file defines one sequence and its transformation with the syntax
@@ -132,7 +129,7 @@ def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment
 
     return rules
 
-
+###############################################################################
 def make_trie(seq_dict: List[Tuple[str, str]], output_func_char_map: Dict[str, int]) -> Dict[str, Any]:
     """Makes a trie from the the sequences, writing in reverse.
   Args:
@@ -155,7 +152,7 @@ def make_trie(seq_dict: List[Tuple[str, str]], output_func_char_map: Dict[str, i
 
     return trie
 
-
+###############################################################################
 def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
     outputs = set()
 
@@ -215,7 +212,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str):
     traverse_trienode(trie)
     return outputs
 
-
+###############################################################################
 def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[Tuple[int, str, str]]:
     """Parses lines read from `file_name` into context-correction pairs."""
 
@@ -235,7 +232,7 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
 
                 yield line_number, context, correction
 
-
+###############################################################################
 def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int], int]:
     quiet_print(sorted(outputs, key=len, reverse=True))
     completions_str = ''
@@ -256,7 +253,7 @@ def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int], int
     quiet_print(completions_str)
     return (list(bytes(completions_str, 'ascii')), completions_map, max_completion_len)
 
-
+###############################################################################
 def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str, Any], completions_map: Dict[str, int]) -> List[int]:
     """Serializes trie in a form readable by the C code.
 
@@ -342,7 +339,7 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
     # Serialize final table.
     return [b for e in table for b in serialize(e)]
 
-
+###############################################################################
 def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
     uint16_offset = link['uint16_offset']
@@ -351,19 +348,19 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
         sys.exit(1)
     return [uint16_offset]
 
-
+###############################################################################
 def sequence_len(e: Tuple[str, str]) -> int:
     return len(e[0])
 
-
+###############################################################################
 def byte_to_hex(b: int) -> str:
     return f'0x{b:02X}'
 
-
+###############################################################################
 def uint16_to_hex(b: int) -> str:
     return f'0x{b:04X}'
 
-
+###############################################################################
 def generate_sequence_transform_data():
     magic_chars = config['magic_chars']
     output_func_chars = config['output_func_chars']
@@ -439,7 +436,7 @@ def generate_sequence_transform_data():
     # Show the results
     # dump_lines(cli.args.output, sequence_transform_data_h_lines, cli.args.quiet)
 
-
+###############################################################################
 if __name__ == '__main__':
     config = json.load(open(THIS_FOLDER / args.config, 'rt', encoding="utf-8"))
 
