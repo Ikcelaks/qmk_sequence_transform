@@ -13,7 +13,7 @@
 
 #define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
 
-uint16_t char_to_keycode(char c);
-char keycode_to_char(uint16_t keycode);
-void multi_tap(uint16_t keycode, int count);
-void send_key(uint16_t keycode);
+uint16_t st_char_to_keycode(char c);
+char st_keycode_to_char(uint16_t keycode);
+void st_multi_tap(uint16_t keycode, int count);
+void st_send_key(uint16_t keycode);

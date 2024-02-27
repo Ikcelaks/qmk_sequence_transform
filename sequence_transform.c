@@ -22,7 +22,7 @@
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 static uint16_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {KC_SPC};
-static key_buffer_t key_buffer = {
+static st_key_buffer_t key_buffer = {
     key_buffer_data,
     SEQUENCE_MAX_LENGTH,
     1
@@ -35,7 +35,7 @@ static uint32_t sequence_timer = 0;
 void sequence_transform_task(void)
 {
     if (timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
-        key_buffer_reset(&key_buffer);
+        st_key_buffer_reset(&key_buffer);
         sequence_timer = timer_read32();
     }
 }
@@ -43,7 +43,7 @@ void sequence_transform_task(void)
 
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
-static trie_t trie = {
+static st_trie_t trie = {
     DICTIONARY_SIZE,
     sequence_transform_data,
     COMPLETIONS_SIZE,
@@ -62,7 +62,7 @@ static trie_t trie = {
  * @return true Allow context_magic
  * @return false Stop processing and escape from context_magic.
  */
-bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
+bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
 {
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
@@ -153,20 +153,20 @@ bool process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("clearing buffer (mods: 0x%04X)\n", *mods);
 #endif
-        key_buffer_reset(&key_buffer);
+        st_key_buffer_reset(&key_buffer);
         return false;
     }
 
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void record_send_key(uint16_t keycode)
+void st_record_send_key(uint16_t keycode)
 {
-    key_buffer_enqueue(&key_buffer, keycode);
-    send_key(keycode);
+    st_key_buffer_push(&key_buffer, keycode);
+    st_send_key(keycode);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void handle_repeat_key()
+void st_handle_repeat_key()
 {
     uint16_t keycode = KC_NO;
     for (int i = key_buffer.context_len - 1; i >= 0; --i) {
@@ -179,30 +179,30 @@ void handle_repeat_key()
     uprintf("repeat keycode: 0x%04X\n", keycode);
 #endif
     if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
-        key_buffer_dequeue(&key_buffer, 1);
-        key_buffer_enqueue(&key_buffer, keycode);
-        send_key(keycode);
+        st_key_buffer_pop(&key_buffer, 1);
+        st_key_buffer_push(&key_buffer, keycode);
+        st_send_key(keycode);
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void handle_result(trie_t *trie, trie_payload_t *res)
+void st_handle_result(st_trie_t *trie, st_trie_payload_t *res)
 {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
 #endif
     // Send backspaces
-    multi_tap(KC_BSPC, res->num_backspaces);
+    st_multi_tap(KC_BSPC, res->num_backspaces);
     // Send completion string
     const uint16_t completion_end = res->completion_index + res->completion_len;
     bool ends_with_wordbreak = (res->completion_len > 0 && CDATA(completion_end - 1) == ' ');
     for (uint16_t i = res->completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
-        send_key(char_to_keycode(ascii_code));
+        st_send_key(st_char_to_keycode(ascii_code));
     }
     switch (res->func_code) {
         case 1:  // repeat
-            handle_repeat_key();
+            st_handle_repeat_key();
             break;
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
@@ -211,7 +211,7 @@ void handle_result(trie_t *trie, trie_payload_t *res)
             ends_with_wordbreak = false;
     }
     if (ends_with_wordbreak) {
-        key_buffer_enqueue(&key_buffer, KC_SPC);
+        st_key_buffer_push(&key_buffer, KC_SPC);
     }
 }
 
@@ -220,12 +220,12 @@ void handle_result(trie_t *trie, trie_payload_t *res)
  *
  * @return true if sequence transform was performed
  */
-bool perform_sequence_transform()
+bool st_perform()
 {
     // Get completion string from trie for our current key buffer.
-    trie_payload_t res  = {0, 0, 0, 0};
-    if (trie_get_completion(&trie, &key_buffer, &res)) {
-        handle_result(&trie, &res);
+    st_trie_payload_t res  = {0, 0, 0, 0};
+    if (st_trie_get_completion(&trie, &key_buffer, &res)) {
+        st_handle_result(&trie, &res);
         return true;
     }
     return false;
@@ -259,7 +259,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
     }
     // keycode verification and extraction
-    if (!process_check(&keycode, record, &mods))
+    if (!st_process_check(&keycode, record, &mods))
         return true;
 
     // keycode buffer check
@@ -277,18 +277,18 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         case KC_BSPC:
             // remove last character from the buffer
             // FIXME: proper logic here needs to be determined
-            key_buffer_dequeue(&key_buffer, 1);
-            //key_buffer_reset(&key_buffer);
+            st_key_buffer_pop(&key_buffer, 1);
+            //st_key_buffer_reset(&key_buffer);
             return true;
         default:
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
     }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("  translated keycode: 0x%04X (%c)\n", keycode, keycode_to_char(keycode));
+    uprintf("  translated keycode: 0x%04X (%c)\n", keycode, st_keycode_to_char(keycode));
 #endif
-    key_buffer_enqueue(&key_buffer, keycode);
-    if (perform_sequence_transform()) {
+    st_key_buffer_push(&key_buffer, keycode);
+    if (st_perform()) {
         // tell QMK to not process this key
         return false;
     } else {

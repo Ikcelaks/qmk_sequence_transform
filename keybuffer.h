@@ -16,10 +16,10 @@ typedef struct
     uint16_t    *data;       // array of keycodes
     uint8_t     size;        // buffer size
     uint8_t     context_len; // number of current keys in buffer
-} key_buffer_t;
+} st_key_buffer_t;
 
-uint16_t    key_buffer_get(key_buffer_t *buf, int index);
-void        key_buffer_reset(key_buffer_t *buf);
-void        key_buffer_enqueue(key_buffer_t *buf, uint16_t keycode);
-void        key_buffer_dequeue(key_buffer_t *buf, uint8_t num);
-void        key_buffer_print(key_buffer_t *buf);
+uint16_t    st_key_buffer_get(st_key_buffer_t *buf, int index);
+void        st_key_buffer_reset(st_key_buffer_t *buf);
+void        st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode);
+void        st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
+void        st_key_buffer_print(st_key_buffer_t *buf);
