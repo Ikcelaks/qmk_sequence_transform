@@ -1,3 +1,11 @@
+// Copyright 2021 Google LLC
+// Copyright 2021 @filterpaper
+// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #include "quantum.h"
 #include "utils.h"
 #include "send_string.h"
@@ -6,8 +14,7 @@
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
-// todo: include generated .h file for these defines and magic key chars
-#define SPECIAL_KEY_TRIECODE_0 0x0100
+// TODO: define this in generated .h file
 static const char magic_chars[] = {'M', 'R'};
 
 const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
