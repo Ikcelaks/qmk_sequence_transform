@@ -93,7 +93,7 @@ def quiet_print(*args, **kwargs):
 
 def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
     if len(output_func_chars) > OUTPUT_FUNC_COUNT_MAX:
-        quiet_print('{fg_red}Error:{fg_reset} More than %d ({fg_cyan}%d{fg_reset}) output_func_chars were listed %s', OUTPUT_FUNC_COUNT_MAX, len(output_func_chars), output_func_chars)
+        print('{fg_red}Error:{fg_reset} More than %d ({fg_cyan}%d{fg_reset}) output_func_chars were listed %s', OUTPUT_FUNC_COUNT_MAX, len(output_func_chars), output_func_chars)
         sys.exit(1)
     return dict([(char, OUTPUT_FUNC_1 + i) for i, char in enumerate(output_func_chars)])
 
@@ -114,15 +114,15 @@ def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment
     context_set = set()
     for line_number, context, correction in parse_file_lines(file_name, separator, comment):
         if context in context_set:
-            quiet_print('{fg_red}Error:%d:{fg_reset} Ignoring duplicate typo: "{fg_cyan}%s{fg_reset}"', line_number, context)
+            print('{fg_red}Error:%d:{fg_reset} Ignoring duplicate sequence: "{fg_cyan}%s{fg_reset}"', line_number, context)
             continue
 
         # Check that `context` is valid.
         if not  all([(c in char_map) for c in context[:-1]]):
-            quiet_print('{fg_red}Error:%d:{fg_reset} Typo "{fg_cyan}%s{fg_reset}" has invalid characters', line_number, context)
+            print('{fg_red}Error:%d:{fg_reset} sequence "{fg_cyan}%s{fg_reset}" has invalid characters', line_number, context)
             sys.exit(1)
         if len(context) > 127:
-            quiet_print('{fg_red}Error:%d:{fg_reset} Typo exceeds 127 chars: "{fg_cyan}%s{fg_reset}"', line_number, context)
+            print('{fg_red}Error:%d:{fg_reset} Sequence exceeds 127 chars: "{fg_cyan}%s{fg_reset}"', line_number, context)
             sys.exit(1)
 
         rules.append((context, correction))
@@ -226,7 +226,7 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
                 # Parse syntax "typo -> correction", using strip to ignore indenting.
                 tokens = [token.strip() for token in line.split(separator, 1)]
                 if len(tokens) != 2 or not tokens[0]:
-                    quiet_print(f'Error:{line_number}: Invalid syntax: "{line}"')
+                    print(f'Error:{line_number}: Invalid syntax: "{line}"')
                     sys.exit(1)
 
                 context, correction = tokens
