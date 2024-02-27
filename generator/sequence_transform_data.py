@@ -234,12 +234,14 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
                 yield line_number, context, correction
 
 
-def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int]]:
+def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int], int]:
     quiet_print(sorted(outputs, key=len, reverse=True))
     completions_str = ''
     completions_map = {}
     completions_offset = 0
+    max_completion_len = 0
     for output in sorted(outputs, key=len, reverse=True):
+        max_completion_len = max(max_completion_len, len(output))
         i = completions_str.find(output)
         if i == -1:
             quiet_print(f'{output} added at {completions_offset}')
@@ -250,7 +252,7 @@ def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int]]:
             quiet_print(f'{output} found at {i}')
             completions_map[output] = i
     quiet_print(completions_str)
-    return (list(bytes(completions_str, 'ascii')), completions_map)
+    return (list(bytes(completions_str, 'ascii')), completions_map, max_completion_len)
 
 
 def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str, Any], completions_map: Dict[str, int]) -> List[int]:
@@ -375,7 +377,7 @@ def generate_sequence_transform_data():
     trie = make_trie(autocorrections, output_func_char_map)
     outputs = complete_trie(trie, wordbreak_char)
     quiet_print(json.dumps(trie, indent=4))
-    completions_data, completions_map = serialize_outputs(outputs)
+    completions_data, completions_map, max_completion_len = serialize_outputs(outputs)
     trie_data = serialize_trie(char_map, wordbreak_char, trie, completions_map)
 
     # current_keyboard = cli.args.keyboard or cli.config.user.keyboard or cli.config.generate_sequence_transform_data.keyboard
@@ -405,6 +407,7 @@ def generate_sequence_transform_data():
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_typo)} // "{min_typo}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_typo)} // "{max_typo}"',
+        f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TRANSFORM_COUNT {len(magic_chars)}',
