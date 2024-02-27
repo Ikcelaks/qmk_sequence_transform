@@ -15,7 +15,7 @@
 
 //////////////////////////////////////////////////////////////////
 // Private helper functions
-int get_real_index(key_buffer_t *buf, int index)
+int get_real_index(st_key_buffer_t *buf, int index)
 {
     if (index < 0) {
         index += buf->context_len;
@@ -31,7 +31,7 @@ int get_real_index(key_buffer_t *buf, int index)
     return index;
 }
 
-void resize_context(key_buffer_t *buf, int delta)
+void resize_context(st_key_buffer_t *buf, int delta)
 {
     if (delta < -buf->size || delta > buf->size) {
         uprintf("ABS of buffer resize request (%d) exceeds total available space index (%d)!", delta, buf->size);
@@ -64,7 +64,7 @@ void resize_context(key_buffer_t *buf, int delta)
 // buffer indexing from start or end (with negative index)
 // returns 0 if index is out of bounds
 //
-struct key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
+struct st_key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
 {
     int real_index = get_real_index(buf, index);
     if (real_index < 0) { // index was out of bounds
@@ -76,7 +76,7 @@ struct key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
 void st_key_buffer_reset(st_key_buffer_t *buf)
 {
     buf->context_len = 0;
-    key_buffer_push(buf, KC_SPC);
+    st_key_buffer_push(buf, KC_SPC);
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
