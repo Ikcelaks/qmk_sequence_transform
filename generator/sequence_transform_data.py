@@ -34,7 +34,7 @@ import sys
 import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple
-from datetime import date, datetime
+from datetime import date
 from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
@@ -498,7 +498,6 @@ def generate_sequence_transform_data():
     max_sequence = max(seq_dict, key=sequence_len)[0]
 
     # Build the sequence_transform_data.h file.
-    now = datetime.now()
     transformations = []
 
     for sequence, transformation in seq_dict:
@@ -507,19 +506,24 @@ def generate_sequence_transform_data():
 
         transformations.append(f'//    {sequence} -> {tranformation}')
 
-    sequence_transform_data_h_lines = [
-        # General template
+    header_lines = [
         GPL2_HEADER_C_LIKE,
         GENERATED_HEADER_C_LIKE,
         '#pragma once\n',
+    ]
 
-        # Tranformations
+    tranformations_lines = [
         f'// Sequence Transformation dictionary with longest match semantics',
         f'// Dictionary ({len(seq_dict)} entries):',
         *transformations,
+    ]
 
-        # Trie stats
+    record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
+
+    trie_stats_lines = [
         f'\n#define {ST_GENERATOR_VERSION}',
+        *record_rule_usage,
+        "",
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
@@ -528,14 +532,22 @@ def generate_sequence_transform_data():
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TRANSFORM_COUNT {len(MAGIC_CHARS)}\n',
+    ]
 
-        # Encoded trie data
+    trie_data_lines = [
         'static const uint16_t sequence_transform_data[DICTIONARY_SIZE] PROGMEM = {',
         textwrap.fill('    %s' % (', '.join(map(uint16_to_hex, trie_data))), width=135, subsequent_indent='    '),
         '};\n',
         'static const uint8_t sequence_transform_completions_data[COMPLETIONS_SIZE] PROGMEM = {',
         textwrap.fill('    %s' % (', '.join(map(byte_to_hex, completions_data))), width=100, subsequent_indent='    '),
         '};\n',
+    ]
+
+    sequence_transform_data_h_lines = [
+        *header_lines,
+        *tranformations_lines,
+        *trie_stats_lines,
+        *trie_data_lines,
     ]
 
     if os.path.exists(OUT_FILE):
@@ -557,6 +569,7 @@ if __name__ == '__main__':
         WORDBREAK_CHAR = config['wordbreak_char']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
+        RECORD_RULE_USAGE = config['record_rule_usage']
     except KeyError as e:
         print(f"Incorrect config! {e} key is missing.")
 
