@@ -16,23 +16,22 @@
 # limitations under the License.
 """Python program to make sequence_transform_data.h.
 This program reads from a prepared dictionary file and generates a C source file
-"sequence_transform_data.h" with a serialized trie embedded as an array. Run this
-program and pass it as the first argument like:
-$ qmk generate-autocorrect-data autocorrect_dict.txt
-Each line of the dict file defines one typo and its correction with the syntax
-"typo -> correction". Blank lines or lines starting with '#' are ignored.
-Example:
-  :thier        -> their
-  fitler        -> filter
-  lenght        -> length
-  ouput         -> output
-  widht         -> width
-For full documentation, see QMK Docs
+"sequence_transform_data.h" with a serialized trie embedded as an array.
+
+Each line of the dict file defines one sequence and its transformation with the syntax
+"sequence -> transformation". Blank lines or lines starting with comment string are ignored.
+Examples:
+  :ex@        -> example
+  :ob@        -> obvious
+  :d@         -> develop
+  :d@r        -> developer
+
 """
 import os.path
 import sys
 import textwrap
 import json
+import datetime
 from typing import Any, Dict, Iterator, List, Tuple
 from string import digits
 from pathlib import Path
@@ -57,6 +56,8 @@ KC_SEMICOLON = 0x33
 KC_1 = 0x1E
 MOD_LSFT = 0x0200
 KC_MAGIC_0 = 0x0100
+TRIE_MATCH_BIT = 0x8000
+TRIE_BRANCH_BIT = 0x4000
 qmk_digits = digits[1:] + digits[0]
 
 
@@ -99,20 +100,20 @@ def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
 
 
 def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment: str) -> List[Tuple[str, str]]:
-    """Parses autocorrections dictionary file.
-  Each line of the file defines one typo and its correction with the syntax
-  "typo -> correction". Blank lines or lines starting with '#' are ignored. The
-  function validates that typos only have characters a-z. Overlapping typos are
+    """Parses sequence dictionary file.
+  Each line of the file defines one sequence and its transformation with the syntax
+  "sequence -> transformation". Blank lines or lines starting with the comment string are ignored. The
+  function validates that sequences only have characters a-z. Overlapping sequences are
   matched to the longest valid match.
   Args:
-    file_name: String, path of the autocorrections dictionary.
+    file_name: String, path of the sequence transformation dictionary.
   Returns:
-    List of (typo, correction) tuples.
+    List of (sequence, transformation) tuples.
   """
 
     rules = []
     context_set = set()
-    for line_number, context, correction in parse_file_lines(file_name, separator, comment):
+    for line_number, context, completion in parse_file_lines(file_name, separator, comment):
         if context in context_set:
             print('{fg_red}Error:%d:{fg_reset} Ignoring duplicate sequence: "{fg_cyan}%s{fg_reset}"', line_number, context)
             continue
@@ -125,21 +126,21 @@ def parse_file(file_name: str, char_map: Dict[str, int], separator: str, comment
             print('{fg_red}Error:%d:{fg_reset} Sequence exceeds 127 chars: "{fg_cyan}%s{fg_reset}"', line_number, context)
             sys.exit(1)
 
-        rules.append((context, correction))
+        rules.append((context, completion))
         context_set.add(context)
 
     return rules
 
 
-def make_trie(magicons: List[Tuple[str, str]], output_func_char_map: Dict[str, int]) -> Dict[str, Any]:
-    """Makes a trie from the the typos, writing in reverse.
+def make_trie(seq_dict: List[Tuple[str, str]], output_func_char_map: Dict[str, int]) -> Dict[str, Any]:
+    """Makes a trie from the the sequences, writing in reverse.
   Args:
-    autocorrections: List of (typo, correction) tuples.
+    seq_dict: List of (sequence, transformation) tuples.
   Returns:
     Dict of dict, representing the trie.
   """
     trie = {}
-    for context, correction in magicons:
+    for context, correction in seq_dict:
         node = trie
         if correction[-1] in output_func_char_map:
             output_func = output_func_char_map[correction[-1]]
@@ -223,7 +224,7 @@ def parse_file_lines(file_name: str, separator: str, comment: str) -> Iterator[T
             line_number += 1
             line = line.strip()
             if line and line.find(comment) != 0:
-                # Parse syntax "typo -> correction", using strip to ignore indenting.
+                # Parse syntax "sequence -> transformation", using strip to ignore indenting.
                 tokens = [token.strip() for token in line.split(separator, 1)]
                 if len(tokens) != 2 or not tokens[0]:
                     print(f'Error:{line_number}: Invalid syntax: "{line}"')
@@ -257,25 +258,23 @@ def serialize_outputs(outputs: set[str]) -> Tuple[List[int], Dict[str, int], int
 
 def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str, Any], completions_map: Dict[str, int]) -> List[int]:
     """Serializes trie in a form readable by the C code.
-  Args:
-    autocorrections: List of (typo, correction) tuples.
-    trie: Dict of dicts.
+
   Returns:
-    List of ints in the range 0-255.
+    List of 16bit ints in the range 0-64k.
   """
     table = []
 
     # Traverse trie in depth first order.
     def traverse(trie_node):
         if 'MATCH' in trie_node:  # Handle a MATCH trie node.
-            typo, completion = trie_node['MATCH']
-            typo = typo.strip(wordbreak_char)
+            sequence, completion = trie_node['MATCH']
+            sequence = sequence.strip(wordbreak_char)
             backspaces = completion['RESULT']['BACKSPACES']
             func = completion['RESULT']['FUNC']
             output = completion['RESULT']['OUTPUT']
             output_index = completions_map[output]
             # 2 bits (16,15) are used for node type
-            code = 0x8000 + (0x4000 if len(trie_node) > 1 else 0)
+            code = TRIE_MATCH_BIT + (TRIE_BRANCH_BIT if len(trie_node) > 1 else 0)
             # 3 bits (14..12) are used for special function
             assert 0 <= func < 8
             code += func << 11
@@ -329,7 +328,7 @@ def serialize_trie(char_map: Dict[str, int], wordbreak_char: str, trie: Dict[str
         else:  # Handle a branch table entry.
             links = []
             for c, link in zip(e['chars'], e['links']):
-                links += [char_map[c] | (0 if links else 0x4000)] + encode_link(link)
+                links += [char_map[c] | (0 if links else TRIE_BRANCH_BIT)] + encode_link(link)
             return data + links + [0]
 
     uint16_offset = 0
@@ -345,12 +344,12 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
     uint16_offset = link['uint16_offset']
     if not (0 <= uint16_offset <= 0xffff):
-        quiet_print('{fg_red}Error:{fg_reset} The autocorrection table is too large, a node link exceeds 64KB limit. Try reducing the autocorrection dict to fewer entries.')
+        print('{fg_red}Error:{fg_reset} The autocorrection table is too large, a node link exceeds 64KB limit. Try reducing the autocorrection dict to fewer entries.')
         sys.exit(1)
     return [uint16_offset]
 
 
-def typo_len(e: Tuple[str, str]) -> int:
+def sequence_len(e: Tuple[str, str]) -> int:
     return len(e[0])
 
 
@@ -373,8 +372,8 @@ def generate_sequence_transform_data():
     char_map = generate_context_char_map(magic_chars, wordbreak_char)
     output_func_char_map = generate_output_func_char_map(output_func_chars)
 
-    autocorrections = parse_file(THIS_FOLDER / "../../" / config['rules_file_name'], char_map, sep_str, comment_str)
-    trie = make_trie(autocorrections, output_func_char_map)
+    seq_dict = parse_file(THIS_FOLDER / "../../" / config['rules_file_name'], char_map, sep_str, comment_str)
+    trie = make_trie(seq_dict, output_func_char_map)
     outputs = complete_trie(trie, wordbreak_char)
     quiet_print(json.dumps(trie, indent=4))
     completions_data, completions_map, max_completion_len = serialize_outputs(outputs)
@@ -389,24 +388,27 @@ def generate_sequence_transform_data():
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
 
-    min_typo = min(autocorrections, key=typo_len)[0]
-    max_typo = max(autocorrections, key=typo_len)[0]
+    min_sequence = min(seq_dict, key=sequence_len)[0]
+    max_sequence = max(seq_dict, key=sequence_len)[0]
 
     # Build the sequence_transform_data.h file.
     # sequence_transform_data_h_lines = [GPL2_HEADER_C_LIKE, GENERATED_HEADER_C_LIKE, '#pragma once', '']
     sequence_transform_data_h_lines = ['#pragma once', '']
-
-    sequence_transform_data_h_lines.append(f'// Autocorrection dictionary with longest match semantics:')
-    sequence_transform_data_h_lines.append(f'// Autocorrection dictionary ({len(autocorrections)} entries):')
-    for typo, correction in autocorrections:
-        correction_escape_backslash = correction.replace("\\", "\\ [escape]")
-        sequence_transform_data_h_lines.append(f'//   {typo:<{len(max_typo)}} -> {correction_escape_backslash}')
+    now = datetime.datetime.now()
+    sequence_transform_data_h_lines.append(f'// Sequence Transformation dictionary with longest match semantics')
+    sequence_transform_data_h_lines.append(f'// !!! This file was generated !!!')
+    sequence_transform_data_h_lines.append(f'// ' + now.strftime("%Y-%m-%d %H:%M:%S"))
+    sequence_transform_data_h_lines.append(f'// ')
+    sequence_transform_data_h_lines.append(f'// Dictionary ({len(seq_dict)} entries):')
+    for sequence, transformation in seq_dict:
+        transform_escape_backslash = transformation.replace("\\", "\\ [escape]")
+        sequence_transform_data_h_lines.append(f'//   {sequence:<{len(max_sequence)}} -> {transform_escape_backslash}')
 
     sequence_transform_data_h_lines.extend([
         ''
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
-        f'#define SEQUENCE_MIN_LENGTH {len(min_typo)} // "{min_typo}"',
-        f'#define SEQUENCE_MAX_LENGTH {len(max_typo)} // "{max_typo}"',
+        f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
+        f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
