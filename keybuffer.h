@@ -11,8 +11,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-typedef struct
-{
+typedef struct {
     uint16_t    *data;       // array of keycodes
     uint8_t     size;        // buffer size
     uint8_t     context_len; // number of current keys in buffer

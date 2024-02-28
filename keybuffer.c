@@ -16,8 +16,7 @@
 // buffer indexing from start or end (with negative index)
 // returns 0 if index is out of bounds
 //
-uint16_t st_key_buffer_get(st_key_buffer_t *buf, int index)
-{
+uint16_t st_key_buffer_get(st_key_buffer_t *buf, int index) {
     if (index > 0) {
         return index < buf->context_len ? buf->data[index] : 0;
     } else {
@@ -25,14 +24,12 @@ uint16_t st_key_buffer_get(st_key_buffer_t *buf, int index)
     }
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_reset(st_key_buffer_t *buf)
-{
+void st_key_buffer_reset(st_key_buffer_t *buf) {
     buf->data[0] = KC_SPC;
     buf->context_len = 1;
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
-{
+void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode) {
     // Store all alpha chars as lowercase
     const bool shifted = keycode & QK_LSFT;
     const uint8_t lowkey = keycode & 0xFF;
@@ -49,15 +46,13 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
 #endif
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
-{
+void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num) {
     buf->context_len -= MIN(num, buf->context_len);
     if (!buf->context_len)
         st_key_buffer_reset(buf);
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_print(st_key_buffer_t *buf)
-{
+void st_key_buffer_print(st_key_buffer_t *buf) {
     uprintf("buffer: |");
     for (int i = 0; i < buf->context_len; ++i)
         uprintf("%c", st_keycode_to_char(buf->data[i]));
