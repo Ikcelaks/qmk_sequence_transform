@@ -55,8 +55,7 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-char st_keycode_to_char(uint16_t keycode)
-{
+char st_keycode_to_char(uint16_t keycode) {
     if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT)
 		return magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
     const bool shifted = keycode & QK_LSFT;
@@ -69,8 +68,7 @@ char st_keycode_to_char(uint16_t keycode)
     return '?';
 }
 ////////////////////////////////////////////////////////////////////////////////
-uint16_t st_char_to_keycode(char c)
-{
+uint16_t st_char_to_keycode(char c) {
     uint16_t k = pgm_read_byte(&ascii_to_keycode_lut[(uint8_t)c]);
     bool is_shifted = PGM_LOADBIT(ascii_to_shift_lut, (uint8_t)c);
     if (is_shifted)
@@ -78,14 +76,12 @@ uint16_t st_char_to_keycode(char c)
     return k;
 }
 ////////////////////////////////////////////////////////////////////////////////
-void st_multi_tap(uint16_t keycode, int count)
-{
+void st_multi_tap(uint16_t keycode, int count) {
     for (int i = 0; i < count; ++i)
         tap_code16(keycode);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_send_key(uint16_t keycode)
-{
+void st_send_key(uint16_t keycode) {
     // Apply shift to sent key if caps word is enabled.
 #ifdef CAPS_WORD_ENABLED
     if (is_caps_word_on() && IS_ALPHA_KEYCODE(keycode))

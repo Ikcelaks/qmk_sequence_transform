@@ -11,8 +11,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-typedef struct
-{
+typedef struct {
     size_t          data_size;          // size in words of data buffer
     const uint16_t  *data;              // serialized trie node data
     size_t          completions_size;   // size in bytes of completions data buffer
@@ -21,8 +20,7 @@ typedef struct
     uint8_t         max_backspaces;     // max backspaces for all completions
 } st_trie_t;
 
-typedef struct
-{
+typedef struct {
     uint16_t    completion_index;   // index to start of completion string in trie_t.completions
     uint8_t     completion_len;     // length of completion string
     uint8_t     num_backspaces;     // number of backspaces to send before the completion string
