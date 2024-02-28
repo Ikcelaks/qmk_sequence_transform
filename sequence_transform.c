@@ -228,7 +228,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-            uprintf("%s", 'S');
+            uprintf("%c", 'S');
 #endif
             break;
         case 3:  // disable auto-wordbreak
