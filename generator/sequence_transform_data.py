@@ -164,12 +164,10 @@ def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
     if len(output_func_chars) > OUTPUT_FUNC_COUNT_MAX:
         output_chars = str(len(output_func_chars))
 
-        print(
+        raise SystemExit(
             f'{err()} More than {OUTPUT_FUNC_COUNT_MAX} ({cyan(output_chars)})'
             f' output_func_chars were listed {output_func_chars}'
         )
-
-        sys.exit(1)
 
     return dict([
         (char, OUTPUT_FUNC_1 + i)
@@ -203,20 +201,16 @@ def parse_file(
 
         # Check that `context` is valid.
         if not all([(c in char_map) for c in context[:-1]]):
-            print(
+            raise SystemExit(
                 f'{err("line", line_number)}: '
                 f'sequence "{cyan(context)}" has invalid characters'
             )
 
-            sys.exit(1)
-
         if len(context) > 127:
-            print(
+            raise SystemExit(
                 f'{err("line", line_number)}:'
                 f'Sequence exceeds 127 chars: "{cyan(context)}"'
             )
-
-            sys.exit(1)
 
         rules.append((context, completion))
         context_set.add(context)
@@ -356,8 +350,9 @@ def parse_file_lines(
                 tokens = [token.strip() for token in line.split(separator, 1)]
 
                 if len(tokens) != 2 or not tokens[0]:
-                    print(f'{err(line_number)}: Invalid syntax: "{red(line)}"')
-                    sys.exit(1)
+                    raise SystemExit(
+                        f'{err(line_number)}: Invalid syntax: "{red(line)}"'
+                    )
 
                 context, correction = tokens
                 yield line_number, context, correction
@@ -518,13 +513,11 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
     uint16_offset = link['uint16_offset']
 
     if not (0 <= uint16_offset <= 0xffff):
-        print(
+        raise SystemExit(
             f'{err()} The transforming table is too large, '
             f'a node link exceeds 64KB limit. '
             f'Try reducing the transforming dict to fewer entries.'
         )
-
-        sys.exit(1)
 
     return [uint16_offset]
 
