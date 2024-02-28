@@ -238,6 +238,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
             ends_with_wordbreak = false;
     }
 
+
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
         uprintf("\n");
 #endif
