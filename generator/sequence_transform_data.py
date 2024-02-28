@@ -30,7 +30,6 @@ Examples:
 """
 
 import os.path
-import sys
 import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple, Callable
@@ -153,7 +152,7 @@ def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
 
 ###############################################################################
 def quiet_print(*args, **kwargs):
-    if config["quiet"]:
+    if IS_QUIET:
         return
 
     print(*args, **kwargs)
@@ -641,12 +640,14 @@ if __name__ == '__main__':
         WORDBREAK_CHAR = config['wordbreak_char']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
-        RECORD_RULE_USAGE = config['record_rule_usage']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
     except KeyError as e:
-        print(f"Incorrect config! {e} key is missing.")
+        raise KeyError(f"Incorrect config! {e} key is missing.")
+
+    RECORD_RULE_USAGE = config.get('record_rule_usage', True)
+    IS_QUIET = config.get("quiet", True)
 
     if cli_args.quiet:
-        config["quiet"] = True
+        IS_QUIET = True
 
     generate_sequence_transform_data()
