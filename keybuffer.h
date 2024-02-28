@@ -12,7 +12,7 @@
 // Public API
 
 #define ST_DEFAULT_KEY_ACTION 0xffff
-#define SEQUENCE_TRANSFORM_LOG_GENERAL
+
 typedef struct st_key_action_t
 {
     uint16_t keypressed;

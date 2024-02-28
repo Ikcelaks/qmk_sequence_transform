@@ -68,8 +68,8 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
     if (buf->context_len < buf->size) {
         buf->context_len++;
     }
-    if (++buf->cur_pos >= buf->size) {
-        buf->cur_pos = 0;
+    if (++buf->cur_pos >= buf->size) {  // increment cur_pos
+        buf->cur_pos = 0;               // wrap to 0
     }
     buf->data[buf->cur_pos].keypressed = keycode;
     buf->data[buf->cur_pos].action_taken = ST_DEFAULT_KEY_ACTION;
@@ -80,11 +80,11 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 {
-    const int new_context_len = buf->context_len - num;
-    buf->context_len = new_context_len < 0 ? 0 : new_context_len;
-
-    const int new_pos = buf->cur_pos - num;
-    buf->cur_pos = new_pos < 0 ? new_pos + buf->size : new_pos;
+    buf->context_len = MAX(0, buf->context_len - num);
+    buf->cur_pos -= num;
+    if (buf->cur_pos < 0) {
+        buf->cur_pos += buf->size;
+    }
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_print(st_key_buffer_t *buf)
