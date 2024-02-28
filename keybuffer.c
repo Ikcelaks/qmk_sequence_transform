@@ -80,7 +80,11 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 {
-    buf->context_len = MAX(0, buf->context_len - num);
+    if (buf->context_len <= num) {
+        st_key_buffer_reset(buf);
+    } else {
+        buf->context_len -= num;
+    }
     buf->cur_pos -= num;
     if (buf->cur_pos < 0) {
         buf->cur_pos += buf->size;
@@ -90,7 +94,7 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 void st_key_buffer_print(st_key_buffer_t *buf)
 {
     uprintf("buffer: |");
-    for (int i = 0; i < buf->context_len; ++i)
+    for (int i = -1; i >= -buf->context_len; --i)
         uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
     uprintf("| (%d)\n", buf->context_len);
 }
