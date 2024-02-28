@@ -11,6 +11,9 @@
 #include "keybuffer.h"
 #include "utils.h"
 #include "print.h"
+#include "sequence_transform_data.h"
+
+char tmp_buffer[SEQUENCE_MAX_LENGTH];
 
 //////////////////////////////////////////////////////////////////
 // Public
