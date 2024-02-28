@@ -24,7 +24,7 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_pa
     return st_find_longest_chain(trie, search, res, 0, 0);
 }
 //////////////////////////////////////////////////////////////////
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index) {
+void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index, uint8_t depth) {
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
     // 0b NNFF FBBB BCCC CCCC
@@ -32,6 +32,7 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
     payload->num_backspaces = (code >> 7) & 15;
     payload->completion_len = code & 127;
     payload->completion_index = completion_index;
+    payload->context_len = depth;
 }
 
 /**
@@ -66,12 +67,13 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
         if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, res, offset+2, depth+1))
             return true;
         // If no better match found deeper, so recordd the payload result!
-        st_get_payload_from_code(res, code, TDATA(offset + 1));
+        st_get_payload_from_code(res, code, TDATA(offset + 1), depth);
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
          // bounds check completion data
         if (res->completion_index + res->completion_len > trie->completions_size) {
             uprintf("find_longest_chain() ERROR: trying to read past end of completion data buffer! index: %d, len: %d\n",
                 res->completion_index, res->completion_len);
+
             return false;
         }
 #endif

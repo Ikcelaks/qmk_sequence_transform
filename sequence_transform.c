@@ -189,7 +189,19 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 #endif
 
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-    uprintf("special_rule,%d,",res->num_backspaces);
+    char special_char;
+    char *context_string = st_key_buffer_get_last(&key_buffer, res->context_len, &special_char);
+    bool is_repeat = special_char == 'R' && strlen(context_string) == 0;
+
+    if (is_repeat) {
+        context_string[0] = st_keycode_to_char(st_key_buffer_get(&key_buffer, -2));
+        context_string[1] = '\0';
+    }
+
+    uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, special_char);
+
+    if (is_repeat)
+        uprintf("%s", context_string);
 #endif
 
     // Send backspaces
@@ -206,6 +218,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 #endif
         st_send_key(st_char_to_keycode(ascii_code));
     }
+
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
         uprintf("\n");
 #endif
