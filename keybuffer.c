@@ -20,7 +20,7 @@ int get_real_index(st_key_buffer_t *buf, int index)
     if (index < 0) {
         index += buf->context_len;
     }
-    if (index > buf->context_len || index < 0) {
+    if (index >= buf->context_len || index < 0) {
         uprintf("Accessing index (%d) outside valid range (-%d, %d)!", index, buf->context_len, buf->context_len);
         return -1;
     }
@@ -49,7 +49,7 @@ void resize_context(st_key_buffer_t *buf, int delta)
     const int new_pos = buf->cur_pos + delta;
     if (new_pos < 0) {
         buf->cur_pos = new_pos + buf->size;
-    } else if (new_pos > buf->size) {
+    } else if (new_pos >= buf->size) {
         buf->cur_pos = new_pos - buf->size;
     } else {
         buf->cur_pos = new_pos;
@@ -61,16 +61,31 @@ void resize_context(st_key_buffer_t *buf, int delta)
 //////////////////////////////////////////////////////////////////
 // Public
 //////////////////////////////////////////////////////////////////
-// buffer indexing from start or end (with negative index)
-// returns 0 if index is out of bounds
-//
+// Most recent keypress data is at index 0.
+// Positive indexes move back towards older keypresses
+// Negative indexes start at the oldest keypress still in the
+//   buffer and move towards more recent presses
+// If you type "abc" then:
+//   st_key_buffer_get(buf, 0) -> c
+//   st_key_buffer_get(buf, 1) -> b
+//   st_key_buffer_get(buf, 2) -> a
+//   st_key_buffer_get(buf, -1) -> a
+//   st_key_buffer_get(buf, -2) -> b
+//   st_key_buffer_get(buf, -3) -> c
+// returns KC_NO if index is out of bounds
+uint16_t st_key_buffer_get_keycode(st_key_buffer_t *buf, int index)
+{
+    const struct st_key_action_t* keyaction = st_key_buffer_get(buf, index);
+    return (keyaction ? keyaction->keypressed : KC_NO);
+}
+//////////////////////////////////////////////////////////////////
 struct st_key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
 {
     int real_index = get_real_index(buf, index);
     if (real_index < 0) { // index was out of bounds
         return NULL;
     }
-    return &buf->data[index];
+    return &buf->data[real_index];
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_reset(st_key_buffer_t *buf)
@@ -83,15 +98,12 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
 {
     // Store all alpha chars as lowercase
     const bool shifted = keycode & QK_LSFT;
-    const uint8_t lowkey = keycode & 0xFF;
+    const uint8_t lowkey = keycode & ST_DEFAULT_KEY_ACTION;
     if (shifted && IS_ALPHA_KEYCODE(lowkey))
         keycode = lowkey;
-    if (buf->context_len < buf->size) {
-        buf->context_len++;
-    }
     resize_context(buf, 1);
     buf->data[buf->cur_pos].keypressed = keycode;
-    buf->data[buf->cur_pos].match_offset = 0xffff;
+    buf->data[buf->cur_pos].action_taken = 0xffff;
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_key_buffer_print(buf);
 #endif
@@ -106,6 +118,6 @@ void st_key_buffer_print(st_key_buffer_t *buf)
 {
     uprintf("buffer: |");
     for (int i = 0; i < buf->context_len; ++i)
-        uprintf("%c", st_keycode_to_char(buf->data[i]));
+        uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
     uprintf("| (%d)\n", buf->context_len);
 }

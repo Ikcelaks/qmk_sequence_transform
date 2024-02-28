@@ -11,11 +11,13 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
+#define ST_DEFAULT_KEY_ACTION 0xffff
+#define SEQUENCE_TRANSFORM_LOG_GENERAL
 typedef struct st_key_action_t
 {
     uint16_t keypressed;
-    uint16_t match_offset;
-};
+    uint16_t action_taken;
+} st_key_action_t;
 typedef struct
 {
     struct st_key_action_t     *data;       // array of keycodes
@@ -24,7 +26,8 @@ typedef struct
     uint8_t                 cur_pos;
 } st_key_buffer_t;
 
-struct st_key_action_t*    st_key_buffer_get(st_key_buffer_t *buf, int index);
+struct st_key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index);
+uint16_t                st_key_buffer_get_keycode(st_key_buffer_t *buf, int index);
 void                    st_key_buffer_reset(st_key_buffer_t *buf);
 void                    st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode);
 void                    st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
