@@ -22,14 +22,14 @@
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res)
 {
-    return st_find_longest_chain(trie, search, res, 0, 1);
+    return st_find_longest_chain(trie, search, res, 0, 0);
 }
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
 {
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
-    // 0b NNFF FBBB BCCC CCCC  
+    // 0b NNFF FBBB BCCC CCCC
     payload->func_code = (code >> 11) & 7;
     payload->num_backspaces = (code >> 7) & 15;
     payload->completion_len = code & 127;
@@ -87,7 +87,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
 			return false;
 		code &= TRIE_CODE_MASK;
         // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = st_key_buffer_get(search, -depth);
+        const uint16_t cur_key = st_key_buffer_get_keycode(search, depth);
 		for (; code; offset += 2, code = TDATA(offset)) {
             if (code == cur_key) {
                 // 16bit offset to child node is built from next uint16_t
@@ -103,7 +103,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
 	// Travel down chain until we reach a zero byte, or we no longer match our buffer
 	for (; code; depth++, code = TDATA(++offset)) {
 		if (depth > search->context_len ||
-            code != st_key_buffer_get(search, -depth))
+            code != st_key_buffer_get_keycode(search, depth))
 			return false;
 	}
 	// After a chain, there should be a leaf or branch

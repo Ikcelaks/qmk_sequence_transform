@@ -21,7 +21,7 @@
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
-static uint16_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {KC_SPC};
+static struct st_key_action_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     SEQUENCE_MAX_LENGTH,
@@ -168,20 +168,19 @@ void st_record_send_key(uint16_t keycode)
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key()
 {
-    uint16_t keycode = KC_NO;
-    for (int i = key_buffer.context_len - 1; i >= 0; --i) {
-        keycode = key_buffer.data[i];
-        if (!(keycode & SPECIAL_KEY_TRIECODE_0)) {
+    struct st_key_action_t *keyaction = NULL;
+    for (int i = 1; i < key_buffer.context_len; ++i) {
+        keyaction = st_key_buffer_get(&key_buffer, i);
+        if (!keyaction || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
             break;
         }
     }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("repeat keycode: 0x%04X\n", keycode);
+    uprintf("repeat keycode: 0x%04X\n", keyaction->keypressed);
 #endif
-    if (keycode && !(keycode & SPECIAL_KEY_TRIECODE_0)) {
-        st_key_buffer_pop(&key_buffer, 1);
-        st_key_buffer_push(&key_buffer, keycode);
-        st_send_key(keycode);
+    if (keyaction) {
+        *st_key_buffer_get(&key_buffer, 0) = *keyaction;
+        st_send_key(keyaction->keypressed);
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
