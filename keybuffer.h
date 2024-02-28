@@ -25,9 +25,10 @@ typedef struct {
     uint8_t                 cur_pos;
 } st_key_buffer_t;
 
-st_key_action_t        *st_key_buffer_get(st_key_buffer_t *buf, int index);
+st_key_action_t         *st_key_buffer_get(st_key_buffer_t *buf, int index);
 uint16_t                st_key_buffer_get_keycode(st_key_buffer_t *buf, int index);
 void                    st_key_buffer_reset(st_key_buffer_t *buf);
 void                    st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode);
 void                    st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
 void                    st_key_buffer_print(st_key_buffer_t *buf);
+char                    *st_key_buffer_get_last(st_key_buffer_t *buf, uint8_t char_count, char *special_char);

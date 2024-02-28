@@ -165,7 +165,7 @@ void st_record_send_key(uint16_t keycode) {
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key()
 {
-    struct st_key_action_t *keyaction = NULL;
+    st_key_action_t *keyaction = NULL;
     for (int i = 1; i < key_buffer.context_len; ++i) {
         keyaction = st_key_buffer_get(&key_buffer, i);
         if (!keyaction || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
@@ -194,7 +194,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     bool is_repeat = special_char == 'R' && strlen(context_string) == 0;
 
     if (is_repeat) {
-        context_string[0] = st_keycode_to_char(st_key_buffer_get(&key_buffer, -2));
+        context_string[0] = st_keycode_to_char(st_key_buffer_get_keycode(&key_buffer, -2));
         context_string[1] = '\0';
     }
 
