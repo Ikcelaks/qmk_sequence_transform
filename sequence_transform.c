@@ -200,9 +200,6 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     }
 
     uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, special_char);
-
-    if (is_repeat)
-        uprintf("%s", context_string);
 #endif
 
     // Send backspaces
@@ -220,20 +217,27 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
         st_send_key(st_char_to_keycode(ascii_code));
     }
 
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-        uprintf("\n");
-#endif
-
     switch (res->func_code) {
         case 1:  // repeat
             st_handle_repeat_key();
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+            if (is_repeat)
+                uprintf("%s", context_string);
+#endif
             break;
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+            uprintf("%к", 'S');
+#endif
             break;
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
+
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+        uprintf("\n");
+#endif
 
     if (ends_with_wordbreak) {
         st_key_buffer_push(&key_buffer, KC_SPC);
