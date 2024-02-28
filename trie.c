@@ -20,13 +20,11 @@
 #define TDATA(L) pgm_read_word(&trie->data[L])
 
 //////////////////////////////////////////////////////////////////
-bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res)
-{
+bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res) {
     return st_find_longest_chain(trie, search, res, 0, 0);
 }
 //////////////////////////////////////////////////////////////////
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
-{
+void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index) {
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
     // 0b NNFF FBBB BCCC CCCC
@@ -46,8 +44,7 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth)
-{
+bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth) {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
     if (offset >= trie->data_size) {
         uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);

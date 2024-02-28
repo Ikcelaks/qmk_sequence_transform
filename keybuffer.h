@@ -13,14 +13,13 @@
 
 #define ST_DEFAULT_KEY_ACTION 0xffff
 
-typedef struct st_key_action_t
-{
+typedef struct {
     uint16_t keypressed;
     uint16_t action_taken;
 } st_key_action_t;
-typedef struct
-{
-    struct st_key_action_t     *data;       // array of keycodes
+
+typedef struct {
+    st_key_action_t         *data;       // array of keycodes
     uint8_t                 size;        // buffer size
     uint8_t                 context_len; // number of current keys in buffer
     uint8_t                 cur_pos;
