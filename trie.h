@@ -25,6 +25,7 @@ typedef struct {
     uint8_t     completion_len;     // length of completion string
     uint8_t     num_backspaces;     // number of backspaces to send before the completion string
     uint8_t     func_code;          // special function code
+    uint8_t     context_len;
 } st_trie_payload_t;
 
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res);
@@ -32,5 +33,5 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_pa
 //////////////////////////////////////////////////////////////////
 // Internal
 
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
+void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index, uint8_t depth);
 bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth);
