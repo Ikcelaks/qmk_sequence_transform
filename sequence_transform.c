@@ -186,7 +186,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
 #endif
-#ifdef RECORD_RULE_USAGE and CONSOLE_ENABLE
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     uprintf("used rule: hello world\n");
 #endif
     // Send backspaces

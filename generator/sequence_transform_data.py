@@ -420,7 +420,7 @@ def serialize_trie(
             output_index = completions_map[output]
 
             # 2 bits (16,15) are used for node type
-            code = TRIE_MATCH_BIT + (TRIE_BRANCH_BIT * len(trie_node) > 1)
+            code = TRIE_MATCH_BIT + TRIE_BRANCH_BIT * (len(trie_node) > 1)
 
             # 3 bits (14..12) are used for special function
             assert 0 <= func < 8
