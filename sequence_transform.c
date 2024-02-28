@@ -32,8 +32,7 @@ static st_key_buffer_t key_buffer = {
 // Add KC_SPC on timeout
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
-void sequence_transform_task(void)
-{
+void sequence_transform_task(void) {
     if (timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         st_key_buffer_reset(&key_buffer);
         sequence_timer = timer_read32();
@@ -62,8 +61,7 @@ static st_trie_t trie = {
  * @return true Allow context_magic
  * @return false Stop processing and escape from context_magic.
  */
-bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
-{
+bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
         // Exclude these keycodes from processing.
@@ -160,8 +158,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods)
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_record_send_key(uint16_t keycode)
-{
+void st_record_send_key(uint16_t keycode) {
     st_key_buffer_push(&key_buffer, keycode);
     st_send_key(keycode);
 }
@@ -184,11 +181,13 @@ void st_handle_repeat_key()
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_result(st_trie_t *trie, st_trie_payload_t *res)
-{
+void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
+#endif
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+    uprintf("used rule: hello world\n");
 #endif
     // Send backspaces
     st_multi_tap(KC_BSPC, res->num_backspaces);
@@ -219,8 +218,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res)
  *
  * @return true if sequence transform was performed
  */
-bool st_perform()
-{
+bool st_perform() {
     // Get completion string from trie for our current key buffer.
     st_trie_payload_t res  = {0, 0, 0, 0};
     if (st_trie_get_completion(&trie, &key_buffer, &res)) {
@@ -239,8 +237,7 @@ bool st_perform()
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start)
-{
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start) {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
