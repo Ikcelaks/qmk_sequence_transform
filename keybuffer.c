@@ -100,17 +100,15 @@ void st_key_buffer_print(st_key_buffer_t *buf) {
 }
 //////////////////////////////////////////////////////////////////
 char *st_key_buffer_get_last(st_key_buffer_t *buf, uint8_t char_count, char *special_char) {
-    int j;
+    int i = 0;
 
-    for (int i = buf->context_len - char_count; i < buf->context_len; i += 1) {
-        j = i - buf->context_len + char_count;
-
-        char current_char = st_keycode_to_char(buf->data[i].keypressed); 
-        tmp_buffer[j] = current_char == ' ' ? ':' : current_char;
+    for (; i < char_count; i += 1) {
+        char current_char = st_keycode_to_char(st_key_buffer_get_keycode(buf, char_count - i - 1)); 
+        tmp_buffer[i] = current_char == ' ' ? ':' : current_char;
     }
 
-    *special_char = tmp_buffer[j]; 
-    tmp_buffer[j] = '\0';
+    *special_char = tmp_buffer[i - 1]; 
+    tmp_buffer[i - 1] = '\0';
 
     return tmp_buffer;
 }

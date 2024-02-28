@@ -32,7 +32,7 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
     payload->num_backspaces = (code >> 7) & 15;
     payload->completion_len = code & 127;
     payload->completion_index = completion_index;
-    payload->context_len = depth;
+    payload->context_len = depth + 1;
 }
 
 /**
