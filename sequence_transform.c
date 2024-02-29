@@ -193,7 +193,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
 
     if (is_repeat) {
-        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, -2);
+        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, 1);
 
         context_string[0] = st_keycode_to_char(last_key);
         context_string[1] = '\0';
