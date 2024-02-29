@@ -11,7 +11,6 @@
 #include "keybuffer.h"
 #include "utils.h"
 #include "print.h"
-#include "sequence_transform_data.h"
 
 //////////////////////////////////////////////////////////////////
 // Public
@@ -58,7 +57,8 @@ void st_key_buffer_reset(st_key_buffer_t *buf)
     st_key_buffer_push(buf, KC_SPC);
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode) {
+void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
+{
     // Store all alpha chars as lowercase
     const bool shifted = keycode & QK_LSFT;
     const uint8_t lowkey = keycode & 0xFF;
@@ -77,7 +77,8 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode) {
 #endif
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num) {
+void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
+{
     if (buf->context_len <= num) {
         st_key_buffer_reset(buf);
     } else {
@@ -89,14 +90,16 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num) {
     }
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_print(st_key_buffer_t *buf) {
+void st_key_buffer_print(st_key_buffer_t *buf)
+{
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->context_len; --i)
         uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
     uprintf("| (%d)\n", buf->context_len);
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_get_context_string(st_key_buffer_t *buf, char* output_string, uint8_t context_len) {
+void st_key_buffer_get_context_string(st_key_buffer_t *buf, char* output_string, uint8_t context_len)
+{
     int i = 0;
 
     for (; i < context_len; i += 1) {
