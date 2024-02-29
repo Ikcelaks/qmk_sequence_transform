@@ -27,13 +27,24 @@ typedef struct
     uint8_t     completion_len;     // length of completion string
     uint8_t     num_backspaces;     // number of backspaces to send before the completion string
     uint8_t     func_code;          // special function code
-    uint8_t     context_match_len;
 } st_trie_payload_t;
 
-bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res);
+typedef struct
+{
+    uint16_t            trie_match_index;
+    uint8_t             context_match_len;
+} st_trie_match_t;
+
+typedef struct
+{
+    st_trie_match_t     trie_match;
+    st_trie_payload_t   trie_payload;
+} st_trie_search_result_t;
+
+bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res);
 
 //////////////////////////////////////////////////////////////////
 // Internal
 
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth);
+void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
+bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);

@@ -190,13 +190,13 @@ void st_handle_repeat_key()
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
+void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_to_str(&key_buffer, context_string, res->context_match_len);
+    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.context_match_len);
 
-    char rule_trigger_char = context_string[res->context_match_len - 1];
-    context_string[res->context_match_len - 1] = '\0';
+    char rule_trigger_char = context_string[res->trie_match.context_match_len - 1];
+    context_string[res->trie_match.context_match_len - 1] = '\0';
 
     // TODO remove 'R' hardcode
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
@@ -208,18 +208,18 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
         context_string[1] = '\0';
     }
 
-    uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
+    uprintf("st_rule,%s,%d,%c,", context_string, res->trie_payload.num_backspaces, rule_trigger_char);
 
     // Completion string
-    const uint16_t completion_end = res->completion_index + res->completion_len;
+    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
 
-    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
         uprintf("%c", ascii_code);
     }
 
     // Special function cases
-    switch (res->func_code) {
+    switch (res->trie_payload.func_code) {
         case 1:  // repeat
             if (is_repeat)
                 uprintf("%s", context_string);
@@ -234,25 +234,26 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     uprintf("\n");
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
+void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
-            res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
+            res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
 #endif
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     log_rule(trie, res);
 #endif
-
+    // Most recent key in the buffer triggered a match action, record it in the buffer
+    st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // Send backspaces
-    st_multi_tap(KC_BSPC, res->num_backspaces);
+    st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    const uint16_t completion_end = res->completion_index + res->completion_len;
-    bool ends_with_wordbreak = (res->completion_len > 0 && CDATA(completion_end - 1) == ' ');
-    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
+    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && CDATA(completion_end - 1) == ' ');
+    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
         st_send_key(st_char_to_keycode(ascii_code));
     }
-    switch (res->func_code) {
+    switch (res->trie_payload.func_code) {
         case 1:  // repeat
             st_handle_repeat_key();
             break;
@@ -274,7 +275,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
  */
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
-    st_trie_payload_t res  = {0, 0, 0, 0};
+    st_trie_search_result_t res = {{0, 0}, {0, 0, 0, 0}};
     if (st_trie_get_completion(&trie, &key_buffer, &res)) {
         st_handle_result(&trie, &res);
         return true;

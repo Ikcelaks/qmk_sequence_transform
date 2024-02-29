@@ -20,20 +20,26 @@
 #define TDATA(L) pgm_read_word(&trie->data[L])
 
 //////////////////////////////////////////////////////////////////
-bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res)
+bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res)
 {
-    return st_find_longest_chain(trie, search, res, 0, 0);
+
+    if (st_find_longest_chain(trie, search, &res->trie_match, 0, 0)) {
+        st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
+        return true;
+    }
+    return false;
 }
 //////////////////////////////////////////////////////////////////
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
+void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
 {
+    const uint16_t code = TDATA(match_index);
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
     // 0b NNFF FBBB BCCC CCCC
     payload->func_code = (code >> 11) & 7;
     payload->num_backspaces = (code >> 7) & 15;
     payload->completion_len = code & 127;
-    payload->completion_index = completion_index;
+    payload->completion_index = TDATA(match_index+1);
 }
 
 /**
@@ -46,7 +52,7 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth)
+bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth)
 {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
     if (offset >= trie->data_size) {
@@ -65,12 +71,12 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
 	if (code & TRIE_MATCH_BIT) {
         // match nodes are side attachments, so decrease depth
         depth--;
+        // record this as the new longest match
+        longest_match->trie_match_index = offset;
+        longest_match->context_match_len = depth + 1;
         // If bit 14 is also set, there is a child node after the completion string
-        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, res, offset+2, depth+1))
+        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, longest_match, offset+2, depth+1))
             return true;
-        // If no better match found deeper, so recordd the payload result!
-        st_get_payload_from_code(res, code, TDATA(offset + 1));
-        res->context_match_len = depth + 1;
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
          // bounds check completion data
         if (res->completion_index + res->completion_len > trie->completions_size) {
@@ -94,7 +100,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
                 // 16bit offset to child node is built from next uint16_t
                 const uint16_t child_offset = TDATA(offset+1);
                 // Traverse down child node
-                return st_find_longest_chain(trie, search, res, child_offset, depth+1);
+                return st_find_longest_chain(trie, search, longest_match, child_offset, depth+1);
             }
         }
         // Couldn't go deeper, so return false.
@@ -108,5 +114,5 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
 			return false;
 	}
 	// After a chain, there should be a leaf or branch
-	return st_find_longest_chain(trie, search, res, offset+1, depth);
+	return st_find_longest_chain(trie, search, longest_match, offset+1, depth);
 }
