@@ -11,7 +11,6 @@
 #include "keybuffer.h"
 #include "utils.h"
 #include "print.h"
-#include "sequence_transform_data.h"
 
 char tmp_buffer[SEQUENCE_MAX_LENGTH];
 
@@ -91,7 +90,8 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num) {
     }
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_print(st_key_buffer_t *buf) {
+void st_key_buffer_print(st_key_buffer_t *buf)
+{
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->context_len; --i)
         uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
