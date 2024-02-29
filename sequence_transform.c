@@ -17,6 +17,7 @@
     #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
+#define KEY_BUFFER_SIZE SEQUENCE_MAX_LENGTH + 10
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
 //////////////////////////////////////////////////////////////////
@@ -267,6 +268,95 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
         st_key_buffer_push(&key_buffer, KC_SPC);
     }
 }
+//////////////////////////////////////////////////////////////////////////////////////////
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_count) {
+    if (key_count <= 0) {
+        // No more keys to restore
+        return;
+    }
+    st_key_action_t *key_action = st_key_buffer_get(&key_buffer, buf_cur_pos);
+    if (!key_action) {
+        // End of buffer reached before fully restoring. Enlarge the extra buffer space
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Unable to restore full changes. Expand the extra buffer space (%d, %d)",
+                key_count, skip_count);
+#endif
+        return;
+    }
+    if (key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
+        if (skip_count > 0) {
+            resend_output(trie, buf_cur_pos + 1, key_count, skip_count - 1);
+            // skipping this keypress
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+            uprintf("Skipping single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
+#endif
+            return;
+        }
+        resend_output(trie, buf_cur_pos + 1, key_count - 1, 0);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Redoing single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
+#endif
+        st_send_key(key_action->keypressed);
+        return;
+    }
+    st_trie_payload_t action = {0, 0, 0, 0};
+    st_get_payload_from_match_index(trie, &action, key_action->action_taken);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Key action: bs: %d, restore: %d\n",
+            action.num_backspaces, action.completion_len);
+#endif
+    const uint16_t completion_end = action.completion_index + action.completion_len - skip_count;
+    if (completion_end <= action.completion_index) {
+        // skip everything and pass down any remaining skipt to next keyaction
+        resend_output(trie, buf_cur_pos + 1, key_count, skip_count - action.completion_len);
+        return;
+    }
+    // Some characters from this action need to be resent
+    uint16_t completion_start = completion_end - key_count;
+    if (completion_start < action.completion_index) {
+        resend_output(trie, buf_cur_pos + 1, key_count + skip_count - action.completion_len, 0);
+        completion_start = action.completion_index;
+    }
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Restore last %d key presses from key action with %d total output\n",
+            key_count, action.completion_len);
+#endif
+    for (uint16_t i = completion_start; i < completion_end; ++i) {
+        char ascii_code = CDATA(i);
+        st_send_key(st_char_to_keycode(ascii_code));
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+void handle_backspace(st_trie_t *trie) {
+    st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
+    if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
+        // previous key-press didn't trigger a rule action. Send one backspace
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Undoing backspace after non-matching keypress\n");
+        st_key_buffer_print(&key_buffer);
+#endif
+        st_send_key(KC_BSPC);
+        st_key_buffer_pop(&key_buffer, 1);
+        return;
+    }
+    // Undo a rule action
+    st_trie_payload_t prev_action = {0, 0, 0, 0};
+    st_get_payload_from_match_index(trie, &prev_action, prev_key_action->action_taken);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Undoing previous key action (%d): bs: %d, restore: %d\n",
+            prev_key_action->action_taken, prev_action.completion_len, prev_action.num_backspaces);
+    st_key_buffer_print(&key_buffer);
+#endif
+    // Send backspaces to remove output of previous key action
+    st_multi_tap(KC_BSPC, prev_action.completion_len);
+    // If previous action used backspaces, restore the deleted output from earlier actions
+    if (prev_action.num_backspaces > 0) {
+        resend_output(trie, 1, prev_action.num_backspaces, 0);
+    }
+    st_key_buffer_pop(&key_buffer, 1);
+}
+#endif
 
 /**
  * @brief Performs sequence transform if a match is found in the trie
@@ -326,11 +416,18 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
             if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
             break;
         case KC_BSPC:
-            // remove last character from the buffer
-            // FIXME: proper logic here needs to be determined
-            st_key_buffer_pop(&key_buffer, 1);
-            //st_key_buffer_reset(&key_buffer);
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+            // remove last key from the buffer
+            //   and undo the action of that key
+            handle_backspace(&trie);
+            // tell QMK not to handle the backspace
+            return false;
+#else
+            // without enhanced backspace, the only sane default is to reset the buffer
+            st_key_buffer_reset(&key_buffer);
+            // have QMK process the backspace as normal
             return true;
+#endif
         default:
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
