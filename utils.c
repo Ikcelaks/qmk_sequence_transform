@@ -87,7 +87,7 @@ void st_multi_tap(uint16_t keycode, int count)
 void st_send_key(uint16_t keycode)
 {
     // Apply shift to sent key if caps word is enabled.
-#ifdef CAPS_WORD_ENABLED
+#ifdef CAPS_WORD_ENABLE
     if (is_caps_word_on() && IS_ALPHA_KEYCODE(keycode))
         add_weak_mods(MOD_BIT(KC_LSFT));
 #endif
