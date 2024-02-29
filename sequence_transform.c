@@ -172,7 +172,6 @@ void st_handle_repeat_key()
             break;
         }
     }
-
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("repeat keycode: 0x%04X\n", keyaction->keypressed);
 #endif
@@ -229,23 +228,19 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
 #endif
-
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     log_rule(trie, res);
 #endif
 
     // Send backspaces
     st_multi_tap(KC_BSPC, res->num_backspaces);
-
     // Send completion string
     const uint16_t completion_end = res->completion_index + res->completion_len;
     bool ends_with_wordbreak = (res->completion_len > 0 && CDATA(completion_end - 1) == ' ');
-
     for (uint16_t i = res->completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
         st_send_key(st_char_to_keycode(ascii_code));
     }
-
     switch (res->func_code) {
         case 1:  // repeat
             st_handle_repeat_key();
@@ -256,7 +251,6 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-
     if (ends_with_wordbreak) {
         st_key_buffer_push(&key_buffer, KC_SPC);
     }
@@ -270,12 +264,10 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
     st_trie_payload_t res  = {0, 0, 0, 0};
-
     if (st_trie_get_completion(&trie, &key_buffer, &res)) {
         st_handle_result(&trie, &res);
         return true;
     }
-
     return false;
 }
 

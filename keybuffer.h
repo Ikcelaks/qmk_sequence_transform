@@ -18,7 +18,6 @@ typedef struct
     uint16_t keypressed;
     uint16_t action_taken;
 } st_key_action_t;
-
 typedef struct
 {
     st_key_action_t     *data;       // array of keycodes

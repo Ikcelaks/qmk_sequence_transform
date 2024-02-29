@@ -76,7 +76,6 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
         if (res->completion_index + res->completion_len > trie->completions_size) {
             uprintf("find_longest_chain() ERROR: trying to read past end of completion data buffer! index: %d, len: %d\n",
                 res->completion_index, res->completion_len);
-
             return false;
         }
 #endif
