@@ -180,20 +180,22 @@ void st_handle_repeat_key()
         st_send_key(keyaction->keypressed);
     }
 }
-//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_get_context_string(&key_buffer, context_string, res->context_len);
+    st_key_buffer_to_str(&key_buffer, context_string, res->context_match_len);
 
-    char rule_trigger_char = context_string[res->context_len - 1]; 
-    context_string[res->context_len - 1] = '\0';
+    char rule_trigger_char = context_string[res->context_match_len - 1]; 
+    context_string[res->context_match_len - 1] = '\0';
 
     // TODO remove 'R' hardcode
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
 
     if (is_repeat) {
-        context_string[0] = st_keycode_to_char(st_key_buffer_get_keycode(&key_buffer, -2));
+        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, -2);
+
+        context_string[0] = st_keycode_to_char(last_key);
         context_string[1] = '\0';
     }
 
