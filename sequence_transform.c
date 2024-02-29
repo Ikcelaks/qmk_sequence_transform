@@ -182,13 +182,7 @@ void st_handle_repeat_key()
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
-            res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
-#endif
-
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     char context_string[SEQUENCE_MAX_LENGTH];
     st_key_buffer_get_context_string(&key_buffer, context_string, res->context_len);
 
@@ -203,6 +197,36 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     }
 
     uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
+
+    const uint16_t completion_end = res->completion_index + res->completion_len;
+
+    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+        char ascii_code = CDATA(i);
+        uprintf("%c", ascii_code);
+    }
+
+    switch (res->func_code) {
+        case 1:  // repeat
+            if (is_repeat)
+                uprintf("%s", context_string);
+            break;
+
+        case 2:  // set one-shot shift
+            uprintf("%c", 'S');
+            break;
+    }
+
+    uprintf("\n");
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
+            res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
+#endif
+
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+    log_rule(trie, res);
 #endif
 
     // Send backspaces
@@ -214,34 +238,19 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 
     for (uint16_t i = res->completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-        uprintf("%c", ascii_code);
-#endif
         st_send_key(st_char_to_keycode(ascii_code));
     }
 
     switch (res->func_code) {
         case 1:  // repeat
             st_handle_repeat_key();
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-            if (is_repeat)
-                uprintf("%s", context_string);
-#endif
             break;
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-            uprintf("%c", 'S');
-#endif
             break;
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-
-
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-        uprintf("\n");
-#endif
 
     if (ends_with_wordbreak) {
         st_key_buffer_push(&key_buffer, KC_SPC);
