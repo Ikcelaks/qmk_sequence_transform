@@ -50,6 +50,10 @@ void sequence_transform_task(void) {
 }
 #endif
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// Add track backspace hold time
+static uint32_t backspace_timer = 0;
+
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
 static st_trie_t trie = {
@@ -336,7 +340,7 @@ void handle_backspace(st_trie_t *trie) {
         uprintf("Undoing backspace after non-matching keypress\n");
         st_key_buffer_print(&key_buffer);
 #endif
-        st_send_key(KC_BSPC);
+        // backspace was already sent on keydown
         st_key_buffer_pop(&key_buffer, 1);
         return;
     }
@@ -349,7 +353,7 @@ void handle_backspace(st_trie_t *trie) {
     st_key_buffer_print(&key_buffer);
 #endif
     // Send backspaces to remove output of previous key action
-    st_multi_tap(KC_BSPC, prev_action.completion_len);
+    st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (prev_action.num_backspaces > 0) {
         resend_output(trie, 1, prev_action.num_backspaces, 0);
@@ -386,6 +390,26 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
+    if (keycode == KC_BSPC) {
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+        if (record->event.pressed) {
+            backspace_timer = timer_read32();
+            return true;
+        }
+        // This is a release
+        if (timer_read32() - backspace_timer < TAPPING_TERM) {
+            // remove last key from the buffer
+            //   and undo the action of that key
+            handle_backspace(&trie);
+        } else {
+            st_key_buffer_reset(&key_buffer);
+        }
+        return true;
+#else
+        st_key_buffer_reset(&key_buffer);
+        return true;
+#endif
+    }
     if (!record->event.pressed)
         return true;
     uint8_t mods = get_mods();
@@ -415,19 +439,6 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
             // treat " (shifted ') as a word boundary
             if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
             break;
-        case KC_BSPC:
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
-            // remove last key from the buffer
-            //   and undo the action of that key
-            handle_backspace(&trie);
-            // tell QMK not to handle the backspace
-            return false;
-#else
-            // without enhanced backspace, the only sane default is to reset the buffer
-            st_key_buffer_reset(&key_buffer);
-            // have QMK process the backspace as normal
-            return true;
-#endif
         default:
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
