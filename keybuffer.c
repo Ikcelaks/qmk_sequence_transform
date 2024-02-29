@@ -30,11 +30,11 @@
 // returns KC_NO if index is out of bounds
 uint16_t st_key_buffer_get_keycode(st_key_buffer_t *buf, int index)
 {
-    const st_key_action_t* keyaction = st_key_buffer_get(buf, index);
+    const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
     return (keyaction ? keyaction->keypressed : KC_NO);
 }
 //////////////////////////////////////////////////////////////////
-st_key_action_t* st_key_buffer_get(st_key_buffer_t *buf, int index)
+st_key_action_t *st_key_buffer_get(st_key_buffer_t *buf, int index)
 {
     if (index < 0) {
         index += buf->context_len;
