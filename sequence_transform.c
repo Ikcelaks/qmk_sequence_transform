@@ -21,7 +21,7 @@
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
-static struct st_key_action_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     SEQUENCE_MAX_LENGTH,
@@ -165,7 +165,7 @@ void st_record_send_key(uint16_t keycode) {
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key()
 {
-    struct st_key_action_t *keyaction = NULL;
+    st_key_action_t *keyaction = NULL;
     for (int i = 1; i < key_buffer.context_len; ++i) {
         keyaction = st_key_buffer_get(&key_buffer, i);
         if (!keyaction || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
