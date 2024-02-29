@@ -192,8 +192,8 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
     char context_string[SEQUENCE_MAX_LENGTH];
     st_key_buffer_get_context_string(&key_buffer, context_string, res->context_len);
 
-    char rule_trigger_char = context_string[strlen(context_string) - 1]; 
-    context_string[strlen(context_string) - 1] = '\0';
+    char rule_trigger_char = context_string[res->context_len - 1]; 
+    context_string[res->context_len - 1] = '\0';
 
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
 
