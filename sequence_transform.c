@@ -183,12 +183,14 @@ void st_handle_repeat_key()
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
-    char context_string[SEQUENCE_MAX_LENGTH];
+    // Main body
+    char context_string[SEQUENCE_MAX_LENGTH + 1];
     st_key_buffer_get_context_string(&key_buffer, context_string, res->context_len);
 
     char rule_trigger_char = context_string[res->context_len - 1]; 
     context_string[res->context_len - 1] = '\0';
 
+    // TODO remove 'R' hardcode
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
 
     if (is_repeat) {
@@ -198,6 +200,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
 
     uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
 
+    // Completion string 
     const uint16_t completion_end = res->completion_index + res->completion_len;
 
     for (uint16_t i = res->completion_index; i < completion_end; ++i) {
@@ -205,6 +208,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
         uprintf("%c", ascii_code);
     }
 
+    // Special function cases
     switch (res->func_code) {
         case 1:  // repeat
             if (is_repeat)
@@ -216,6 +220,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
             break;
     }
 
+    // Terminator
     uprintf("\n");
 }
 //////////////////////////////////////////////////////////////////////////////////////////
