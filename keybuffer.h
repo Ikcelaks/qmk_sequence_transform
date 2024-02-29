@@ -21,7 +21,9 @@ typedef struct
 typedef struct
 {
     st_key_action_t     *data;       // array of keycodes
+    // TODO rename to capacity
     uint8_t             size;        // buffer size
+    // TODO rename to size
     uint8_t             context_len; // number of current keys in buffer
     uint8_t             cur_pos;
 } st_key_buffer_t;
@@ -32,3 +34,4 @@ void                    st_key_buffer_reset(st_key_buffer_t *buf);
 void                    st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode);
 void                    st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
 void                    st_key_buffer_print(st_key_buffer_t *buf);
+void                    st_key_buffer_to_str(st_key_buffer_t *buf, char* output_string, uint8_t len);

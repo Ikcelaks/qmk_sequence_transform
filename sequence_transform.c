@@ -180,6 +180,50 @@ void st_handle_repeat_key()
         st_send_key(keyaction->keypressed);
     }
 }
+///////////////////////////////////////////////////////////////////////////////
+void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
+    // Main body
+    char context_string[SEQUENCE_MAX_LENGTH + 1];
+    st_key_buffer_to_str(&key_buffer, context_string, res->context_match_len);
+
+    char rule_trigger_char = context_string[res->context_match_len - 1]; 
+    context_string[res->context_match_len - 1] = '\0';
+
+    // TODO remove 'R' hardcode
+    bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
+
+    if (is_repeat) {
+        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, -2);
+
+        context_string[0] = st_keycode_to_char(last_key);
+        context_string[1] = '\0';
+    }
+
+    uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
+
+    // Completion string 
+    const uint16_t completion_end = res->completion_index + res->completion_len;
+
+    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+        char ascii_code = CDATA(i);
+        uprintf("%c", ascii_code);
+    }
+
+    // Special function cases
+    switch (res->func_code) {
+        case 1:  // repeat
+            if (is_repeat)
+                uprintf("%s", context_string);
+            break;
+
+        case 2:  // set one-shot shift
+            uprintf("%c", 'S');
+            break;
+    }
+
+    // Terminator
+    uprintf("\n");
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
@@ -187,8 +231,9 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
             res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
 #endif
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-    uprintf("used rule: hello world\n");
+    log_rule(trie, res);
 #endif
+
     // Send backspaces
     st_multi_tap(KC_BSPC, res->num_backspaces);
     // Send completion string

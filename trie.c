@@ -70,6 +70,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_pay
             return true;
         // If no better match found deeper, so recordd the payload result!
         st_get_payload_from_code(res, code, TDATA(offset + 1));
+        res->context_match_len = depth + 1;
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
          // bounds check completion data
         if (res->completion_index + res->completion_len > trie->completions_size) {
