@@ -31,4 +31,4 @@ void                    st_key_buffer_reset(st_key_buffer_t *buf);
 void                    st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode);
 void                    st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
 void                    st_key_buffer_print(st_key_buffer_t *buf);
-char                    *st_key_buffer_get_last(st_key_buffer_t *buf, uint8_t char_count, char *special_char);
+void                    st_key_buffer_get_context_string(st_key_buffer_t *buf, char* output_string, uint8_t context_len);

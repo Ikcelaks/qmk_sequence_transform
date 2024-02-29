@@ -13,9 +13,6 @@
 #include "print.h"
 #include "sequence_transform_data.h"
 
-char tmp_buffer[SEQUENCE_MAX_LENGTH];
-
-
 //////////////////////////////////////////////////////////////////
 // Public
 //////////////////////////////////////////////////////////////////
@@ -99,16 +96,15 @@ void st_key_buffer_print(st_key_buffer_t *buf) {
     uprintf("| (%d)\n", buf->context_len);
 }
 //////////////////////////////////////////////////////////////////
-char *st_key_buffer_get_last(st_key_buffer_t *buf, uint8_t char_count, char *special_char) {
+void st_key_buffer_get_context_string(st_key_buffer_t *buf, char* output_string, uint8_t context_len) {
     int i = 0;
 
-    for (; i < char_count; i += 1) {
-        char current_char = st_keycode_to_char(st_key_buffer_get_keycode(buf, char_count - i - 1)); 
-        tmp_buffer[i] = current_char == ' ' ? ':' : current_char;
+    for (; i < context_len; i += 1) {
+        uint16_t current_keycode = st_key_buffer_get_keycode(buf, context_len - i - 1);
+        char current_char = st_keycode_to_char(current_keycode);
+
+        output_string[i] = current_char == ' ' ? ':' : current_char;
     }
 
-    *special_char = tmp_buffer[i - 1]; 
-    tmp_buffer[i - 1] = '\0';
-
-    return tmp_buffer;
+    output_string[i] = '\0';
 }
