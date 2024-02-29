@@ -32,14 +32,18 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
 {
-    const uint16_t code = TDATA(match_index);
+    st_get_payload_from_code(payload, TDATA(match_index), TDATA(match_index+1));
+}
+//////////////////////////////////////////////////////////////////
+void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
+{
     // Payload data is bit-backed into 16bits:
     // (N: node type, F: func, B: backspackes, C: completion index)
     // 0b NNFF FBBB BCCC CCCC
     payload->func_code = (code >> 11) & 7;
     payload->num_backspaces = (code >> 7) & 15;
     payload->completion_len = code & 127;
-    payload->completion_index = TDATA(match_index+1);
+    payload->completion_index = completion_index;
 }
 
 /**
