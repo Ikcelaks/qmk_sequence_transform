@@ -35,3 +35,4 @@ void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_payload_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
+void st_on_missed_rule(const st_trie_rule_t *rule);
