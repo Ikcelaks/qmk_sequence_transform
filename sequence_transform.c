@@ -242,9 +242,14 @@ void st_find_missed_rule(void)
     char rule_str[SEQUENCE_MAX_LENGTH + 1];
     char completion_str[COMPLETION_MAX_LENGTH + 1];
     static uint8_t search_len_start = 1;
-    // If key buffer was reset, reset search_len_start
-    if (search_len_start > key_buffer.context_len)
-        search_len_start = 1;    
+    // Buffer starts rolling when full, so dec search search_len_start.
+    if (key_buffer.context_len == key_buffer.size) {
+        search_len_start = st_max(1, search_len_start - 1);
+    } else {
+        // Don't let search_len_start get ahead of context len.
+        // (this handles backspace and buffer reset)
+        search_len_start = st_min(search_len_start, key_buffer.context_len - 1);
+    }
     st_trie_rule_t result;
     result.rule = rule_str;
     result.completion = completion_str;
