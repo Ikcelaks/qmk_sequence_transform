@@ -44,11 +44,11 @@ st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
 #endif
         return NULL;
     }
-    return &buf->data[
-        buf->cur_pos >= index
-            ? buf->cur_pos - index
-            : buf->size + index - buf->cur_pos //wrap around
-    ];
+    int buf_index = buf->cur_pos - index;
+    if (buf_index < 0) {
+        buf_index += buf->size;
+    }
+    return &buf->data[buf_index];
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_reset(st_key_buffer_t *buf)
