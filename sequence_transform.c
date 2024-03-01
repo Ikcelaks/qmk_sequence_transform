@@ -266,7 +266,12 @@ void st_find_missed_rule(void)
     st_trie_rule_t result;
     result.rule = rule_str;
     result.completion = completion_str;
-    const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);
+    int t = timer_read32();
+    const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    t = timer_elapsed32(t);
+    uprintf("st_trie_get_rule time: %d\n", t);
+#endif
     if (next_start != search_len_start) {
         sequence_transform_on_missed_rule_user(&result);
         // Next time, start searching from after completion
