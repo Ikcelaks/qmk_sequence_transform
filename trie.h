@@ -19,6 +19,7 @@ typedef struct
     const uint8_t   *completions;       // packed completions strings buffer
     uint8_t         completion_max_len; // max len of all completion strings
     uint8_t         max_backspaces;     // max backspaces for all completions
+    st_key_stack_t * const  key_stack;  // key stack used for searches
 } st_trie_t;
 
 typedef struct
@@ -27,13 +28,33 @@ typedef struct
     uint8_t     completion_len;     // length of completion string
     uint8_t     num_backspaces;     // number of backspaces to send before the completion string
     uint8_t     func_code;          // special function code
-    uint8_t     context_match_len;
+    uint8_t     context_match_len;  // amount of context keys matched from full search buffer
 } st_trie_payload_t;
 
+typedef struct
+{
+    st_trie_payload_t   payload;
+    char                *rule;
+    char                *completion;
+} st_trie_rule_t;
+
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res);
+uint8_t st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, uint8_t search_len_start, st_trie_rule_t *res);
 
 //////////////////////////////////////////////////////////////////
 // Internal
 
+typedef struct 
+{
+    st_trie_t               *trie;                  // trie to search
+	const st_key_buffer_t   *key_buffer;            // search buffer
+    uint8_t                 search_len;             // amount of buffer (from oldest key) to use when searching
+	uint8_t                 skip_levels;	        // number of trie levels to 'skip' when searching
+    uint8_t                 max_completed_chars;     // keeps track of best result
+    st_trie_rule_t          *result;                // pointer to result to be filled with best match
+} st_trie_search_t;
+
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
 bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth);
+bool st_find_rule(st_trie_search_t *search, uint16_t offset);
+void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
