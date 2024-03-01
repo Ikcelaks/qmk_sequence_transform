@@ -237,7 +237,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     uprintf("\n");
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) void st_on_missed_rule(const st_trie_rule_t *rule)
+__attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
     uprintf("Missed rule! %s -> %s\n", rule->rule, rule->completion);
 }
@@ -260,7 +260,7 @@ void st_find_missed_rule(void)
     result.completion = completion_str;
     const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);
     if (next_start != search_len_start) {
-        st_on_missed_rule(&result);
+        sequence_transform_on_missed_rule_user(&result);
         // Next time, start searching from after completion
         search_len_start = next_start;
     }
