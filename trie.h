@@ -39,7 +39,7 @@ typedef struct
 } st_trie_rule_t;
 
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res);
-uint8_t st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, uint8_t search_len_start, st_trie_rule_t *res);
+int st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, int search_len_start, st_trie_rule_t *res);
 
 //////////////////////////////////////////////////////////////////
 // Internal
@@ -47,10 +47,10 @@ uint8_t st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, uin
 typedef struct 
 {
     st_trie_t               *trie;                  // trie to search
-	const st_key_buffer_t   *key_buffer;            // search buffer
-    uint8_t                 search_len;             // amount of buffer (from oldest key) to use when searching
-	uint8_t                 skip_levels;	        // number of trie levels to 'skip' when searching
-    uint8_t                 max_completed_chars;     // keeps track of best result
+    const st_key_buffer_t   *key_buffer;            // search buffer
+    int                     search_len;             // amount of buffer (from oldest key) to use when searching
+    int                     skip_levels;	        // number of trie levels to 'skip' when searching
+    int                     max_completed_chars;    // keeps track of best result
     st_trie_rule_t          *result;                // pointer to result to be filled with best match
 } st_trie_search_t;
 

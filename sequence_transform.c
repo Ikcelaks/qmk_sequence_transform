@@ -246,7 +246,7 @@ void st_find_missed_rule(void)
 {
     char rule_str[SEQUENCE_MAX_LENGTH + 1];
     char completion_str[COMPLETION_MAX_LENGTH + 1];
-    static uint8_t search_len_start = 1;
+    static int search_len_start = 1;
     // Buffer starts rolling when full, so dec search search_len_start.
     if (key_buffer.context_len == key_buffer.size) {
         search_len_start = st_max(1, search_len_start - 1);
