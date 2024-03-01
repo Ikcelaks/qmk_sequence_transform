@@ -131,6 +131,8 @@ int st_trie_get_rule(st_trie_t              *trie,
         // Each skip level allows for a magic key or deleted char.
         for (search.skip_levels = 1; search.skip_levels <= max_skip_levels; ++search.skip_levels) {
             search.search_len = len + search.skip_levels;
+            if (search.search_len > key_buffer->context_len)
+                break;
             trie->key_stack->size = 0;
             st_find_rule(&search, 0);
             if (search.max_completed_chars) {
