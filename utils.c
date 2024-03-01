@@ -93,3 +93,13 @@ void st_send_key(uint16_t keycode)
 #endif
     tap_code16(keycode);
 }
+//////////////////////////////////////////////////////////////////////
+int st_max(int a, int b)
+{
+    return (a > b ? a : b);
+}
+//////////////////////////////////////////////////////////////////////
+int st_min(int a, int b)
+{
+    return (a < b ? a : b);
+}
