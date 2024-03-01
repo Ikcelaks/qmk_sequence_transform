@@ -68,6 +68,8 @@ def main():
     for rule in rules_collection.rules:
         print(rule)
 
+    input()
+
 
 def read_csv_file(file_path):
     with open(file_path, newline='') as csvfile:
