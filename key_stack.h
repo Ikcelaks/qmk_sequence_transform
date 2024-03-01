@@ -7,9 +7,9 @@
 
 typedef struct
 {
-	uint16_t    *buffer;
-    uint8_t     capacity;
-	uint8_t     size;	
+    uint16_t    *buffer;
+    int         capacity;
+    int         size;	
 } st_key_stack_t;
 
 void st_key_stack_push(st_key_stack_t *s, uint16_t key);

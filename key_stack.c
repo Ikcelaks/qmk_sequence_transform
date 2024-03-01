@@ -10,20 +10,21 @@
 //////////////////////////////////////////////////////////////////////
 void st_key_stack_push(st_key_stack_t *s, uint16_t key)
 {
-    if (s->size < s->capacity)
+    if (s->size < s->capacity) {
         s->buffer[s->size++] = key;
+    }
 }
 //////////////////////////////////////////////////////////////////////
 void st_key_stack_pop(st_key_stack_t *s)
 {
-    if (s->size > 0)
-        s->size--;
+    s->size = st_max(0, s->size - 1);
 }
 //////////////////////////////////////////////////////////////////////
 void st_key_stack_to_str(const st_key_stack_t *s, char *str)
 {
     char *dst = str;
-	for (int i = s->size - 1; i >= 0; --i)
-		*dst++ = st_keycode_to_char(s->buffer[i]);
-	str[s->size] = 0;
+    for (int i = s->size - 1; i >= 0; --i) {
+        *dst++ = st_keycode_to_char(s->buffer[i]);
+    }
+    str[s->size] = 0;
 }
