@@ -47,7 +47,7 @@ st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
     return &buf->data[
         buf->cur_pos >= index
             ? buf->cur_pos - index
-            : buf->cur_pos - index + buf->size //wrap around
+            : buf->size + index - buf->cur_pos //wrap around
     ];
 }
 //////////////////////////////////////////////////////////////////

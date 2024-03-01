@@ -22,10 +22,10 @@ typedef struct
 {
     st_key_action_t     *data;       // array of keycodes
     // TODO rename to capacity
-    uint8_t             size;        // buffer size
+    int             size;        // buffer size
     // TODO rename to size
-    uint8_t             context_len; // number of current keys in buffer
-    uint8_t             cur_pos;
+    int             context_len; // number of current keys in buffer
+    int             cur_pos;
 } st_key_buffer_t;
 
 st_key_action_t         *st_key_buffer_get(const st_key_buffer_t *buf, int index);
