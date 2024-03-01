@@ -21,10 +21,19 @@
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
-static st_key_action_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+#ifdef SEQUENCE_TRANSFORM_EXTRA_BUFFER
+#   if SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER < 256
+#       define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER
+#   else
+#       define KEY_BUFFER_CAPACITY 255
+#   endif
+#else
+#   define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH
+#endif
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
-    SEQUENCE_MAX_LENGTH,
+    KEY_BUFFER_CAPACITY,
     1
 };
 
@@ -186,7 +195,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     char context_string[SEQUENCE_MAX_LENGTH + 1];
     st_key_buffer_to_str(&key_buffer, context_string, res->context_match_len);
 
-    char rule_trigger_char = context_string[res->context_match_len - 1]; 
+    char rule_trigger_char = context_string[res->context_match_len - 1];
     context_string[res->context_match_len - 1] = '\0';
 
     // TODO remove 'R' hardcode
@@ -201,7 +210,7 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
 
     uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
 
-    // Completion string 
+    // Completion string
     const uint16_t completion_end = res->completion_index + res->completion_len;
 
     for (uint16_t i = res->completion_index; i < completion_end; ++i) {

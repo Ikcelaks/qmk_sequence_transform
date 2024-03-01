@@ -27,13 +27,13 @@
 //   st_key_buffer_get(buf, -2) -> b
 //   st_key_buffer_get(buf, -3) -> c
 // returns KC_NO if index is out of bounds
-uint16_t st_key_buffer_get_keycode(st_key_buffer_t *buf, int index)
+uint16_t st_key_buffer_get_keycode(const st_key_buffer_t *buf, int index)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
     return (keyaction ? keyaction->keypressed : KC_NO);
 }
 //////////////////////////////////////////////////////////////////
-st_key_action_t *st_key_buffer_get(st_key_buffer_t *buf, int index)
+st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
 {
     if (index < 0) {
         index += buf->context_len;
@@ -47,7 +47,7 @@ st_key_action_t *st_key_buffer_get(st_key_buffer_t *buf, int index)
     return &buf->data[
         buf->cur_pos >= index
             ? buf->cur_pos - index
-            : buf->cur_pos - index + buf->size //wrap around
+            : buf->size + index - buf->cur_pos //wrap around
     ];
 }
 //////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
     }
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_print(st_key_buffer_t *buf)
+void st_key_buffer_print(const st_key_buffer_t *buf)
 {
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->context_len; --i)
@@ -98,7 +98,7 @@ void st_key_buffer_print(st_key_buffer_t *buf)
     uprintf("| (%d)\n", buf->context_len);
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_to_str(st_key_buffer_t *buf, char* output_string, uint8_t len)
+void st_key_buffer_to_str(const st_key_buffer_t *buf, char* output_string, uint8_t len)
 {
     int i = 0;
 
