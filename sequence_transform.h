@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include "action.h"
 #include "keybuffer.h"
+#include "key_stack.h"
 #include "trie.h"
 
 //////////////////////////////////////////////////////////////////
@@ -33,3 +34,4 @@ void st_record_send_key(uint16_t keycode);
 void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_payload_t *res);
 bool st_perform(void);
+void st_find_missed_rule(void);

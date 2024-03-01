@@ -21,10 +21,11 @@
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
-static st_key_action_t key_buffer_data[SEQUENCE_MAX_LENGTH] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+#define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
-    SEQUENCE_MAX_LENGTH,
+    KEY_BUFFER_CAPACITY,
     1
 };
 
@@ -33,12 +34,22 @@ static st_key_buffer_t key_buffer = {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
 void sequence_transform_task(void) {
-    if (timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
+    if (key_buffer.context_len > 1 &&
+        timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         st_key_buffer_reset(&key_buffer);
         sequence_timer = timer_read32();
     }
 }
 #endif
+
+//////////////////////////////////////////////////////////////////
+// Trie key stack
+static uint16_t trie_key_stack_data[SEQUENCE_MAX_LENGTH] = {0};
+static st_key_stack_t trie_stack = {
+    trie_key_stack_data,
+    SEQUENCE_MAX_LENGTH,
+    0
+};
 
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
@@ -48,7 +59,8 @@ static st_trie_t trie = {
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
-    MAX_BACKSPACES
+    MAX_BACKSPACES,
+    &trie_stack
 };
 
 /**
@@ -224,6 +236,25 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     // Terminator
     uprintf("\n");
 }
+//////////////////////////////////////////////////////////////////////
+void st_find_missed_rule(void)
+{
+    char rule_str[SEQUENCE_MAX_LENGTH + 1];
+    char completion_str[COMPLETION_MAX_LENGTH + 1];
+    static uint8_t search_len_start = 1;
+    // If key buffer was reset, reset search_len_start
+    if (search_len_start > key_buffer.context_len)
+        search_len_start = 1;    
+    st_trie_rule_t result;
+    result.rule = rule_str;
+    result.completion = completion_str;
+    const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);
+    if (next_start != search_len_start) {
+        uprintf("Missed rule: %s -> %s (new start: %d)\n", rule_str, completion_str, next_start);
+        // Next time, start searching from after completion
+        search_len_start = next_start;
+    }
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
@@ -333,7 +364,9 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // tell QMK to not process this key
         return false;
     } else {
-        // TODO: search for rules
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+        st_find_missed_rule();
+#endif
     }
     return true;
 }
