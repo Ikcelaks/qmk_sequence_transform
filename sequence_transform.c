@@ -270,7 +270,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-    if (ends_with_wordbreak) {
+    if (ends_with_wordbreak && st_key_buffer_get_keycode(&key_buffer, 0) != KC_SPC) {
         st_key_buffer_push(&key_buffer, KC_SPC);
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_IGNORE_KEY_ACTION;
     }
@@ -340,7 +340,7 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void handle_backspace(st_trie_t *trie, int index) {
+void handle_backspace(st_trie_t *trie) {
     st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
     if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
@@ -353,8 +353,9 @@ void handle_backspace(st_trie_t *trie, int index) {
         return;
     }
     if (prev_key_action->action_taken == ST_IGNORE_KEY_ACTION) {
-        // This is a hacky fake key-press. Skip to next key in the buffer
-        handle_backspace(trie, 1);
+        // This is a hacky fake key-press. Pop it off the buffer and go again
+        st_key_buffer_pop(&key_buffer, 1);
+        handle_backspace(trie);
         return;
     }
     // Undo a rule action
@@ -428,7 +429,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
             // remove last key from the buffer
             //   and undo the action of that key
-            handle_backspace(&trie, 0);
+            handle_backspace(&trie);
         } else {
             st_key_buffer_reset(&key_buffer);
         }
