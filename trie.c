@@ -124,7 +124,7 @@ int st_trie_get_rule(st_trie_t              *trie,
     search.trie = trie;
     search.key_buffer = key_buffer;
     search.result = res;
-    search.max_completed_chars = 0;    
+    search.max_transform_len = 0;
     const int max_skip_levels = 1 + trie->max_backspaces;
     for (int len = search_len_start; len < key_buffer->context_len; ++len) {
         // For every base search_len, increase skip_levels until we find a match.
@@ -135,7 +135,7 @@ int st_trie_get_rule(st_trie_t              *trie,
                 break;
             trie->key_stack->size = 0;
             st_find_rule(&search, 0);
-            if (search.max_completed_chars) {
+            if (search.max_transform_len) {
                 return len + res->payload.completion_len;
             }
         }
@@ -225,22 +225,19 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     st_trie_rule_t *res = search->result;
     //uprintf("checking match at index %d\n", payload->completion_index);
     // Early return if:
-    // 1. potential completed len is smaller than our current best
-    // 2. potential completed len overflows search buffer
+    // 1. potential transform len is smaller than our current best
+    // 2. potential transform len is bigger than search buffer
     int clen = search->search_len - search->skip_levels;
-    const int clen_end = clen + payload->completion_len;
-    if (clen_end < search->max_completed_chars ||
-        clen_end > search->key_buffer->context_len) {
+    const int transform_len = clen + payload->completion_len;
+    if (transform_len < search->max_transform_len ||
+        transform_len > search->key_buffer->context_len) {
         return;
     }
     //uprintf("  testing completion: ");
     // Check if completed string matches what comes next in our search buffer
-    const int completion_end = payload->completion_index + payload->completion_len;
-    char *completion_str = res->completion;
+    const int completion_end = payload->completion_index + payload->completion_len;    
     for (int i = payload->completion_index; i < completion_end; ++i, ++clen) {
         const char ascii_code = CDATA(i);
-        // Save to ascii completion string at the same time
-        *completion_str++ = ascii_code;       
         const uint16_t keycode = st_char_to_keycode(tolower(ascii_code));
         const uint16_t buffer_keycode = st_key_buffer_get_keycode(search->key_buffer, -(clen+1));
         //uprintf("[%02X, %02X] ", keycode, buffer_keycode);
@@ -249,10 +246,14 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
             return;
         }
     }
-    *completion_str = 0;
     //uprintf("  match found!!!\n");
-    // Mark winning info in search struct, and write the rule string
-    search->max_completed_chars = clen;
+    // Save payload data in result, with sequence and completion strings
+    search->max_transform_len = clen;
     res->payload = *payload;
-    st_key_stack_to_str(trie->key_stack, res->rule);
+    st_key_stack_to_str(trie->key_stack, res->sequence);
+    char *completion_str = res->completion;
+    for (int i = payload->completion_index; i < completion_end; ++i) {
+        *completion_str++ = CDATA(i);
+    }
+    *completion_str = 0;
  }

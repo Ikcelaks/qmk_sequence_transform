@@ -34,7 +34,7 @@ typedef struct
 typedef struct
 {
     st_trie_payload_t   payload;
-    char                *rule;
+    char                *sequence;
     char                *completion;
 } st_trie_rule_t;
 
@@ -50,7 +50,7 @@ typedef struct
     const st_key_buffer_t   *key_buffer;            // search buffer
     int                     search_len;             // amount of buffer (from oldest key) to use when searching
     int                     skip_levels;	        // number of trie levels to 'skip' when searching
-    int                     max_completed_chars;    // keeps track of best result
+    int                     max_transform_len;      // keeps track of best result
     st_trie_rule_t          *result;                // pointer to result to be filled with best match
 } st_trie_search_t;
 
