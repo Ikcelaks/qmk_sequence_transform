@@ -17,7 +17,6 @@
     #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
-#define KEY_BUFFER_SIZE SEQUENCE_MAX_LENGTH + 10
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
 //////////////////////////////////////////////////////////////////
@@ -76,6 +75,9 @@ static st_trie_t trie = {
  * @return false Stop processing and escape from context_magic.
  */
 bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
+    if (!record->event.pressed && QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
+        return false;
+    }
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
         // Exclude these keycodes from processing.
@@ -270,6 +272,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     }
     if (ends_with_wordbreak) {
         st_key_buffer_push(&key_buffer, KC_SPC);
+        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_IGNORE_KEY_ACTION;
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -286,6 +289,11 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
         uprintf("Unable to restore full changes. Expand the extra buffer space (%d, %d)",
                 key_count, skip_count);
 #endif
+        return;
+    }
+    if (key_action->action_taken == ST_IGNORE_KEY_ACTION) {
+        // This is a hacky fake key-press. Skip to next key in the buffer
+        resend_output(trie, buf_cur_pos + 1, key_count, skip_count);
         return;
     }
     if (key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
@@ -332,16 +340,21 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void handle_backspace(st_trie_t *trie) {
+void handle_backspace(st_trie_t *trie, int index) {
     st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
     if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
-        // previous key-press didn't trigger a rule action. Send one backspace
+        // previous key-press didn't trigger a rule action. One total backspace required
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Undoing backspace after non-matching keypress\n");
         st_key_buffer_print(&key_buffer);
 #endif
         // backspace was already sent on keydown
         st_key_buffer_pop(&key_buffer, 1);
+        return;
+    }
+    if (prev_key_action->action_taken == ST_IGNORE_KEY_ACTION) {
+        // This is a hacky fake key-press. Skip to next key in the buffer
+        handle_backspace(trie, 1);
         return;
     }
     // Undo a rule action
@@ -390,28 +403,6 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
-    if (keycode == KC_BSPC) {
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
-        if (record->event.pressed) {
-            backspace_timer = timer_read32();
-            return true;
-        }
-        // This is a release
-        if (timer_read32() - backspace_timer < TAPPING_TERM) {
-            // remove last key from the buffer
-            //   and undo the action of that key
-            handle_backspace(&trie);
-        } else {
-            st_key_buffer_reset(&key_buffer);
-        }
-        return true;
-#else
-        st_key_buffer_reset(&key_buffer);
-        return true;
-#endif
-    }
-    if (!record->event.pressed)
-        return true;
     uint8_t mods = get_mods();
 #ifndef NO_ACTION_ONESHOT
     mods |= get_oneshot_mods();
@@ -427,6 +418,26 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     if (!st_process_check(&keycode, record, &mods))
         return true;
 
+    if (keycode == KC_BSPC) {
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+        if (record->event.pressed) {
+            backspace_timer = timer_read32();
+            return true;
+        }
+        // This is a release
+        if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
+            // remove last key from the buffer
+            //   and undo the action of that key
+            handle_backspace(&trie, 0);
+        } else {
+            st_key_buffer_reset(&key_buffer);
+        }
+        return true;
+#else
+        st_key_buffer_reset(&key_buffer);
+        return true;
+#endif
+    }
     // keycode buffer check
     switch (keycode) {
         case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT:
