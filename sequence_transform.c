@@ -255,6 +255,12 @@ void st_find_missed_rule(void)
     char rule_str[SEQUENCE_MAX_LENGTH + 1];
     char completion_str[COMPLETION_MAX_LENGTH + 1];
     static int search_len_start = 1;
+    const uint16_t keycode = st_key_buffer_get_keycode(&key_buffer, 0);
+    // Start search from last space
+    if (keycode == KC_SPACE) {
+        search_len_start = key_buffer.context_len;
+        return;
+    }
     // Buffer starts rolling when full, so dec search search_len_start.
     if (key_buffer.context_len == key_buffer.size) {
         search_len_start = st_max(1, search_len_start - 1);
