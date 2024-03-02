@@ -53,3 +53,5 @@ dkms.conf
 /.vs
 /sequence_transform_data.h
 /rule_usage/rule_usage_log.csv
+/tester/.vs/tester
+/tester/x64/Debug

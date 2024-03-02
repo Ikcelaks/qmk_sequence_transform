@@ -8,7 +8,12 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include <string.h>
-#include "quantum.h"
+#include <stdint.h>
+#ifndef ST_TESTER
+#   include "quantum.h"
+#else
+#   include "tester/qmk_wrappers.h"
+#endif //ST_TESTER
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
