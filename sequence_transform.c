@@ -93,7 +93,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
                 *mods |= MOD_RSFT;
             }
             *keycode = QK_MODS_GET_BASIC_KEYCODE(*keycode); // Get the basic keycode.
-            return true;
+            break;
 #ifndef NO_ACTION_TAPPING
         // Exclude tap-hold keys when they are held down
         // and mask for base keycode when they are tapped.
