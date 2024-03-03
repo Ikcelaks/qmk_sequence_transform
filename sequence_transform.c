@@ -65,6 +65,12 @@ static st_trie_t trie = {
     MAX_BACKSPACES
 };
 
+//////////////////////////////////////////////////////////////////
+#ifdef ST_TESTER
+st_trie_t       *st_get_trie(void) { return &trie; }
+st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
+#endif
+
 /**
  * @brief determine if context_magic should process this keypress,
  *        and remove any mods from keycode.

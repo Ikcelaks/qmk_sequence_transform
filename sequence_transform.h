@@ -33,3 +33,8 @@ void st_record_send_key(uint16_t keycode);
 void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_payload_t *res);
 bool st_perform(void);
+
+#ifdef ST_TESTER
+st_trie_t       *st_get_trie(void);
+st_key_buffer_t *st_get_key_buffer(void);
+#endif
