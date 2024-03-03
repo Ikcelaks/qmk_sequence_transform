@@ -7,9 +7,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
-// TODO: define this in generated .h file
-static const char magic_chars[] = {'M', 'R'};
-
 #include <stdint.h>
 #ifndef ST_TESTER
 #   include "quantum.h"
@@ -64,7 +61,7 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 char st_keycode_to_char(uint16_t keycode)
 {
     if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT)
-		return magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
+		return st_magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
     if (keycode >= KC_A && keycode <= KC_SLASH) {
