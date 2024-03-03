@@ -79,12 +79,11 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
             return false;
 
         // bake shift mod into keycode symbols
-        case KC_1 ... KC_0:
-        case KC_MINUS ... KC_SLASH:
+        case KC_1 ... KC_SLASH:
             if (*mods & MOD_MASK_SHIFT) {
                 *keycode |= QK_LSFT;
             }
-            return true;
+            break;
         // Clear shift for alphas
         case LSFT(KC_A) ... LSFT(KC_Z):
         case RSFT(KC_A) ... RSFT(KC_Z):
