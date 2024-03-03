@@ -33,11 +33,13 @@ _OBJ = tester.o \
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
-	mkdir -p $(ODIR)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	@echo Compiling $<
+	@mkdir -p $(ODIR)
+	@$(CC) -c -o $@ $< $(CFLAGS)
 
 tester: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
+	@$(CC) -o $@ $^ $(CFLAGS)
+	@echo "Build successful! You can now run ./tester.exe"
 	
 .PHONY: clean
 
