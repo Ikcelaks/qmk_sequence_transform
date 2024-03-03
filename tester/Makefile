@@ -19,6 +19,7 @@ DEPS = qmk_wrappers.h \
 	../keybuffer.h \
 	../sequence_transform.h \
 	../sequence_transform_data.h \
+	../sequence_transform_test.h \
 	../trie.h \
 	../utils.h
 		
