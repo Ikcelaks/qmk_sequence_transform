@@ -28,7 +28,6 @@ typedef struct
     uint8_t     completion_len;     // length of completion string
     uint8_t     num_backspaces;     // number of backspaces to send before the completion string
     uint8_t     func_code;          // special function code
-    uint8_t     context_match_len;  // amount of context keys matched from full search buffer
 } st_trie_payload_t;
 
 typedef struct
