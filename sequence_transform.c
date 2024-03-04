@@ -76,6 +76,9 @@ static st_trie_t trie = {
  */
 bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
     if (!record->event.pressed && QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
+        // We generally only process key presses, not releases, but we must make an
+        // exception for Backspace, because enhanced backspace does its action on
+        // the release of backspace.
         return false;
     }
     // See quantum_keycodes.h for reference on these matched ranges.
@@ -200,10 +203,10 @@ void st_handle_repeat_key()
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.context_match_len);
+    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
 
-    char rule_trigger_char = context_string[res->trie_match.context_match_len - 1];
-    context_string[res->trie_match.context_match_len - 1] = '\0';
+    char rule_trigger_char = context_string[res->trie_match.seq_match_len - 1];
+    context_string[res->trie_match.seq_match_len - 1] = '\0';
 
     // TODO remove 'R' hardcode
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
@@ -271,6 +274,12 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
             ends_with_wordbreak = false;
     }
     if (ends_with_wordbreak && st_key_buffer_get_keycode(&key_buffer, 0) != KC_SPC) {
+        // If the last key in an action outputs a wordbreak character, we need to mark in the buffer
+        // that we are at a word break. Currently, we must hack this by appending a fake KC_SPC to the buffer.
+        // We mark the action as ST_IGNORE_KEY_ACTION to designate that this is a fake key press with
+        // no associated output. We skip this fake space if the key that triggered the output ending with a
+        // wordbreak was a space. All of this convoluted logic will be removed when proper tagging support is
+        // added in a future feature
         st_key_buffer_push(&key_buffer, KC_SPC);
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_IGNORE_KEY_ACTION;
     }

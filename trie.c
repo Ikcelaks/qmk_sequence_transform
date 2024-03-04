@@ -77,18 +77,10 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_mat
         depth--;
         // record this as the new longest match
         longest_match->trie_match_index = offset;
-        longest_match->context_match_len = depth + 1;
+        longest_match->seq_match_len = depth + 1;
         // If bit 14 is also set, there is a child node after the completion string
         if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, longest_match, offset+2, depth+1))
             return true;
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-         // bounds check completion data
-        if (res->completion_index + res->completion_len > trie->completions_size) {
-            uprintf("find_longest_chain() ERROR: trying to read past end of completion data buffer! index: %d, len: %d\n",
-                res->completion_index, res->completion_len);
-            return false;
-        }
-#endif
         // Found a match so return true!
         return true;
 	}

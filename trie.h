@@ -32,7 +32,7 @@ typedef struct
 typedef struct
 {
     uint16_t            trie_match_index;
-    uint8_t             context_match_len;
+    int                 seq_match_len;
 } st_trie_match_t;
 
 typedef struct
