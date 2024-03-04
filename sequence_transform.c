@@ -476,7 +476,8 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     mods |= get_oneshot_mods();
 #endif
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("pst keycode: 0x%04X\n", keycode);
+    uprintf("pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
+            keycode, mods, record->event.pressed);
 #endif
     // If this is one of the special keycodes, convert to our internal trie code
     if (keycode >= special_key_start && keycode < special_key_start + SEQUENCE_TRANSFORM_COUNT) {
