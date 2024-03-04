@@ -263,8 +263,8 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-    char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
-    char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
+    char sequence_str[SEQUENCE_MAX_LENGTH * 4 + 1] = {0};
+    char transform_str[TRANSFORM_MAX_LEN * 4 + 1] = {0};
     static int search_len_start = 1;
     // Start search from last space
     if (PREV_KEY == KC_SPACE) {
