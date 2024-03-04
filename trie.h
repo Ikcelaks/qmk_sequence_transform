@@ -38,7 +38,19 @@ typedef struct
     char                *completion;
 } st_trie_rule_t;
 
-bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res);
+typedef struct
+{
+    uint16_t            trie_match_index;
+    int                 seq_match_len;
+} st_trie_match_t;
+
+typedef struct
+{
+    st_trie_match_t     trie_match;
+    st_trie_payload_t   trie_payload;
+} st_trie_search_result_t;
+
+bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res);
 int st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, int search_len_start, st_trie_rule_t *res);
 
 //////////////////////////////////////////////////////////////////
@@ -54,7 +66,8 @@ typedef struct
     st_trie_rule_t          *result;                // pointer to result to be filled with best match
 } st_trie_search_t;
 
+void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_payload_t *res, uint16_t offset, uint8_t depth);
+bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
 bool st_find_rule(st_trie_search_t *search, uint16_t offset);
 void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
