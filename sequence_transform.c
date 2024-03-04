@@ -18,6 +18,7 @@
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
+#define PREV_KEY st_key_buffer_get_keycode(&key_buffer, 0)
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
@@ -257,17 +258,16 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-    uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->completion);
+    uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
 }
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-    char sequence_str[SEQUENCE_MAX_LENGTH + 1];
-    char completion_str[COMPLETION_MAX_LENGTH + 1];
+    char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
+    char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
     static int search_len_start = 1;
-    const uint16_t keycode = st_key_buffer_get_keycode(&key_buffer, 0);
     // Start search from last space
-    if (keycode == KC_SPACE) {
+    if (PREV_KEY == KC_SPACE) {
         search_len_start = key_buffer.context_len;
         return;
     }
@@ -281,7 +281,7 @@ void st_find_missed_rule(void)
     }
     st_trie_rule_t result;
     result.sequence = sequence_str;
-    result.completion = completion_str;
+    result.transform = transform_str;
     int t = timer_read32();
     const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL

@@ -247,14 +247,24 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
             return;
         }
     }
-    //uprintf("  match found!!!\n");
-    // Save payload data in result, with sequence and completion strings
+    // Save payload data and max_transform_len in result
     search->max_transform_len = clen;
     res->payload = *payload;
-    st_key_stack_to_str(trie->key_stack, res->sequence);
-    char *completion_str = res->completion;
-    for (int i = payload->completion_index; i < completion_end; ++i) {
-        *completion_str++ = CDATA(i);
+    // Fill the result sequence and start of transform
+    char *seq = res->sequence;
+    char *transform = res->transform;
+    for (int i = trie->key_stack->size - 1; i >= 0; --i) {
+        const uint16_t keycode = trie->key_stack->buffer[i];
+        const char c = st_keycode_to_char(keycode);
+        *seq++ = c;
+        if (i >= 1 + payload->num_backspaces) {
+            *transform++ = c;
+        }
     }
-    *completion_str = 0;
+    *seq = 0;
+    // Finish writing transform
+    for (int i = payload->completion_index; i < completion_end; ++i) {
+        *transform++ = CDATA(i);
+    }
+    *transform = 0;
  }

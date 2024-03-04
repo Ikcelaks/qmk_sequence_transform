@@ -34,7 +34,7 @@ typedef struct
 {
     st_trie_payload_t   payload;
     char                *sequence;
-    char                *completion;
+    char                *transform;
 } st_trie_rule_t;
 
 typedef struct
