@@ -492,6 +492,11 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
 ###############################################################################
 def sequence_len(node: Tuple[str, str]) -> int:
     return len(node[0])
+    
+
+###############################################################################
+def transform_len(node: Tuple[str, str]) -> int:
+    return len(node[1])
 
 
 ###############################################################################
@@ -524,6 +529,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     min_sequence = min(seq_dict, key=sequence_len)[0]
     max_sequence = max(seq_dict, key=sequence_len)[0]
+    max_transform = max(seq_dict, key=transform_len)[1]
 
     # Build the sequence_transform_data.h file.
     transformations = []
@@ -559,6 +565,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
+        f'#define TRANSFORM_MAX_LEN {len(max_transform)} // "{max_transform}"',
         f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
         f'#define MAX_BACKSPACES {max_backspaces}',
         f'#define DICTIONARY_SIZE {len(trie_data)}',

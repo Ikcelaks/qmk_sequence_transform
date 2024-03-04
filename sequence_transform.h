@@ -12,12 +12,14 @@
 #include <stdbool.h>
 #include "action.h"
 #include "keybuffer.h"
+#include "key_stack.h"
 #include "trie.h"
 
 //////////////////////////////////////////////////////////////////
 // Public API
 
 bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
+void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule);
 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 void sequence_transform_task(void);
@@ -33,6 +35,7 @@ void st_record_send_key(uint16_t keycode);
 void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
 bool st_perform(void);
+void st_find_missed_rule(void);
 
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void);

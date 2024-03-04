@@ -20,6 +20,10 @@
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
+// TODO: define this in generated .h file
+static const char *st_seq_tokens[] = {"☆", "✪"};
+static const char *st_wordbreak_token = "␣";
+
 static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D
                                     'a',    'b',    'c',    'd',
@@ -57,6 +61,30 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
     '?'
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// copies src to dest and returns pointer to the new end of dest
+// (null terminator is written at end address)
+char *st_strcpy(char *dest, const char *src)
+{
+    // st_assert(dest != 0 && src != 0);
+    while (*src) {
+        *dest++ = *src++;
+    }
+    *dest = 0;
+    return dest;
+}
+////////////////////////////////////////////////////////////////////////////////
+// if keycode is a token that can be translated back to its user symbol,
+// returns pointer to it, otherwise returns 0
+const char *st_get_seq_token_symbol(uint16_t keycode)
+{
+    if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
+    } else if (keycode == KC_SPACE) {
+        return st_wordbreak_token;
+    }
+    return 0;
+}
 ////////////////////////////////////////////////////////////////////////////////
 char st_keycode_to_char(uint16_t keycode)
 {

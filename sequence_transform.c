@@ -23,6 +23,7 @@
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
+#define PREV_KEY st_key_buffer_get_keycode(&key_buffer, 0)
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
@@ -47,7 +48,8 @@ static st_key_buffer_t key_buffer = {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
 void sequence_transform_task(void) {
-    if (timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
+    if (key_buffer.context_len > 1 &&
+        timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         st_key_buffer_reset(&key_buffer);
         sequence_timer = timer_read32();
     }
@@ -59,6 +61,15 @@ void sequence_transform_task(void) {
 static uint32_t backspace_timer = 0;
 
 //////////////////////////////////////////////////////////////////
+// Trie key stack
+static uint16_t trie_key_stack_data[SEQUENCE_MAX_LENGTH] = {0};
+static st_key_stack_t trie_stack = {
+    trie_key_stack_data,
+    SEQUENCE_MAX_LENGTH,
+    0
+};
+
+//////////////////////////////////////////////////////////////////
 // Trie node and completion data
 static st_trie_t trie = {
     DICTIONARY_SIZE,
@@ -66,7 +77,8 @@ static st_trie_t trie = {
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
-    MAX_BACKSPACES
+    MAX_BACKSPACES,
+    &trie_stack
 };
 
 //////////////////////////////////////////////////////////////////
@@ -254,6 +266,45 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Terminator
     uprintf("\n");
 }
+//////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
+{
+    uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
+}
+//////////////////////////////////////////////////////////////////////
+void st_find_missed_rule(void)
+{
+    char sequence_str[SEQUENCE_MAX_LENGTH * 4 + 1] = {0};
+    char transform_str[TRANSFORM_MAX_LEN * 4 + 1] = {0};
+    static int search_len_start = 1;
+    // Start search from last space
+    if (PREV_KEY == KC_SPACE) {
+        search_len_start = key_buffer.context_len;
+        return;
+    }
+    // Buffer starts rolling when full, so dec search search_len_start.
+    if (key_buffer.context_len == key_buffer.size) {
+        search_len_start = st_max(1, search_len_start - 1);
+    } else {
+        // Don't let search_len_start get ahead of context len.
+        // (this handles backspace and buffer reset)
+        search_len_start = st_min(search_len_start, key_buffer.context_len - 1);
+    }
+    st_trie_rule_t result;
+    result.sequence = sequence_str;
+    result.transform = transform_str;
+    int t = timer_read32();
+    const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    t = timer_elapsed32(t);
+    uprintf("st_trie_get_rule time: %d\n", t);
+#endif
+    if (next_start != search_len_start) {
+        sequence_transform_on_missed_rule_user(&result);
+        // Next time, start searching from after completion
+        search_len_start = next_start;
+    }
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
@@ -436,7 +487,8 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     mods |= get_oneshot_mods();
 #endif
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("pst keycode: 0x%04X\n", keycode);
+    uprintf("pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
+            keycode, mods, record->event.pressed);
 #endif
     // If this is one of the special keycodes, convert to our internal trie code
     if (keycode >= special_key_start && keycode < special_key_start + SEQUENCE_TRANSFORM_COUNT) {
@@ -490,7 +542,9 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // tell QMK to not process this key
         return false;
     } else {
-        // TODO: search for rules
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+        st_find_missed_rule();
+#endif
     }
     return true;
 }
