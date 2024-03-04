@@ -12,6 +12,7 @@
 // Public API
 
 #define ST_DEFAULT_KEY_ACTION 0xffff
+#define ST_IGNORE_KEY_ACTION 0x0000
 
 typedef struct
 {

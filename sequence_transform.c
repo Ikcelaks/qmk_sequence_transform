@@ -49,6 +49,10 @@ void sequence_transform_task(void) {
 }
 #endif
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// Add track backspace hold time
+static uint32_t backspace_timer = 0;
+
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
 static st_trie_t trie = {
@@ -71,6 +75,12 @@ static st_trie_t trie = {
  * @return false Stop processing and escape from context_magic.
  */
 bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
+    if (!record->event.pressed && QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
+        // We generally only process key presses, not releases, but we must make an
+        // exception for Backspace, because enhanced backspace does its action on
+        // the release of backspace.
+        return false;
+    }
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
         // Exclude these keycodes from processing.
@@ -190,13 +200,13 @@ void st_handle_repeat_key()
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
+void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_to_str(&key_buffer, context_string, res->context_match_len);
+    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
 
-    char rule_trigger_char = context_string[res->context_match_len - 1];
-    context_string[res->context_match_len - 1] = '\0';
+    char rule_trigger_char = context_string[res->trie_match.seq_match_len - 1];
+    context_string[res->trie_match.seq_match_len - 1] = '\0';
 
     // TODO remove 'R' hardcode
     bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
@@ -208,18 +218,18 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
         context_string[1] = '\0';
     }
 
-    uprintf("st_rule,%s,%d,%c,", context_string, res->num_backspaces, rule_trigger_char);
+    uprintf("st_rule,%s,%d,%c,", context_string, res->trie_payload.num_backspaces, rule_trigger_char);
 
     // Completion string
-    const uint16_t completion_end = res->completion_index + res->completion_len;
+    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
 
-    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
         uprintf("%c", ascii_code);
     }
 
     // Special function cases
-    switch (res->func_code) {
+    switch (res->trie_payload.func_code) {
         case 1:  // repeat
             if (is_repeat)
                 uprintf("%s", context_string);
@@ -234,25 +244,26 @@ void log_rule(st_trie_t *trie, st_trie_payload_t *res) {
     uprintf("\n");
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
+void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
-            res->completion_index, res->completion_len, res->num_backspaces, res->func_code);
+            res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
 #endif
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     log_rule(trie, res);
 #endif
-
+    // Most recent key in the buffer triggered a match action, record it in the buffer
+    st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // Send backspaces
-    st_multi_tap(KC_BSPC, res->num_backspaces);
+    st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    const uint16_t completion_end = res->completion_index + res->completion_len;
-    bool ends_with_wordbreak = (res->completion_len > 0 && CDATA(completion_end - 1) == ' ');
-    for (uint16_t i = res->completion_index; i < completion_end; ++i) {
+    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
+    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && CDATA(completion_end - 1) == ' ');
+    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
         char ascii_code = CDATA(i);
         st_send_key(st_char_to_keycode(ascii_code));
     }
-    switch (res->func_code) {
+    switch (res->trie_payload.func_code) {
         case 1:  // repeat
             st_handle_repeat_key();
             break;
@@ -262,10 +273,124 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-    if (ends_with_wordbreak) {
+    if (ends_with_wordbreak && st_key_buffer_get_keycode(&key_buffer, 0) != KC_SPC) {
+        // If the last key in an action outputs a wordbreak character, we need to mark in the buffer
+        // that we are at a word break. Currently, we must hack this by appending a fake KC_SPC to the buffer.
+        // We mark the action as ST_IGNORE_KEY_ACTION to designate that this is a fake key press with
+        // no associated output. We skip this fake space if the key that triggered the output ending with a
+        // wordbreak was a space. All of this convoluted logic will be removed when proper tagging support is
+        // added in a future feature
         st_key_buffer_push(&key_buffer, KC_SPC);
+        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_IGNORE_KEY_ACTION;
     }
 }
+//////////////////////////////////////////////////////////////////////////////////////////
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_count, int num_backspaces) {
+    if (key_count <= 0) {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("IMPOSSIBLE: resend_output called when no more keys need to be resent (%d, %d)",
+                key_count, skip_count);
+#endif
+        return;
+    }
+    st_key_action_t *key_action = st_key_buffer_get(&key_buffer, buf_cur_pos);
+    if (!key_action) {
+        // End of buffer reached before fully restoring. Enlarge the extra buffer space
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Unable to restore full changes. Expand the extra buffer space (%d, %d)",
+                key_count, skip_count);
+#endif
+        return;
+    }
+    if (key_action->action_taken == ST_IGNORE_KEY_ACTION) {
+        // This is a hacky fake key-press. Skip to next key in the buffer
+        resend_output(trie, buf_cur_pos + 1, key_count, skip_count, num_backspaces);
+        return;
+    }
+    if (key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
+        if (skip_count > 0) {
+            resend_output(trie, buf_cur_pos + 1, key_count, skip_count - 1, num_backspaces);
+            // skipping this keypress
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+            uprintf("Skipping single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
+#endif
+            return;
+        }
+        resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Redoing single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
+#endif
+        st_send_key(key_action->keypressed);
+        return;
+    }
+    st_trie_payload_t action = {0, 0, 0, 0};
+    st_get_payload_from_match_index(trie, &action, key_action->action_taken);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Key action: bs: %d, restore: %d\n",
+            action.num_backspaces, action.completion_len);
+#endif
+    const uint16_t completion_end = action.completion_index + action.completion_len - skip_count;
+    if (completion_end <= action.completion_index) {
+        // skip everything and pass down any remaining skipt to next keyaction
+        resend_output(trie, buf_cur_pos + 1, key_count, skip_count - action.completion_len, num_backspaces);
+        return;
+    }
+    // Some characters from this action need to be resent
+    uint16_t completion_start = completion_end - key_count;
+    if (completion_start < action.completion_index) {
+        resend_output(trie, buf_cur_pos + 1, key_count + skip_count - action.completion_len, 0, num_backspaces);
+        completion_start = action.completion_index;
+    } else {
+        // Send backspaces now that we know we can do the full undo
+        st_multi_tap(KC_BSPC, num_backspaces);
+    }
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Restore last %d key presses from key action with %d total output\n",
+            key_count, action.completion_len);
+#endif
+    for (uint16_t i = completion_start; i < completion_end; ++i) {
+        char ascii_code = CDATA(i);
+        st_send_key(st_char_to_keycode(ascii_code));
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+void handle_backspace(st_trie_t *trie) {
+    st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
+    if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
+        // previous key-press didn't trigger a rule action. One total backspace required
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+        uprintf("Undoing backspace after non-matching keypress\n");
+        st_key_buffer_print(&key_buffer);
+#endif
+        // backspace was already sent on keydown
+        st_key_buffer_pop(&key_buffer, 1);
+        return;
+    }
+    if (prev_key_action->action_taken == ST_IGNORE_KEY_ACTION) {
+        // This is a hacky fake key-press. Pop it off the buffer and go again
+        st_key_buffer_pop(&key_buffer, 1);
+        handle_backspace(trie);
+        return;
+    }
+    // Undo a rule action
+    st_trie_payload_t prev_action = {0, 0, 0, 0};
+    st_get_payload_from_match_index(trie, &prev_action, prev_key_action->action_taken);
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+    uprintf("Undoing previous key action (%d): bs: %d, restore: %d\n",
+            prev_key_action->action_taken, prev_action.completion_len, prev_action.num_backspaces);
+    st_key_buffer_print(&key_buffer);
+#endif
+    // If previous action used backspaces, restore the deleted output from earlier actions
+    if (prev_action.num_backspaces > 0) {
+        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
+    } else {
+        // Send backspaces now that we know we can do the full undo
+        st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
+    }
+    st_key_buffer_pop(&key_buffer, 1);
+}
+#endif
 
 /**
  * @brief Performs sequence transform if a match is found in the trie
@@ -274,7 +399,7 @@ void st_handle_result(st_trie_t *trie, st_trie_payload_t *res) {
  */
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
-    st_trie_payload_t res  = {0, 0, 0, 0};
+    st_trie_search_result_t res = {{0, 0}, {0, 0, 0, 0}};
     if (st_trie_get_completion(&trie, &key_buffer, &res)) {
         st_handle_result(&trie, &res);
         return true;
@@ -295,8 +420,6 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
-    if (!record->event.pressed)
-        return true;
     uint8_t mods = get_mods();
 #ifndef NO_ACTION_ONESHOT
     mods |= get_oneshot_mods();
@@ -312,6 +435,26 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     if (!st_process_check(&keycode, record, &mods))
         return true;
 
+    if (keycode == KC_BSPC) {
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+        if (record->event.pressed) {
+            backspace_timer = timer_read32();
+            return true;
+        }
+        // This is a release
+        if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
+            // remove last key from the buffer
+            //   and undo the action of that key
+            handle_backspace(&trie);
+        } else {
+            st_key_buffer_reset(&key_buffer);
+        }
+        return true;
+#else
+        st_key_buffer_reset(&key_buffer);
+        return true;
+#endif
+    }
     // keycode buffer check
     switch (keycode) {
         case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT:
@@ -324,12 +467,6 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
             // treat " (shifted ') as a word boundary
             if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
             break;
-        case KC_BSPC:
-            // remove last character from the buffer
-            // FIXME: proper logic here needs to be determined
-            st_key_buffer_pop(&key_buffer, 1);
-            //st_key_buffer_reset(&key_buffer);
-            return true;
         default:
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
