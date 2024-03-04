@@ -15,6 +15,9 @@
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #define OUTPUT_BUFFER_CAPACITY 256
 char output_buffer[OUTPUT_BUFFER_CAPACITY];
@@ -104,6 +107,10 @@ bool test_st_perform(const char *sequence, const char *transform)
 //////////////////////////////////////////////////////////////////////
 int main()
 {
+#ifdef WIN32
+    // Set UTF8 code page for Windows console
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     int rules = 0, fail = 0;
     for (; *st_rule_strings[rules]; ++rules) {
         if (!test_st_perform(st_rule_strings[rules][0],

@@ -4,6 +4,11 @@ ODIR = obj
 
 vpath %.c  ./ ../
 
+OSFLAG :=
+ifeq ($(OS),Windows_NT)
+	OSFLAG += -D WIN32
+endif
+
 CFLAGS = -I. \
 	-I$(QMKPATH)/platforms \
 	-I$(QMKPATH)/quantum \
@@ -13,7 +18,9 @@ CFLAGS = -I. \
 	-I../ \
 	-DST_TESTER \
 	-DNO_PRINT \
-	-D_CONSOLE
+	-D_CONSOLE \
+	$(OSFLAG)
+	
  
 DEPS = qmk_wrappers.h \
 	../keybuffer.h \

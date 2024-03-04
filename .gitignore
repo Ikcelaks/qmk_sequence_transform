@@ -56,3 +56,4 @@ dkms.conf
 /tester/.vs/tester
 /tester/x64/Debug
 /sequence_transform_test.h
+/tester/tester
