@@ -383,12 +383,14 @@ void handle_backspace(st_trie_t *trie) {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (prev_action.num_backspaces > 0) {
-        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
+        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len);
     } else {
         // Send backspaces now that we know we can do the full undo
-        st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
+        st_multi_tap(KC_BSPC, prev_action.completion_len);
     }
     st_key_buffer_pop(&key_buffer, 1);
+    // Add sacrificial space to the output to be removed by the downstream processing of KC_BSPC
+    st_send_key(KC_SPC);
 }
 #endif
 
@@ -439,14 +441,14 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
         if (record->event.pressed) {
             backspace_timer = timer_read32();
-            return true;
-        }
-        // This is a release
-        if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
             // remove last key from the buffer
             //   and undo the action of that key
             handle_backspace(&trie);
-        } else {
+            return true;
+        }
+        // This is a release
+        if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
+            // Clear the buffer if the backspace key was held past the tapping term
             st_key_buffer_reset(&key_buffer);
         }
         return true;
