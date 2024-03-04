@@ -78,12 +78,12 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_mat
 	if (code & TRIE_MATCH_BIT) {
         // match nodes are side attachments, so decrease depth
         depth--;
-        // record this as the new longest match
-        longest_match->trie_match_index = offset;
-        longest_match->seq_match_len = depth + 1;
         // If bit 14 is also set, there is a child node after the completion string
         if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, longest_match, offset+2, depth+1))
             return true;
+        // this is the longest match, so record it
+        longest_match->trie_match_index = offset;
+        longest_match->seq_match_len = depth + 1;
         // Found a match so return true!
         return true;
 	}
