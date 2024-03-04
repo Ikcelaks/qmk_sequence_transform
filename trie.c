@@ -255,10 +255,20 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     char *transform = res->transform;
     for (int i = trie->key_stack->size - 1; i >= 0; --i) {
         const uint16_t keycode = trie->key_stack->buffer[i];
-        const char c = st_keycode_to_char(keycode);
-        *seq++ = c;
+        const char *token = st_get_seq_token_symbol(keycode);
+        char c;
+        if (token) {
+            seq = st_strcpy(seq, token);
+        } else {
+            c = st_keycode_to_char(keycode);
+            *seq++ = c;
+        }
         if (i >= 1 + payload->num_backspaces) {
-            *transform++ = c;
+            if (token) {
+                transform = st_strcpy(transform, token);
+            } else {
+                *transform++ = c;
+            }            
         }
     }
     *seq = 0;
