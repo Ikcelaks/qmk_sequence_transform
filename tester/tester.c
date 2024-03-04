@@ -10,6 +10,7 @@
 #include "keycodes.h"
 #include "progmem.h"
 #include "keybuffer.h"
+#include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
 #include "sequence_transform.h"

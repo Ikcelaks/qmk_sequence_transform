@@ -293,7 +293,7 @@ void st_find_missed_rule(void)
     st_trie_rule_t result;
     result.sequence = sequence_str;
     result.transform = transform_str;
-    int t = timer_read32();
+    //int t = timer_read32();
     const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     t = timer_elapsed32(t);

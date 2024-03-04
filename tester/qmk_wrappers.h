@@ -6,6 +6,8 @@
 
 #define uprintf printf
 
+#define TAPPING_TERM 200
+
 extern const uint8_t ascii_to_shift_lut[16];
 extern const uint8_t ascii_to_keycode_lut[128];
 
