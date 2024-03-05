@@ -536,7 +536,9 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     tranformations_c_strings = []
 
     for sequence, transformation in seq_dict:
-        tranformations_c_strings.append('    { "' + sequence + '", "' +  transformation + '" },')
+        # Don't add rules with transformation functions to test header for now
+        if transformation[-1] not in output_func_char_map:
+            tranformations_c_strings.append('    { "' + sequence + '", "' +  transformation + '" },')
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
         transformations.append(f'//    {sequence} -> {transformation}')        
