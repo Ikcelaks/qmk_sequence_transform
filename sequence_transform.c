@@ -9,7 +9,6 @@
 
 #include "tester/qmk_wrappers.h"
 #include <string.h>
-#include <stdint.h>
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
@@ -19,7 +18,7 @@
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
-#define PREV_KEY st_key_buffer_get_keycode(&key_buffer, 0)
+#define KEY_AT(i) st_key_buffer_get_keycode(&key_buffer, (i))
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
@@ -272,33 +271,27 @@ void st_find_missed_rule(void)
 {
     char sequence_str[SEQUENCE_MAX_LENGTH * 4 + 1] = {0};
     char transform_str[TRANSFORM_MAX_LEN * 4 + 1] = {0};
-    static int search_len_start = 1;
-    // Start search from last space
-    if (PREV_KEY == KC_SPACE) {
-        search_len_start = key_buffer.context_len;
+    static int search_len_from_space = 0;
+    // find buffer index for last space
+    int last_space_index = 0;
+    while (last_space_index < key_buffer.context_len &&
+           KEY_AT(last_space_index) != KC_SPACE) {
+        ++last_space_index;
+    }
+    if (last_space_index == 0) {
+        search_len_from_space = 0;
         return;
     }
-    // Buffer starts rolling when full, so dec search search_len_start.
-    if (key_buffer.context_len == key_buffer.size) {
-        search_len_start = st_max(1, search_len_start - 1);
-    } else {
-        // Don't let search_len_start get ahead of context len.
-        // (this handles backspace and buffer reset)
-        search_len_start = st_min(search_len_start, key_buffer.context_len - 1);
-    }
+    const int search_len_start = key_buffer.context_len - last_space_index
+        + search_len_from_space;
     st_trie_rule_t result;
     result.sequence = sequence_str;
     result.transform = transform_str;
-    //int t = timer_read32();
-    const uint8_t next_start = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    t = timer_elapsed32(t);
-    uprintf("st_trie_get_rule time: %d\n", t);
-#endif
-    if (next_start != search_len_start) {
+    const int len_offset = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
+    if (len_offset) {
         sequence_transform_on_missed_rule_user(&result);
         // Next time, start searching from after completion
-        search_len_start = next_start;
+        search_len_from_space += len_offset;
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
