@@ -14,7 +14,11 @@
 #include "utils.h"
 
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0
-    #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#endif
+
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+static bool run_enhanced_backspace_on_post_process_record = false;
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
@@ -385,14 +389,12 @@ void handle_backspace(st_trie_t *trie) {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (prev_action.num_backspaces > 0) {
-        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len);
+        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
     } else {
         // Send backspaces now that we know we can do the full undo
-        st_multi_tap(KC_BSPC, prev_action.completion_len);
+        st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
     }
     st_key_buffer_pop(&key_buffer, 1);
-    // Add sacrificial space to the output to be removed by the downstream processing of KC_BSPC
-    st_send_key(KC_SPC);
 }
 #endif
 
@@ -443,9 +445,8 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
         if (record->event.pressed) {
             backspace_timer = timer_read32();
-            // remove last key from the buffer
-            //   and undo the action of that key
-            handle_backspace(&trie);
+            // set flag so that post_process_sequence_transform will perfom an undo
+            run_enhanced_backspace_on_post_process_record = true;
             return true;
         }
         // This is a release
@@ -486,4 +487,21 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // TODO: search for rules
     }
     return true;
+}
+
+/**
+ * @brief Performs sequence transform related actions that must occur after normal processing
+ *
+ * Should be called from the `post_process_record_user` function
+ */
+void post_process_sequence_transform()
+{
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+    if (run_enhanced_backspace_on_post_process_record) {
+        // remove last key from the buffer
+        //   and undo the action of that key
+        handle_backspace(&trie);
+        run_enhanced_backspace_on_post_process_record = false;
+    }
+#endif
 }
