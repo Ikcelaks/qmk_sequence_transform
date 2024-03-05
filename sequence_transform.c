@@ -213,6 +213,7 @@ void st_handle_repeat_key()
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
     st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
@@ -254,15 +255,19 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 
     // Terminator
     uprintf("\n");
+#endif
 }
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
+#ifdef CONSOLE_ENABLE
     uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
+#endif
 }
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
     static int search_len_from_space = 0;
@@ -292,6 +297,7 @@ void st_find_missed_rule(void)
         // Next time, start searching from after completion
         search_len_from_space = new_len - len_to_last_space;
     }
+#endif
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
@@ -299,9 +305,9 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
 #endif
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+
     log_rule(trie, res);
-#endif
+
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // Send backspaces
@@ -530,9 +536,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // tell QMK to not process this key
         return false;
     } else {
-#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
         st_find_missed_rule();
-#endif
     }
     return true;
 }
