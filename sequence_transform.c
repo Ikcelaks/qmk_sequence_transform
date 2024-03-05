@@ -18,7 +18,13 @@
 #endif
 
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
-static bool run_enhanced_backspace_on_post_process_record = false;
+static bool post_process_do_enhanced_backspace = false;
+// Track backspace hold time
+static uint32_t backspace_timer = 0;
+#endif
+
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+static bool post_process_do_rule_search = false;
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
@@ -54,10 +60,6 @@ void sequence_transform_task(void) {
     }
 }
 #endif
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Add track backspace hold time
-static uint32_t backspace_timer = 0;
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack
@@ -501,7 +503,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         if (record->event.pressed) {
             backspace_timer = timer_read32();
             // set flag so that post_process_sequence_transform will perfom an undo
-            run_enhanced_backspace_on_post_process_record = true;
+            post_process_do_enhanced_backspace = true;
             return true;
         }
         // This is a release
@@ -539,7 +541,9 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // tell QMK to not process this key
         return false;
     } else {
-        st_find_missed_rule();
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+        post_process_do_rule_search = true;
+#endif
     }
     return true;
 }
@@ -552,11 +556,17 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 void post_process_sequence_transform()
 {
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
-    if (run_enhanced_backspace_on_post_process_record) {
+    if (post_process_do_enhanced_backspace) {
         // remove last key from the buffer
         //   and undo the action of that key
         handle_backspace(&trie);
-        run_enhanced_backspace_on_post_process_record = false;
+        post_process_do_enhanced_backspace = false;
+    }
+#endif
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+    if (post_process_do_rule_search) {
+        st_find_missed_rule();
+        post_process_do_rule_search = false;
     }
 #endif
 }
