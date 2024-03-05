@@ -200,6 +200,7 @@ void st_handle_repeat_key()
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
@@ -243,6 +244,7 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Terminator
     uprintf("\n");
 }
+#endif
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
