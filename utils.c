@@ -129,3 +129,8 @@ int st_min(int a, int b)
 {
     return (a < b ? a : b);
 }
+//////////////////////////////////////////////////////////////////////
+int st_clamp(int val, int min_val, int max_val)
+{
+    return (val < min_val ? min_val : (val > max_val ? max_val : val));
+}
