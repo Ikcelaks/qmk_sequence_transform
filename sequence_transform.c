@@ -217,14 +217,14 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     char context_string[SEQUENCE_MAX_LENGTH + 1];
     st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
 
-    char rule_trigger_char = context_string[res->trie_match.seq_match_len - 1];
-    context_string[res->trie_match.seq_match_len - 1] = '\0';
+    const int match_len = res->trie_match.seq_match_len - 1;
+    char rule_trigger_char = context_string[match_len];
+    context_string[match_len] = '\0';
 
-    // TODO remove 'R' hardcode
-    bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
+    const bool is_repeat = KEY_AT(0) == SPECIAL_KEY_TRIECODE_0+1 && match_len == 0;
 
     if (is_repeat) {
-        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, 1);
+        uint16_t last_key = KEY_AT(1);
 
         context_string[0] = st_keycode_to_char(last_key);
         context_string[1] = '\0';
@@ -323,7 +323,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-    if (ends_with_wordbreak && st_key_buffer_get_keycode(&key_buffer, 0) != KC_SPC) {
+    if (ends_with_wordbreak && KEY_AT(0) != KC_SPC) {
         // If the last key in an action outputs a wordbreak character, we need to mark in the buffer
         // that we are at a word break. Currently, we must hack this by appending a fake KC_SPC to the buffer.
         // We mark the action as ST_IGNORE_KEY_ACTION to designate that this is a fake key press with
