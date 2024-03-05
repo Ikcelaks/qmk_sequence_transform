@@ -14,6 +14,7 @@
 #include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
+#include "keycodes.h"
 #include "print.h"
 
 #define TRIE_MATCH_BIT      0x8000
@@ -256,20 +257,11 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     char *transform = res->transform;
     for (int i = trie->key_stack->size - 1; i >= 0; --i) {
         const uint16_t keycode = trie->key_stack->buffer[i];
-        const char *token = st_get_seq_token_symbol(keycode);
-        char c;
-        if (token) {
-            seq = st_strcpy(seq, token);
-        } else {
-            c = st_keycode_to_char(keycode);
-            *seq++ = c;
-        }
-        if (i >= 1 + payload->num_backspaces) {
-            if (token) {
-                transform = st_strcpy(transform, token);
-            } else {
-                *transform++ = c;
-            }            
+        const char c = st_keycode_to_char(keycode);
+        *seq++ = c;
+        if (i >= 1 + payload->num_backspaces &&
+            !(i == trie->key_stack->size - 1 && keycode == KC_SPACE)) {
+            *transform++ = c;
         }
     }
     *seq = 0;
