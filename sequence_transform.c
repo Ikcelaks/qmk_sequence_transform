@@ -14,7 +14,17 @@
 #include "utils.h"
 
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0
-    #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#endif
+
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+static bool post_process_do_enhanced_backspace = false;
+// Track backspace hold time
+static uint32_t backspace_timer = 0;
+#endif
+
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+static bool post_process_do_rule_search = false;
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
@@ -50,10 +60,6 @@ void sequence_transform_task(void) {
     }
 }
 #endif
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Add track backspace hold time
-static uint32_t backspace_timer = 0;
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack
@@ -120,7 +126,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
             if (*mods & MOD_MASK_SHIFT) {
                 *keycode |= QK_LSFT;
             }
-            return true;
+            break;
         // Clear shift for alphas
         case LSFT(KC_A) ... LSFT(KC_Z):
         case RSFT(KC_A) ... RSFT(KC_Z):
@@ -130,7 +136,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
                 *mods |= MOD_RSFT;
             }
             *keycode = QK_MODS_GET_BASIC_KEYCODE(*keycode); // Get the basic keycode.
-            return true;
+            break;
 #ifndef NO_ACTION_TAPPING
         // Exclude tap-hold keys when they are held down
         // and mask for base keycode when they are tapped.
@@ -219,18 +225,19 @@ void st_handle_repeat_key()
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
     st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
 
-    char rule_trigger_char = context_string[res->trie_match.seq_match_len - 1];
-    context_string[res->trie_match.seq_match_len - 1] = '\0';
+    const int match_len = res->trie_match.seq_match_len - 1;
+    char rule_trigger_char = context_string[match_len];
+    context_string[match_len] = '\0';
 
-    // TODO remove 'R' hardcode
-    bool is_repeat = rule_trigger_char == 'R' && strlen(context_string) == 0;
+    const bool is_repeat = KEY_AT(0) == SPECIAL_KEY_TRIECODE_0+1 && match_len == 0;
 
     if (is_repeat) {
-        uint16_t last_key = st_key_buffer_get_keycode(&key_buffer, 1);
+        uint16_t last_key = KEY_AT(1);
 
         context_string[0] = st_keycode_to_char(last_key);
         context_string[1] = '\0';
@@ -260,17 +267,21 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 
     // Terminator
     uprintf("\n");
+#endif
 }
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
+#ifdef CONSOLE_ENABLE
     uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
+#endif
 }
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-    char sequence_str[SEQUENCE_MAX_LENGTH * 4 + 1] = {0};
-    char transform_str[TRANSFORM_MAX_LEN * 4 + 1] = {0};
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+    char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
+    char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
     static int search_len_from_space = 0;
     // find buffer index for last space
     int last_space_index = 0;
@@ -279,20 +290,26 @@ void st_find_missed_rule(void)
         ++last_space_index;
     }
     if (last_space_index == 0) {
+        //uprintf("space at top, resetting search_len_from_space\n");
         search_len_from_space = 0;
         return;
     }
-    const int search_len_start = key_buffer.context_len - last_space_index
-        + search_len_from_space;
+    //uprintf("last_space_index: %d, search_len_from_space: %d\n",
+    //        last_space_index, search_len_from_space);
+    const int len_to_last_space = key_buffer.context_len - last_space_index;
+    const int search_len_start = st_clamp(len_to_last_space + search_len_from_space,
+                                          1,
+                                          key_buffer.context_len - 1);
     st_trie_rule_t result;
     result.sequence = sequence_str;
     result.transform = transform_str;
-    const int len_offset = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
-    if (len_offset) {
+    const int new_len = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
+    if (new_len != search_len_start) {
         sequence_transform_on_missed_rule_user(&result);
         // Next time, start searching from after completion
-        search_len_from_space += len_offset;
+        search_len_from_space = new_len - len_to_last_space;
     }
+#endif
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
@@ -300,9 +317,9 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
 #endif
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+
     log_rule(trie, res);
-#endif
+
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // Send backspaces
@@ -324,7 +341,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
         case 3:  // disable auto-wordbreak
             ends_with_wordbreak = false;
     }
-    if (ends_with_wordbreak && st_key_buffer_get_keycode(&key_buffer, 0) != KC_SPC) {
+    if (ends_with_wordbreak && KEY_AT(0) != KC_SPC) {
         // If the last key in an action outputs a wordbreak character, we need to mark in the buffer
         // that we are at a word break. Currently, we must hack this by appending a fake KC_SPC to the buffer.
         // We mark the action as ST_IGNORE_KEY_ACTION to designate that this is a fake key press with
@@ -491,14 +508,13 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
         if (record->event.pressed) {
             backspace_timer = timer_read32();
+            // set flag so that post_process_sequence_transform will perfom an undo
+            post_process_do_enhanced_backspace = true;
             return true;
         }
         // This is a release
-        if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
-            // remove last key from the buffer
-            //   and undo the action of that key
-            handle_backspace(&trie);
-        } else {
+        if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
+            // Clear the buffer if the backspace key was held past the tapping term
             st_key_buffer_reset(&key_buffer);
         }
         return true;
@@ -532,8 +548,31 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         return false;
     } else {
 #ifdef SEQUENCE_TRANSFORM_MISSED_RULES
-        st_log_time(st_find_missed_rule());
+        post_process_do_rule_search = true;
 #endif
     }
     return true;
+}
+
+/**
+ * @brief Performs sequence transform related actions that must occur after normal processing
+ *
+ * Should be called from the `post_process_record_user` function
+ */
+void post_process_sequence_transform()
+{
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+    if (post_process_do_enhanced_backspace) {
+        // remove last key from the buffer
+        //   and undo the action of that key
+        handle_backspace(&trie);
+        post_process_do_enhanced_backspace = false;
+    }
+#endif
+#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+    if (post_process_do_rule_search) {
+        st_log_time(st_find_missed_rule());
+        post_process_do_rule_search = false;
+    }
+#endif
 }

@@ -138,11 +138,11 @@ int st_trie_get_rule(st_trie_t              *trie,
             trie->key_stack->size = 0;
             st_find_rule(&search, 0);
             if (search.max_transform_len) {
-                return res->payload.completion_len;
+                return len + res->payload.completion_len;
             }
         }
     }
-    return 0;
+    return search_len_start;
 }
 //////////////////////////////////////////////////////////////////////
 bool st_find_rule(st_trie_search_t *search, uint16_t offset)
@@ -256,20 +256,11 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     char *transform = res->transform;
     for (int i = trie->key_stack->size - 1; i >= 0; --i) {
         const uint16_t keycode = trie->key_stack->buffer[i];
-        const char *token = st_get_seq_token_symbol(keycode);
-        char c;
-        if (token) {
-            seq = st_strcpy(seq, token);
-        } else {
-            c = st_keycode_to_char(keycode);
-            *seq++ = c;
-        }
-        if (i >= 1 + payload->num_backspaces) {
-            if (token) {
-                transform = st_strcpy(transform, token);
-            } else {
-                *transform++ = c;
-            }            
+        const char c = st_keycode_to_char(keycode);
+        *seq++ = c;
+        if (i >= 1 + payload->num_backspaces &&
+            !(i == trie->key_stack->size - 1 && keycode == KC_SPACE)) {
+            *transform++ = c;
         }
     }
     *seq = 0;
