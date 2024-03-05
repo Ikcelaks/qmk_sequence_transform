@@ -15,7 +15,7 @@
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
 // TODO: define this in generated .h file
-static const char *st_seq_tokens[] = {"☆", "✪"};
+static const char *st_seq_tokens[] = {"☆", "✵", "★", "✪"};
 static const char *st_wordbreak_token = "␣";
 
 static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
