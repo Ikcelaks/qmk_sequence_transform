@@ -146,14 +146,15 @@ int main()
     }
     // Test rule search
     st_key_buffer_t *buf = st_get_key_buffer();
-    st_key_buffer_reset(buf);
+    buf->context_len = 0;
     output_reset();
-    for (int i = 0; i < 5; ++i) {
-        /* test_st_find_missed_rule("^the");
+    for (int i = 0; i < 15; ++i) {
+        //test_st_find_missed_rule("^the");
         test_st_find_missed_rule("^*m");
-        test_st_find_missed_rule("^time");
-        test_st_find_missed_rule("^judgment");*/
-        test_st_find_missed_rule("^first");
+        //test_st_find_missed_rule("^time");
+        //test_st_find_missed_rule("^judgment");
+        //test_st_find_missed_rule("a");
+        //test_st_find_missed_rule("o");
     }
     return fail ? 1 : 0;
 }
