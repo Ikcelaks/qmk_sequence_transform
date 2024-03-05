@@ -70,20 +70,29 @@ uint16_t char_to_keycode(char *c)
     return st_char_to_keycode(*c);
 }
 //////////////////////////////////////////////////////////////////
-void set_buffer(const char *str)
+void send_keys(const char *str, bool reset, bool print, bool rule_search)
 {
     st_key_buffer_t *buf = st_get_key_buffer();
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
-    buf->context_len = 0;
+    if (reset) {
+        buf->context_len = 0;
+    }
     for (; *str; ++str) {
         char c = *str;
         const uint16_t keycode = char_to_keycode(&c);
         st_key_buffer_push(buf, keycode);
+        if (print) {
+            st_key_buffer_print(buf);
+        }
         // If st_perform doesn't do anything special with this key,
         // add it to our virtual output buffer
         if (!st_perform()) {
-            output_push(c);
+            if (rule_search) {
+                st_find_missed_rule();
+            } else {
+                output_push(c);
+            }
         }
     }
 }
@@ -91,7 +100,7 @@ void set_buffer(const char *str)
 bool test_st_perform(const char *sequence, const char *transform)
 {
     output_reset();
-    set_buffer(sequence);
+    send_keys(sequence, true, false, false);
     // ignore spaces at the start of output
     char *output = output_buffer;
     while (*output == ' ') {
@@ -104,6 +113,17 @@ bool test_st_perform(const char *sequence, const char *transform)
         printf("[\033[0;31mFAIL\033[0m] %s -> %s (expected: %s)\n", sequence, output_buffer, transform);
     }    
     return match;
+}
+//////////////////////////////////////////////////////////////////////
+void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
+{
+    printf("    Missed rule! %s -> %s\n", rule->sequence, rule->transform);
+}
+//////////////////////////////////////////////////////////////////////
+void test_st_find_missed_rule(const char *user_string)
+{
+    printf("-----\nTyping: %s\n", user_string);
+    send_keys(user_string, false, true, true);
 }
 //////////////////////////////////////////////////////////////////////
 int main()
@@ -123,6 +143,17 @@ int main()
         printf("\n[\033[0;32mAll %d tests passed!\033[0m]\n", rules);
     } else {
         printf("\n[\033[0;31m%d/%d tests failed!\033[0m]\n", fail, rules);
+    }
+    // Test rule search
+    st_key_buffer_t *buf = st_get_key_buffer();
+    st_key_buffer_reset(buf);
+    output_reset();
+    for (int i = 0; i < 5; ++i) {
+        /* test_st_find_missed_rule("^the");
+        test_st_find_missed_rule("^*m");
+        test_st_find_missed_rule("^time");
+        test_st_find_missed_rule("^judgment");*/
+        test_st_find_missed_rule("^first");
     }
     return fail ? 1 : 0;
 }
