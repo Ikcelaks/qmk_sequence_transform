@@ -57,3 +57,5 @@ dkms.conf
 /tester/x64/Debug
 /sequence_transform_test.h
 /tester/tester
+/tester/tester.vcxproj.filters
+/tester/tester.vcxproj.user
