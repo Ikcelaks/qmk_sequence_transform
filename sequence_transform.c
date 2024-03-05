@@ -102,7 +102,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
             if (*mods & MOD_MASK_SHIFT) {
                 *keycode |= QK_LSFT;
             }
-            return true;
+            break;
         // Clear shift for alphas
         case LSFT(KC_A) ... LSFT(KC_Z):
         case RSFT(KC_A) ... RSFT(KC_Z):
@@ -112,7 +112,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
                 *mods |= MOD_RSFT;
             }
             *keycode = QK_MODS_GET_BASIC_KEYCODE(*keycode); // Get the basic keycode.
-            return true;
+            break;
 #ifndef NO_ACTION_TAPPING
         // Exclude tap-hold keys when they are held down
         // and mask for base keycode when they are tapped.
