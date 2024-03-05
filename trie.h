@@ -41,6 +41,16 @@ typedef struct
     st_trie_payload_t   trie_payload;
 } st_trie_search_result_t;
 
+typedef struct
+{
+    st_key_buffer_t * const buffer;             // buffer
+    st_trie_t * const       trie;
+    int                     cursor_pos;         // buffer index of cursor position
+    int                     sub_pos;            // Sub-position within the current buffer position
+                                                //   represented as a index from start of completion
+    const bool              as_output_buffer;   // True if buffer traversing the simulated output
+} st_cursor_t;
+
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res);
 
 //////////////////////////////////////////////////////////////////
@@ -49,3 +59,4 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
 void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
 bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
+bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
