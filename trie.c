@@ -138,11 +138,11 @@ int st_trie_get_rule(st_trie_t              *trie,
             trie->key_stack->size = 0;
             st_find_rule(&search, 0);
             if (search.max_transform_len) {
-                return res->payload.completion_len;
+                return len + res->payload.completion_len;
             }
         }
     }
-    return 0;
+    return search_len_start;
 }
 //////////////////////////////////////////////////////////////////////
 bool st_find_rule(st_trie_search_t *search, uint16_t offset)
