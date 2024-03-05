@@ -14,7 +14,11 @@
 #include "utils.h"
 
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0
-    #error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
+#endif
+
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+static bool run_enhanced_backspace_on_post_process_record = false;
 #endif
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
@@ -200,6 +204,7 @@ void st_handle_repeat_key()
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
@@ -243,6 +248,7 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     // Terminator
     uprintf("\n");
 }
+#endif
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
@@ -439,14 +445,13 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
         if (record->event.pressed) {
             backspace_timer = timer_read32();
+            // set flag so that post_process_sequence_transform will perfom an undo
+            run_enhanced_backspace_on_post_process_record = true;
             return true;
         }
         // This is a release
-        if (timer_elapsed32(backspace_timer) < TAPPING_TERM) {
-            // remove last key from the buffer
-            //   and undo the action of that key
-            handle_backspace(&trie);
-        } else {
+        if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
+            // Clear the buffer if the backspace key was held past the tapping term
             st_key_buffer_reset(&key_buffer);
         }
         return true;
@@ -482,4 +487,21 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         // TODO: search for rules
     }
     return true;
+}
+
+/**
+ * @brief Performs sequence transform related actions that must occur after normal processing
+ *
+ * Should be called from the `post_process_record_user` function
+ */
+void post_process_sequence_transform()
+{
+#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+    if (run_enhanced_backspace_on_post_process_record) {
+        // remove last key from the buffer
+        //   and undo the action of that key
+        handle_backspace(&trie);
+        run_enhanced_backspace_on_post_process_record = false;
+    }
+#endif
 }

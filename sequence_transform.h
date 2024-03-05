@@ -18,6 +18,7 @@
 // Public API
 
 bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
+void post_process_sequence_transform(void);
 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 void sequence_transform_task(void);
