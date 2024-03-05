@@ -7,13 +7,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
-#include <stdint.h>
-#ifndef ST_TESTER
-#   include "quantum.h"
-#   include "send_string.h"
-#else
-#   include "tester/qmk_wrappers.h"
-#endif //ST_TESTER
+#include "tester/qmk_wrappers.h"
 #include "utils.h"
 #include "sequence_transform_data.h"
 

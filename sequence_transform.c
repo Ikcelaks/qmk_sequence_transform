@@ -7,13 +7,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
+#include "tester/qmk_wrappers.h"
 #include <string.h>
 #include <stdint.h>
-#ifndef ST_TESTER
-#   include "quantum.h"
-#else
-#   include "tester/qmk_wrappers.h"
-#endif //ST_TESTER
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
@@ -543,7 +539,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         return false;
     } else {
 #ifdef SEQUENCE_TRANSFORM_MISSED_RULES
-        st_find_missed_rule();
+        st_log_time(st_find_missed_rule());
 #endif
     }
     return true;

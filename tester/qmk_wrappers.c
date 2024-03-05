@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include "quantum_keycodes.h"
 #include "qmk_wrappers.h"
 
 #define KCLUT_ENTRY(a, b, c, d, e, f, g, h) \
