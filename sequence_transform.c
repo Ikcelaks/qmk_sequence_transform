@@ -423,7 +423,7 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void handle_backspace(st_trie_t *trie) {
+void st_handle_backspace() {
     st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
     if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
@@ -438,12 +438,12 @@ void handle_backspace(st_trie_t *trie) {
     if (prev_key_action->action_taken == ST_IGNORE_KEY_ACTION) {
         // This is a hacky fake key-press. Pop it off the buffer and go again
         st_key_buffer_pop(&key_buffer, 1);
-        handle_backspace(trie);
+        st_handle_backspace();
         return;
     }
     // Undo a rule action
     st_trie_payload_t prev_action = {0, 0, 0, 0};
-    st_get_payload_from_match_index(trie, &prev_action, prev_key_action->action_taken);
+    st_get_payload_from_match_index(&trie, &prev_action, prev_key_action->action_taken);
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("Undoing previous key action (%d): bs: %d, restore: %d\n",
             prev_key_action->action_taken, prev_action.completion_len, prev_action.num_backspaces);
@@ -451,7 +451,7 @@ void handle_backspace(st_trie_t *trie) {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (prev_action.num_backspaces > 0) {
-        resend_output(trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
+        resend_output(&trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
     } else {
         // Send backspaces now that we know we can do the full undo
         st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
@@ -565,7 +565,7 @@ void post_process_sequence_transform()
     if (post_process_do_enhanced_backspace) {
         // remove last key from the buffer
         //   and undo the action of that key
-        handle_backspace(&trie);
+        st_log_time(st_handle_backspace());
         post_process_do_enhanced_backspace = false;
     }
 #endif

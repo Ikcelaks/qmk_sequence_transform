@@ -20,6 +20,7 @@
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
+//////////////////////////////////////////////////////////////////
 #define OUTPUT_BUFFER_CAPACITY 256
 char output_buffer[OUTPUT_BUFFER_CAPACITY];
 int  output_buffer_size = 0;
@@ -57,38 +58,45 @@ void tap_code16(uint16_t keycode)
     }   
 }
 //////////////////////////////////////////////////////////////////
-void send_keycodes(const uint16_t *keycodes, bool reset, bool print, bool rule_search)
+// (partial) simulation of process_sequence_transform logic
+// to test st_perform
+void sim_st_perform(const uint16_t *keycodes)
 {
-    st_key_buffer_t *buf = st_get_key_buffer();
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
-    if (reset) {
-        buf->context_len = 0;
-    }
+    st_key_buffer_t *buf = st_get_key_buffer();
+    buf->context_len = 0;
     for (uint16_t key = *keycodes; key; key = *++keycodes) {
         st_key_buffer_push(buf, key);
-        if (print) {
-            st_key_buffer_print(buf);
-        }
         // If st_perform doesn't do anything special with this key,
         // add it to our virtual output buffer
         if (!st_perform()) {
-            if (rule_search) {
-                st_find_missed_rule();
-            } else {
-                const char c = key == KC_SPACE ? ' '
-                    : st_keycode_to_char(key);
-                output_push(c);
-            }
+            const char c = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
+            output_push(c);
         }
     }
 }
+//////////////////////////////////////////////////////////////////
+// (partial) simulation of process_sequence_transform logic
+// to test enhanced backspace
+void sim_st_enhanced_backspace(const uint16_t *keycodes)
+{
+    for (uint16_t key = *keycodes; key; key = *++keycodes) {
+        tap_code16(KC_BSPC);
+        st_handle_backspace();
+    }
+}
 //////////////////////////////////////////////////////////////////////
-bool test_st_perform(const st_test_rule_t *rule)
+void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
+{
+    // TODO
+}
+//////////////////////////////////////////////////////////////////////
+bool test_rule(const st_test_rule_t *rule)
 {
     char seq_str[256];
     output_reset();
-    send_keycodes(rule->seq_keycodes, true, false, false);
+    sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
     char *output = output_buffer;
     while (*output++ == ' ');
@@ -96,23 +104,20 @@ bool test_st_perform(const st_test_rule_t *rule)
     // Check if our output buffer matches the expected transform string
     const bool match = !strcmp(output, rule->transform_str);
     keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
+    bool res = match;
     if (match) {
         printf("[\033[0;32mPASS\033[0m] %s ⇒ %s\n", seq_str, output);
+        // Make sure enhanced backspace handling leaves us with an empty
+        // output buffer if we send one backspace for every key sent
+        sim_st_enhanced_backspace(rule->seq_keycodes);
+        if (output_buffer_size) {
+            printf("[\033[0;31mFAIL\033[0m] Output buffer size after backspaces: %d\n", output_buffer_size);
+            res = false;
+        }
     } else {
         printf("[\033[0;31mFAIL\033[0m] %s ⇒ %s (expected: %s)\n", seq_str, output, rule->transform_str);
     }    
-    return match;
-}
-//////////////////////////////////////////////////////////////////////
-void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
-{
-    printf("    Missed rule! %s ⇒ %s\n", rule->sequence, rule->transform);
-}
-//////////////////////////////////////////////////////////////////////
-void test_st_find_missed_rule(const char *user_string)
-{
-    printf("-----\nTyping: %s\n", user_string);
-    //send_keys(user_string, false, true, true);
+    return res;
 }
 //////////////////////////////////////////////////////////////////////
 int main()
@@ -123,7 +128,7 @@ int main()
 #endif
     int rules = 0, fail = 0;
     for (; st_test_rules[rules].transform_str; ++rules) {
-        if (!test_st_perform(&st_test_rules[rules])) {
+        if (!test_rule(&st_test_rules[rules])) {
             ++fail;
         }
     }
