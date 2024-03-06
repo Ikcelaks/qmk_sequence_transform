@@ -518,6 +518,14 @@ def create_test_rule_c_string(
     """ returns a string with the following format: 
         { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
     """
+    # we don't want any utf8 symbols in transformation string here
+    transform_dict = dict([
+        ("\\", "\\\\"),
+        (WORDBREAK_CHAR, " "),
+        *[(s, SEQ_TOKENS_ASCII[i]) for i, s in enumerate(MAGIC_CHARS)]
+    ])
+    for (i, j) in transform_dict.items():
+        transform = transform.replace(i, j)
     seq_ints = [char_map[c] for c in sequence] + [0]
     seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
     res = f'    {{ "{transform}", (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }} }},'

@@ -29,6 +29,11 @@ void tap_code16(uint16_t keycode)
         case KC_BSPC:
             sim_output_pop(1);
             break;
+        case KC_SPACE:
+            // we don't want st_keycode_to_char's translation
+            // of KC_SPACE to st_wordbreak_ascii here
+            sim_output_push(' ');
+            break;
         default:
             sim_output_push(st_keycode_to_char(keycode));
     }   
@@ -47,8 +52,7 @@ void sim_st_perform(const uint16_t *keycodes)
         // If st_perform doesn't do anything special with this key,
         // add it to our virtual output buffer
         if (!st_perform()) {
-            const char c = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
-            sim_output_push(c);
+            tap_code16(key);
         }
     }
 }
