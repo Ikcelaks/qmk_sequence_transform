@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef ST_TESTER
 
@@ -22,6 +23,7 @@
 
 // These includes don't require QMK objects to be linked with tester
 #include <stdio.h>
+#include <string.h>
 #include "quantum_keycodes.h"
 #include "progmem.h"
 

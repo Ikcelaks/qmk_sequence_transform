@@ -3,12 +3,7 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include "keycodes.h"
-#include "progmem.h"
+#include "qmk_wrappers.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
@@ -16,8 +11,13 @@
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
+#include "tester_utils.h"
 #ifdef WIN32
 #include <windows.h>
+#endif
+
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
+#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
 #define OUTPUT_BUFFER_CAPACITY 256
@@ -45,6 +45,7 @@ void output_pop(int n)
     output_buffer[output_buffer_size] = 0;
 }
 //////////////////////////////////////////////////////////////////
+// simulate sending a key to system by adding it to output buffer
 void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
@@ -54,46 +55,6 @@ void tap_code16(uint16_t keycode)
         default:
             output_push(st_keycode_to_char(keycode));
     }   
-}
-////////////////////////////////////////////////////////////////////////////////
-// if keycode is a token that can be translated back to its user symbol,
-// returns pointer to it, otherwise returns 0
-const char *st_get_seq_token_symbol(uint16_t keycode)
-{
-    if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
-        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
-    } else if (keycode == KC_SPACE) {
-        return st_wordbreak_token;
-    }
-    return 0;
-}
-//////////////////////////////////////////////////////////////////
-void keycodes_to_utf8_str(const uint16_t *keycodes, char *str)
-{
-    for (uint16_t key = *keycodes; key; key = *++keycodes) {
-        const char *token = st_get_seq_token_symbol(key);
-        if (token) {
-            while ((*str++ = *token++));
-            str--;
-        } else {
-            *str++ = st_keycode_to_char(key);
-        }
-    }
-    *str = 0;
-}
-//////////////////////////////////////////////////////////////////
-uint16_t ascii_to_keycode(char *c)
-{
-    for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
-        if (*c == st_seq_tokens_ascii[i]) {
-            return SPECIAL_KEY_TRIECODE_0 + i;
-        }
-    }
-    if (*c == st_wordbreak_ascii) {
-        *c = ' ';
-        return KC_SPACE;
-    }
-    return st_char_to_keycode(*c);
 }
 //////////////////////////////////////////////////////////////////
 void send_keycodes(const uint16_t *keycodes, bool reset, bool print, bool rule_search)

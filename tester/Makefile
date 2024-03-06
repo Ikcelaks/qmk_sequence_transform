@@ -15,31 +15,32 @@ CFLAGS = -I. \
 	-I$(QMKPATH)/quantum/sequencer \
 	-I$(QMKPATH)/quantum/logging \
 	-I$(QMKPATH)/quantum/keymap_extras \
-	-I../ \
+	-I.. \
 	-DST_TESTER \
 	-DSEQUENCE_TRANSFORM_MISSED_RULES \
 	-DNO_PRINT \
 	-D_CONSOLE \
-	$(OSFLAG)
-	
- 
+	$(OSFLAG)	
+
 DEPS = qmk_wrappers.h \
+	tester_utils.h \
 	../keybuffer.h \
 	../key_stack.h \
+	../trie.h \
+	../utils.h \
 	../sequence_transform.h \
 	../sequence_transform_data.h \
-	../sequence_transform_test.h \
-	../trie.h \
-	../utils.h
-		
+	../sequence_transform_test.h
+
 _OBJ = tester.o \
 	qmk_wrappers.o \
-	utils.o \
-	trie.o \
-	sequence_transform.o \
+	tester_utils.o \
 	keybuffer.o \
-	key_stack.o
-	
+	key_stack.o \
+	trie.o \
+	utils.o \
+	sequence_transform.o
+
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)

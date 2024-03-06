@@ -162,6 +162,7 @@
     <ClCompile Include="..\utils.c" />
     <ClCompile Include="qmk_wrappers.c" />
     <ClCompile Include="tester.c" />
+    <ClCompile Include="tester_utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\keybuffer.h" />
@@ -171,6 +172,7 @@
     <ClInclude Include="..\trie.h" />
     <ClInclude Include="..\utils.h" />
     <ClInclude Include="qmk_wrappers.h" />
+    <ClInclude Include="tester_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
