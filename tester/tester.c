@@ -7,6 +7,7 @@
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
+#include "cursor.h"
 #include "utils.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
@@ -31,7 +32,7 @@ void tap_code16(uint16_t keycode)
             break;
         default:
             sim_output_push(st_keycode_to_char(keycode));
-    }   
+    }
 }
 //////////////////////////////////////////////////////////////////
 // (partial) simulation of process_sequence_transform logic
@@ -91,7 +92,7 @@ bool test_rule(const st_test_rule_t *rule)
         }
     } else {
         printf("[\033[0;31mFAIL\033[0m] %s ⇒ %s (expected: %s)\n", seq_str, output, rule->transform_str);
-    }    
+    }
     return res;
 }
 //////////////////////////////////////////////////////////////////////

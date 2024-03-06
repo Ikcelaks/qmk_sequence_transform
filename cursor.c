@@ -6,9 +6,9 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
+
+#include "tester/qmk_wrappers.h"
 #include <stdint.h>
-#include "quantum.h"
-#include "quantum_keycodes.h"
 #include "cursor.h"
 #include "keybuffer.h"
 #include "key_stack.h"

@@ -24,7 +24,7 @@ CFLAGS = -I. \
 	-DSEQUENCE_TRANSFORM_MISSED_RULES \
 	-DNO_PRINT \
 	-D_CONSOLE \
-	$(OSFLAG)	
+	$(OSFLAG)
 
 DEPS = qmk_wrappers.h \
 	tester_utils.h \
@@ -32,6 +32,7 @@ DEPS = qmk_wrappers.h \
 	../keybuffer.h \
 	../key_stack.h \
 	../trie.h \
+	../cursor.h \
 	../utils.h \
 	../sequence_transform.h \
 	../sequence_transform_data.h \
@@ -44,6 +45,7 @@ _OBJ = tester.o \
 	keybuffer.o \
 	key_stack.o \
 	trie.o \
+	cursor.o \
 	utils.o \
 	sequence_transform.o
 
@@ -57,7 +59,7 @@ $(ODIR)/%.o: %.c $(DEPS)
 tester: $(OBJ)
 	@$(CC) -o $@ $^ $(CFLAGS)
 	@echo "Build successful!"
-	
+
 .PHONY: clean
 
 clean:
