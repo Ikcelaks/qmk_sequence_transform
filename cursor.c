@@ -18,16 +18,27 @@
 #define CDATA(L) pgm_read_byte(&cursor->trie->completions[L])
 
 //////////////////////////////////////////////////////////////////
+void st_cursor_init(st_cursor_t *cursor, st_trie_t *trie, st_key_buffer_t *buf, int history, bool as_output_buffer)
+{
+    cursor->trie = trie;
+    cursor->buffer = buf;
+    cursor->cursor_pos = history;
+    cursor->as_output_buffer = as_output_buffer;
+    cursor->sub_pos = 0;
+    const st_key_action_t *key_action = st_key_buffer_get(buf, history);
+    if (key_action && key_action->action_taken != ST_IGNORE_KEY_ACTION && key_action->action_taken != ST_DEFAULT_KEY_ACTION) {
+        st_get_payload_from_match_index(trie, &cursor->cached_action, key_action->action_taken);
+    }
+}
+//////////////////////////////////////////////////////////////////
 uint16_t st_cursor_current_keycode(const st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos);
     if (!keyaction) {
         return KC_NO;
     }
-    if (cursor->as_output_buffer && keyaction->action_taken != ST_DEFAULT_KEY_ACTION) {
-        st_trie_payload_t payload = {0, 0, 0, 0};
-        st_get_payload_from_match_index(cursor->trie, &payload, keyaction->action_taken);
-        return ascii_to_keycode_lut[CDATA(payload.completion_index + payload.completion_len - 1 - cursor->sub_pos)];
+    if (cursor->as_output_buffer && keyaction->action_taken != ST_DEFAULT_KEY_ACTION && keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
+        return ascii_to_keycode_lut[CDATA(cursor->cached_action.completion_index + cursor->cached_action.completion_len - 1 - cursor->sub_pos)];
     } else {
         return keyaction->keypressed;
     }
@@ -47,6 +58,7 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
         // skip fake key and try again
         ++cursor->cursor_pos;
+        cursor->sub_pos = 0;
         return st_cursor_next(cursor);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
@@ -55,19 +67,18 @@ bool st_cursor_next(st_cursor_t *cursor)
         cursor->sub_pos = 0;
         return cursor->cursor_pos < cursor->buffer->context_len;
     }
-    st_trie_payload_t payload = {0, 0, 0, 0};
-    st_get_payload_from_match_index(cursor->trie, &payload, keyaction->action_taken);
-    if (cursor->sub_pos < payload.completion_len - 1) {
+    st_get_payload_from_match_index(cursor->trie, &cursor->cached_action, keyaction->action_taken);
+    if (cursor->sub_pos < cursor->cached_action.completion_len - 1) {
         ++cursor->sub_pos;
         return true;
     }
     // We have exhausted the key_action at the current buffer index
     // check if we need to fast-forward over any backspaced chars
-    int backspaces = payload.num_backspaces;
+    int backspaces = cursor->cached_action.num_backspaces;
     while (true) {
         // move to next key in buffer
         ++cursor->cursor_pos;
-        keyaction = st_key_buffer_get(cursor->buffer, 0);
+        keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos);
         if (!keyaction) {
             // We reached the end without finding the next output key
             return false;
@@ -87,13 +98,13 @@ bool st_cursor_next(st_cursor_t *cursor)
             continue;
         }
         // Load payload of key that performed action
-        st_get_payload_from_match_index(cursor->trie, &payload, keyaction->action_taken);
-        if (backspaces < payload.completion_len) {
+        st_get_payload_from_match_index(cursor->trie, &cursor->cached_action, keyaction->action_taken);
+        if (backspaces < cursor->cached_action.completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
             cursor->sub_pos = backspaces;
             return true;
         }
-        backspaces -= payload.completion_len;
+        backspaces -= cursor->cached_action.completion_len;
     }
 }
 //////////////////////////////////////////////////////////////////

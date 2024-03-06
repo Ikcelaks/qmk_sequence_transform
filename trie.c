@@ -27,9 +27,10 @@
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res)
 {
-    st_cursor_t cursor = {search, trie, 0, 0, false};
-    st_cursor_t output_cursor = {search, trie, 0, 0, true};
-    st_cursor_print(&output_cursor);
+    st_cursor_t cursor = {};
+    st_cursor_init(&cursor, trie, search, 0, false);
+    st_cursor_t output_cursor = {};
+    st_cursor_init(&output_cursor, trie, search, 0, true);
     st_find_longest_chain_cursor(&cursor, &res->trie_match, 0, 0);
     st_find_longest_chain_cursor(&output_cursor, &res->trie_match, 0, 0);
     if (res->trie_match.seq_match_len > 0) {

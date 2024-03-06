@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
+void                    st_cursor_init(st_cursor_t *cursor, st_trie_t *trie, st_key_buffer_t *buf, int history, bool as_output_buffer);
 uint16_t                st_cursor_current_keycode(const st_cursor_t *cursor);
 bool                    st_cursor_next(st_cursor_t *cursor);
 void                    st_cursor_print(const st_cursor_t *cursor);
