@@ -385,7 +385,12 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
 #endif
             return;
         }
-        resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
+        if (key_count > 1) {
+            resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
+        } else {
+            // Send backspaces now that we know we can do the full undo
+            st_multi_tap(KC_BSPC, num_backspaces);
+        }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Redoing single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
 #endif
