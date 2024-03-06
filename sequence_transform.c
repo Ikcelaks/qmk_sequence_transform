@@ -13,7 +13,7 @@
 #include "sequence_transform_data.h"
 #include "utils.h"
 
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_2
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 

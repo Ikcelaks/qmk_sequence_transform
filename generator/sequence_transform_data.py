@@ -38,7 +38,7 @@ from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_0_1_0"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_2"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
