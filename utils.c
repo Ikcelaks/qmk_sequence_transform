@@ -15,7 +15,8 @@
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
 // TODO: define this in generated .h file
-static const char magic_chars[] = {'M', 'R'};
+static const char st_seq_tokens_ascii[] = {'*', '@', '$', '#'};
+static const char st_wordbreak_ascii = '^';
 
 static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D
@@ -57,8 +58,11 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 ////////////////////////////////////////////////////////////////////////////////
 char st_keycode_to_char(uint16_t keycode)
 {
-    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT)
-		return magic_chars[keycode - SPECIAL_KEY_TRIECODE_0];
+    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+		return st_seq_tokens_ascii[keycode - SPECIAL_KEY_TRIECODE_0];
+    } else if (keycode == KC_SPACE) {
+        return st_wordbreak_ascii;
+    }
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
     if (keycode >= KC_A && keycode <= KC_SLASH) {
@@ -92,4 +96,19 @@ void st_send_key(uint16_t keycode)
         add_weak_mods(MOD_BIT(KC_LSFT));
 #endif
     tap_code16(keycode);
+}
+//////////////////////////////////////////////////////////////////////
+int st_max(int a, int b)
+{
+    return (a > b ? a : b);
+}
+//////////////////////////////////////////////////////////////////////
+int st_min(int a, int b)
+{
+    return (a < b ? a : b);
+}
+//////////////////////////////////////////////////////////////////////
+int st_clamp(int val, int min_val, int max_val)
+{
+    return (val < min_val ? min_val : (val > max_val ? max_val : val));
 }

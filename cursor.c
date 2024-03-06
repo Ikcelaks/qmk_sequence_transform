@@ -11,6 +11,7 @@
 #include "quantum_keycodes.h"
 #include "cursor.h"
 #include "keybuffer.h"
+#include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
 
