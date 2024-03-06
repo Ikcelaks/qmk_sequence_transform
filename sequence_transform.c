@@ -303,7 +303,7 @@ void st_find_missed_rule(void)
     st_trie_rule_t result;
     result.sequence = sequence_str;
     result.transform = transform_str;
-    const int new_len = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);    
+    const int new_len = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);
     if (new_len != search_len_start) {
         sequence_transform_on_missed_rule_user(&result);
         // Next time, start searching from after completion
@@ -385,7 +385,12 @@ void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_cou
 #endif
             return;
         }
-        resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
+        if (key_count > 1) {
+            resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
+        } else {
+            // Send backspaces now that we know we can do the full undo
+            st_multi_tap(KC_BSPC, num_backspaces);
+        }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Redoing single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
 #endif
