@@ -55,6 +55,32 @@ void tap_code16(uint16_t keycode)
             output_push(st_keycode_to_char(keycode));
     }   
 }
+////////////////////////////////////////////////////////////////////////////////
+// if keycode is a token that can be translated back to its user symbol,
+// returns pointer to it, otherwise returns 0
+const char *st_get_seq_token_symbol(uint16_t keycode)
+{
+    if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
+    } else if (keycode == KC_SPACE) {
+        return st_wordbreak_token;
+    }
+    return 0;
+}
+//////////////////////////////////////////////////////////////////
+void keycodes_to_utf8_str(const uint16_t *keycodes, char *str)
+{
+    for (uint16_t key = *keycodes; key; key = *++keycodes) {
+        const char *token = st_get_seq_token_symbol(key);
+        if (token) {
+            while ((*str++ = *token++));
+            str--;
+        } else {
+            *str++ = st_keycode_to_char(key);
+        }
+    }
+    *str = 0;
+}
 //////////////////////////////////////////////////////////////////
 uint16_t ascii_to_keycode(char *c)
 {
@@ -70,7 +96,7 @@ uint16_t ascii_to_keycode(char *c)
     return st_char_to_keycode(*c);
 }
 //////////////////////////////////////////////////////////////////
-void send_keys(const char *str, bool reset, bool print, bool rule_search)
+void send_keycodes(const uint16_t *keycodes, bool reset, bool print, bool rule_search)
 {
     st_key_buffer_t *buf = st_get_key_buffer();
     // we don't use st_key_buffer_reset(buf) here because
@@ -78,10 +104,8 @@ void send_keys(const char *str, bool reset, bool print, bool rule_search)
     if (reset) {
         buf->context_len = 0;
     }
-    for (; *str; ++str) {
-        char c = *str;
-        const uint16_t keycode = ascii_to_keycode(&c);
-        st_key_buffer_push(buf, keycode);
+    for (uint16_t key = *keycodes; key; key = *++keycodes) {
+        st_key_buffer_push(buf, key);
         if (print) {
             st_key_buffer_print(buf);
         }
@@ -91,39 +115,43 @@ void send_keys(const char *str, bool reset, bool print, bool rule_search)
             if (rule_search) {
                 st_find_missed_rule();
             } else {
+                const char c = key == KC_SPACE ? ' '
+                    : st_keycode_to_char(key);
                 output_push(c);
             }
         }
     }
 }
 //////////////////////////////////////////////////////////////////////
-bool test_st_perform(const char *sequence, const char *transform)
+bool test_st_perform(const st_test_rule_t *rule)
 {
+    char seq_str[256];
     output_reset();
-    send_keys(sequence, true, false, false);
-    // ignore spaces at the start of output
+    send_keycodes(rule->seq_keycodes, true, false, false);
+    // Ignore spaces at the start of output
     char *output = output_buffer;
-    while (*output == ' ') {
-        output++;
-    }
-    bool match = !strcmp(output, transform);
+    while (*output++ == ' ');
+    --output;
+    // Check if our output buffer matches the expected transform string
+    const bool match = !strcmp(output, rule->transform_str);
+    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
     if (match) {
-        printf("[\033[0;32mPASS\033[0m] %s -> %s\n", sequence, output_buffer);
+        printf("[\033[0;32mPASS\033[0m] %s ⇒ %s\n", seq_str, output);
     } else {
-        printf("[\033[0;31mFAIL\033[0m] %s -> %s (expected: %s)\n", sequence, output_buffer, transform);
+        printf("[\033[0;31mFAIL\033[0m] %s ⇒ %s (expected: %s)\n", seq_str, output, rule->transform_str);
     }    
     return match;
 }
 //////////////////////////////////////////////////////////////////////
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-    printf("    Missed rule! %s -> %s\n", rule->sequence, rule->transform);
+    printf("    Missed rule! %s ⇒ %s\n", rule->sequence, rule->transform);
 }
 //////////////////////////////////////////////////////////////////////
 void test_st_find_missed_rule(const char *user_string)
 {
     printf("-----\nTyping: %s\n", user_string);
-    send_keys(user_string, false, true, true);
+    //send_keys(user_string, false, true, true);
 }
 //////////////////////////////////////////////////////////////////////
 int main()
@@ -133,9 +161,8 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
 #endif
     int rules = 0, fail = 0;
-    for (; *st_rule_strings[rules]; ++rules) {
-        if (!test_st_perform(st_rule_strings[rules][0],
-                             st_rule_strings[rules][1])) {
+    for (; st_test_rules[rules].transform_str; ++rules) {
+        if (!test_st_perform(&st_test_rules[rules])) {
             ++fail;
         }
     }
@@ -143,18 +170,6 @@ int main()
         printf("\n[\033[0;32mAll %d tests passed!\033[0m]\n", rules);
     } else {
         printf("\n[\033[0;31m%d/%d tests failed!\033[0m]\n", fail, rules);
-    }
-    // Test rule search
-    st_key_buffer_t *buf = st_get_key_buffer();
-    buf->context_len = 0;
-    output_reset();
-    for (int i = 0; i < 15; ++i) {
-        //test_st_find_missed_rule("^the");
-        test_st_find_missed_rule("^*m");
-        //test_st_find_missed_rule("^time");
-        //test_st_find_missed_rule("^judgment");
-        //test_st_find_missed_rule("a");
-        //test_st_find_missed_rule("o");
     }
     return fail ? 1 : 0;
 }

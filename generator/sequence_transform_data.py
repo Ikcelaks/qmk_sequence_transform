@@ -510,6 +510,20 @@ def uint16_to_hex(b: int) -> str:
 
 
 ###############################################################################
+def create_test_rule_c_string(
+    char_map: Dict[str, int],
+    sequence: str,
+    transform: str
+) -> str:
+    """ returns a string with the following format: 
+        { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
+    """
+    seq_ints = [char_map[c] for c in sequence] + [0]
+    seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
+    res = f'    {{ "{transform}", (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }} }},'
+    return res
+
+###############################################################################
 def generate_sequence_transform_data(data_header_file, test_header_file):
     char_map = generate_context_char_map(MAGIC_CHARS, WORDBREAK_CHAR)
     output_func_char_map = generate_output_func_char_map(OUTPUT_FUNC_CHARS)
@@ -533,12 +547,13 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     # Build the sequence_transform_data.h file.
     transformations = []
-    tranformations_c_strings = []
+    test_rules_c_strings = []
 
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
-            tranformations_c_strings.append('    { "' + sequence + '", "' +  transformation + '" },')
+            test_rule = create_test_rule_c_string(char_map, sequence, transformation) 
+            test_rules_c_strings.append(test_rule)
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
         transformations.append(f'//    {sequence} -> {transformation}')        
@@ -622,8 +637,13 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         st_seq_tokens,
         st_wordbreak_token,
         '',
-        'const char *st_rule_strings[][2] = {',
-        *tranformations_c_strings,
+        'typedef struct {',
+        '   const char * const      transform_str;',
+        '   const uint16_t * const  seq_keycodes;',
+        '} st_test_rule_t;',
+        '',
+        'static const st_test_rule_t st_test_rules[] = {',
+        *test_rules_c_strings,
         '    { 0, 0 }',
         '};'
     ]
