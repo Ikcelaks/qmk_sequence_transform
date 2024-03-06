@@ -1,3 +1,7 @@
+ifeq ($(QMKPATH),)
+  $(error Please set the QMKPATH env var to your qmk_firmware directory)
+endif
+
 CC = gcc
 
 ODIR = build
