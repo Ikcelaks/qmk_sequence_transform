@@ -56,14 +56,14 @@ void tap_code16(uint16_t keycode)
     }   
 }
 //////////////////////////////////////////////////////////////////
-uint16_t char_to_keycode(char *c)
+uint16_t ascii_to_keycode(char *c)
 {
-    for (int i = 0; i < sizeof(st_magic_chars); ++i) {
-        if (*c == st_magic_chars[i]) {
+    for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
+        if (*c == st_seq_tokens_ascii[i]) {
             return SPECIAL_KEY_TRIECODE_0 + i;
         }
     }
-    if (*c == st_wordbreak_char) {
+    if (*c == st_wordbreak_ascii) {
         *c = ' ';
         return KC_SPACE;
     }
@@ -80,7 +80,7 @@ void send_keys(const char *str, bool reset, bool print, bool rule_search)
     }
     for (; *str; ++str) {
         char c = *str;
-        const uint16_t keycode = char_to_keycode(&c);
+        const uint16_t keycode = ascii_to_keycode(&c);
         st_key_buffer_push(buf, keycode);
         if (print) {
             st_key_buffer_print(buf);
