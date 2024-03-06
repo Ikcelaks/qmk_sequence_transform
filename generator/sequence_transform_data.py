@@ -557,13 +557,17 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
     
-    st_magic_chars = 'static const char st_magic_chars[] = { ' + ", ".join(map(lambda c: f"'{c}'", MAGIC_CHARS)) + ' };'
-    st_wordbreak_char = "static const char st_wordbreak_char = '" + WORDBREAK_CHAR + "';"
-
+    # token symbols stored as utf8 strings
+    st_seq_tokens = 'static const char *st_seq_tokens[] = { ' + ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS)) + ' };'
+    st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_CHAR}";'
+    # ascii versions
+    st_seq_tokens_ascii = 'static const char st_seq_tokens_ascii[] = { ' + ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII)) + ' };'
+    st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
+    
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         *record_rule_usage,
-        "",
+        '',
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
@@ -572,9 +576,10 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define MAX_BACKSPACES {max_backspaces}',
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
-        f'#define SEQUENCE_TRANSFORM_COUNT {len(MAGIC_CHARS)}\n',
-        st_magic_chars,
-        st_wordbreak_char
+        f'#define SEQUENCE_TRANSFORM_COUNT {len(MAGIC_CHARS)}',
+        '',
+        st_seq_tokens_ascii,
+        st_wordbreak_ascii
     ]
 
     trie_data_lines = [
@@ -614,6 +619,9 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     sequence_transform_test_h_lines = [
         *header_lines,
         '',
+        st_seq_tokens,
+        st_wordbreak_token,
+        '',
         'const char *st_rule_strings[][2] = {',
         *tranformations_c_strings,
         '    { 0, 0 }',
@@ -643,9 +651,11 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        MAGIC_CHARS = config['magic_chars']
+        SEQ_TOKENS_ASCII = config['seq_tokens_ascii']
+        WORDBREAK_ASCII = config['wordbreak_ascii']
+        MAGIC_CHARS = config['magic_chars']        
         OUTPUT_FUNC_CHARS = config['output_func_chars']
-        WORDBREAK_CHAR = config['wordbreak_char']
+        WORDBREAK_CHAR = config['wordbreak_char']        
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']

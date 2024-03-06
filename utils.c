@@ -14,10 +14,6 @@
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
 
-// TODO: define this in generated .h file
-static const char st_seq_tokens_ascii[] = {'*', '@', '$', '#'};
-static const char st_wordbreak_ascii = '^';
-
 static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D
                                     'a',    'b',    'c',    'd',
