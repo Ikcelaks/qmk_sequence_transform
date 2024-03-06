@@ -581,10 +581,12 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
     
     # token symbols stored as utf8 strings
-    st_seq_tokens = 'static const char *st_seq_tokens[] = { ' + ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS)) + ' };'
+    sym_array_str = ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS))
+    st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
     st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_CHAR}";'
     # ascii versions
-    st_seq_tokens_ascii = 'static const char st_seq_tokens_ascii[] = { ' + ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII)) + ' };'
+    char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
+    st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
     
     trie_stats_lines = [
