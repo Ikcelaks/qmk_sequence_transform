@@ -12,6 +12,7 @@
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
 #include "tester_utils.h"
+#include "sim_output_buffer.h"
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -21,40 +22,15 @@
 #endif
 
 //////////////////////////////////////////////////////////////////
-#define OUTPUT_BUFFER_CAPACITY 256
-char output_buffer[OUTPUT_BUFFER_CAPACITY];
-int  output_buffer_size = 0;
-
-//////////////////////////////////////////////////////////////////
-void output_reset(void)
-{
-    output_buffer_size = 0;
-    output_buffer[0] = 0;
-}
-//////////////////////////////////////////////////////////////////
-void output_push(char c)
-{
-    if (output_buffer_size < OUTPUT_BUFFER_CAPACITY - 1) {
-        output_buffer[output_buffer_size++] = c;
-        output_buffer[output_buffer_size] = 0;
-    }       
-}
-//////////////////////////////////////////////////////////////////
-void output_pop(int n)
-{
-    output_buffer_size = st_max(0, output_buffer_size - n);
-    output_buffer[output_buffer_size] = 0;
-}
-//////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
 void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
         case KC_BSPC:
-            output_pop(1);
+            sim_output_pop(1);
             break;
         default:
-            output_push(st_keycode_to_char(keycode));
+            sim_output_push(st_keycode_to_char(keycode));
     }   
 }
 //////////////////////////////////////////////////////////////////
@@ -72,7 +48,7 @@ void sim_st_perform(const uint16_t *keycodes)
         // add it to our virtual output buffer
         if (!st_perform()) {
             const char c = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
-            output_push(c);
+            sim_output_push(c);
         }
     }
 }
@@ -95,12 +71,10 @@ void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 bool test_rule(const st_test_rule_t *rule)
 {
     char seq_str[256];
-    output_reset();
+    sim_output_reset();
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
-    char *output = output_buffer;
-    while (*output++ == ' ');
-    --output;
+    char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
     const bool match = !strcmp(output, rule->transform_str);
     keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
@@ -110,8 +84,9 @@ bool test_rule(const st_test_rule_t *rule)
         // Make sure enhanced backspace handling leaves us with an empty
         // output buffer if we send one backspace for every key sent
         sim_st_enhanced_backspace(rule->seq_keycodes);
-        if (output_buffer_size) {
-            printf("[\033[0;31mFAIL\033[0m] Output buffer size after backspaces: %d\n", output_buffer_size);
+        const int out_size = sim_output_get_size();
+        if (out_size) {
+            printf("[\033[0;31mFAIL\033[0m] Output buffer size after backspaces: %d\n", out_size);
             res = false;
         }
     } else {

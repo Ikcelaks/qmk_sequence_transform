@@ -24,6 +24,7 @@ CFLAGS = -I. \
 
 DEPS = qmk_wrappers.h \
 	tester_utils.h \
+	sim_output_buffer.h \
 	../keybuffer.h \
 	../key_stack.h \
 	../trie.h \
@@ -35,6 +36,7 @@ DEPS = qmk_wrappers.h \
 _OBJ = tester.o \
 	qmk_wrappers.o \
 	tester_utils.o \
+	sim_output_buffer.o \
 	keybuffer.o \
 	key_stack.o \
 	trie.o \
