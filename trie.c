@@ -31,6 +31,7 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
     st_cursor_init(&cursor, trie, search, 0, false);
     st_cursor_t output_cursor = {};
     st_cursor_init(&output_cursor, trie, search, 0, true);
+    st_cursor_print(&output_cursor);
     st_find_longest_chain_cursor(&cursor, &res->trie_match, 0, 0);
     st_find_longest_chain_cursor(&output_cursor, &res->trie_match, 0, 0);
     if (res->trie_match.seq_match_len > 0) {
@@ -314,7 +315,7 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
 	if (code & TRIE_BRANCH_BIT) {
 		code &= TRIE_CODE_MASK;
         // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = st_cursor_current_keycode(cursor);
+        const uint16_t cur_key = st_cursor_get_keycode(cursor);
         if (!cur_key) {
             return false;
         }
@@ -333,7 +334,7 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
     // No high bits set, so this is a chain node
 	// Travel down chain until we reach a zero byte, or we no longer match our buffer
 	for (; code; depth++, st_cursor_next(cursor), code = TDATA(++offset)) {
-		if (code != st_cursor_current_keycode(cursor))
+		if (code != st_cursor_get_keycode(cursor))
 			return false;
 	}
 	// After a chain, there should be a leaf or branch

@@ -31,7 +31,7 @@ void st_cursor_init(st_cursor_t *cursor, st_trie_t *trie, st_key_buffer_t *buf, 
     }
 }
 //////////////////////////////////////////////////////////////////
-uint16_t st_cursor_current_keycode(const st_cursor_t *cursor)
+uint16_t st_cursor_get_keycode(const st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos);
     if (!keyaction) {
@@ -42,6 +42,15 @@ uint16_t st_cursor_current_keycode(const st_cursor_t *cursor)
     } else {
         return keyaction->keypressed;
     }
+}
+//////////////////////////////////////////////////////////////////
+uint16_t st_cursor_get_action(const st_cursor_t *cursor)
+{
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos);
+    if (!keyaction) {
+        return ST_IGNORE_KEY_ACTION;
+    }
+    return keyaction->action_taken;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
@@ -59,12 +68,14 @@ bool st_cursor_next(st_cursor_t *cursor)
         // skip fake key and try again
         ++cursor->cursor_pos;
         cursor->sub_pos = 0;
+        // TODO: Handle caching
         return st_cursor_next(cursor);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
         ++cursor->cursor_pos;
         cursor->sub_pos = 0;
+        // TODO: Handle caching
         return cursor->cursor_pos < cursor->buffer->context_len;
     }
     st_get_payload_from_match_index(cursor->trie, &cursor->cached_action, keyaction->action_taken);
@@ -108,12 +119,23 @@ bool st_cursor_next(st_cursor_t *cursor)
     }
 }
 //////////////////////////////////////////////////////////////////
+bool st_cursor_move_to_history(st_cursor_t *cursor, int history)
+{
+    cursor->cursor_pos = history;
+    cursor->sub_pos = 0;
+    const st_key_action_t *key_action = st_key_buffer_get(cursor->buffer, history);
+    if (key_action && key_action->action_taken != ST_IGNORE_KEY_ACTION && key_action->action_taken != ST_DEFAULT_KEY_ACTION) {
+        st_get_payload_from_match_index(cursor->trie, &cursor->cached_action, key_action->action_taken);
+    }
+    return history < cursor->buffer->context_len;
+}
+//////////////////////////////////////////////////////////////////
 void st_cursor_print(const st_cursor_t *cursor)
 {
     st_cursor_t temp_cursor = *cursor;
     uprintf("cursor: |");
     while (temp_cursor.cursor_pos < temp_cursor.buffer->context_len) {
-        uint16_t key = st_cursor_current_keycode(&temp_cursor);
+        uint16_t key = st_cursor_get_keycode(&temp_cursor);
         uprintf("%c", st_keycode_to_char(key));
         st_cursor_next(&temp_cursor);
     }

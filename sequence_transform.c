@@ -354,83 +354,11 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
-void resend_output(st_trie_t *trie, int buf_cur_pos, int key_count, int skip_count, int num_backspaces) {
-    if (key_count <= 0) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("IMPOSSIBLE: resend_output called when no more keys need to be resent (%d, %d)",
-                key_count, skip_count);
-#endif
-        return;
-    }
-    st_key_action_t *key_action = st_key_buffer_get(&key_buffer, buf_cur_pos);
-    if (!key_action) {
-        // End of buffer reached before fully restoring. Enlarge the extra buffer space
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("Unable to restore full changes. Expand the extra buffer space (%d, %d)",
-                key_count, skip_count);
-#endif
-        return;
-    }
-    if (key_action->action_taken == ST_IGNORE_KEY_ACTION) {
-        // This is a hacky fake key-press. Skip to next key in the buffer
-        resend_output(trie, buf_cur_pos + 1, key_count, skip_count, num_backspaces);
-        return;
-    }
-    if (key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
-        if (skip_count > 0) {
-            resend_output(trie, buf_cur_pos + 1, key_count, skip_count - 1, num_backspaces);
-            // skipping this keypress
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-            uprintf("Skipping single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
-#endif
-            return;
-        }
-        if (key_count > 1) {
-            resend_output(trie, buf_cur_pos + 1, key_count - 1, 0, num_backspaces);
-        } else {
-            // Send backspaces now that we know we can do the full undo
-            st_multi_tap(KC_BSPC, num_backspaces);
-        }
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("Redoing single keypress: {%c}\n", st_keycode_to_char(key_action->keypressed));
-#endif
-        st_send_key(key_action->keypressed);
-        return;
-    }
-    st_trie_payload_t action = {0, 0, 0, 0};
-    st_get_payload_from_match_index(trie, &action, key_action->action_taken);
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("Key action: bs: %d, restore: %d\n",
-            action.num_backspaces, action.completion_len);
-#endif
-    const uint16_t completion_end = action.completion_index + action.completion_len - skip_count;
-    if (completion_end <= action.completion_index) {
-        // skip everything and pass down any remaining skipt to next keyaction
-        resend_output(trie, buf_cur_pos + 1, key_count, skip_count - action.completion_len, num_backspaces);
-        return;
-    }
-    // Some characters from this action need to be resent
-    uint16_t completion_start = completion_end - key_count;
-    if (completion_start < action.completion_index) {
-        resend_output(trie, buf_cur_pos + 1, key_count + skip_count - action.completion_len, 0, num_backspaces);
-        completion_start = action.completion_index;
-    } else {
-        // Send backspaces now that we know we can do the full undo
-        st_multi_tap(KC_BSPC, num_backspaces);
-    }
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("Restore last %d key presses from key action with %d total output\n",
-            key_count, action.completion_len);
-#endif
-    for (uint16_t i = completion_start; i < completion_end; ++i) {
-        char ascii_code = CDATA(i);
-        st_send_key(st_char_to_keycode(ascii_code));
-    }
-}
-//////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_backspace() {
-    st_key_action_t *prev_key_action = st_key_buffer_get(&key_buffer, 0);
-    if (!prev_key_action || prev_key_action->action_taken == ST_DEFAULT_KEY_ACTION) {
+    st_cursor_t cursor = {};
+    st_cursor_init(&cursor, &trie, &key_buffer, 0, true);
+    const uint16_t action = st_cursor_get_action(&cursor);
+    if (action == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Undoing backspace after non-matching keypress\n");
@@ -440,26 +368,42 @@ void st_handle_backspace() {
         st_key_buffer_pop(&key_buffer, 1);
         return;
     }
-    if (prev_key_action->action_taken == ST_IGNORE_KEY_ACTION) {
+    if (action == ST_IGNORE_KEY_ACTION) {
         // This is a hacky fake key-press. Pop it off the buffer and go again
         st_key_buffer_pop(&key_buffer, 1);
         st_handle_backspace();
         return;
     }
     // Undo a rule action
-    st_trie_payload_t prev_action = {0, 0, 0, 0};
-    st_get_payload_from_match_index(&trie, &prev_action, prev_key_action->action_taken);
+    const int backspaces_needed_count = cursor.cached_action.completion_len - 1;
+    int resend_count = cursor.cached_action.num_backspaces;
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("Undoing previous key action (%d): bs: %d, restore: %d\n",
-            prev_key_action->action_taken, prev_action.completion_len, prev_action.num_backspaces);
+            action, backspaces_needed_count, resend_count);
     st_key_buffer_print(&key_buffer);
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
-    if (prev_action.num_backspaces > 0) {
-        resend_output(&trie, 1, prev_action.num_backspaces, 0, prev_action.completion_len - 1);
+    if (resend_count > 0) {
+        st_cursor_move_to_history(&cursor, 1);
+        trie.key_stack->size = 0;
+        for (; resend_count > 0; --resend_count, st_cursor_next(&cursor)) {
+            const uint16_t keycode = st_cursor_get_keycode(&cursor);
+            if (!keycode) {
+                break;
+            }
+            st_key_stack_push(trie.key_stack, keycode);
+        }
+        if (resend_count == 0) {
+            // Send backspaces now that we know we can do the full undo
+            st_multi_tap(KC_BSPC, backspaces_needed_count);
+            // Send saved keys in original order
+            for (int i = trie.key_stack->size - 1; i >= 0; --i) {
+                st_send_key(trie.key_stack->buffer[i]);
+            }
+        }
     } else {
-        // Send backspaces now that we know we can do the full undo
-        st_multi_tap(KC_BSPC, prev_action.completion_len - 1);
+        // Send backspaces since no resend is needed to complete the undo
+        st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
     st_key_buffer_pop(&key_buffer, 1);
 }
