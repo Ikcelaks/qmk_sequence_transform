@@ -6,17 +6,13 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
-#include "quantum.h"
+
+#include "tester/qmk_wrappers.h"
 #include "utils.h"
-#include "send_string.h"
 #include "sequence_transform_data.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
-
-// TODO: define this in generated .h file
-static const char st_seq_tokens_ascii[] = {'*', '@', '$', '#'};
-static const char st_wordbreak_ascii = '^';
 
 static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //                                  KC_A    KC_B    KC_C    KC_D

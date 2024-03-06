@@ -53,3 +53,9 @@ dkms.conf
 /.vs
 /sequence_transform_data.h
 /rule_usage/rule_usage_log.csv
+/tester/.vs/
+/tester/build/
+/sequence_transform_test.h
+/tester/tester
+/tester/tester.vcxproj.filters
+/tester/tester.vcxproj.user
