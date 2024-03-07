@@ -37,3 +37,9 @@ void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
+void st_handle_backspace(void);
+
+#ifdef ST_TESTER
+st_trie_t       *st_get_trie(void);
+st_key_buffer_t *st_get_key_buffer(void);
+#endif

@@ -6,11 +6,10 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
-#include <stdint.h>
-#include "quantum_keycodes.h"
+
+#include "qmk_wrapper.h"
 #include "keybuffer.h"
 #include "utils.h"
-#include "print.h"
 
 //////////////////////////////////////////////////////////////////
 // Public
@@ -92,12 +91,10 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_print(const st_key_buffer_t *buf)
 {
-#ifdef CONSOLE_ENABLE
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->context_len; --i)
         uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
     uprintf("| (%d)\n", buf->context_len);
-#endif
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_to_str(const st_key_buffer_t *buf, char* output_string, uint8_t len)
