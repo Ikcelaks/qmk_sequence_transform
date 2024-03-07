@@ -21,9 +21,10 @@ typedef struct
 
 typedef struct
 {
-    int pos;            // buffer index of cursor position
-    int sub_pos;        // Sub-position within the current buffer position
-    int segment_len;    // Number of elements traversed
+    int     pos;                // buffer index of cursor position
+    int     sub_pos;            // Sub-position within the current buffer position
+    int     segment_len;        // Number of elements traversed
+    uint8_t as_output_buffer;   // True if buffer traversing the simulated output
 } st_cursor_pos_t;
 
 typedef struct
@@ -32,7 +33,6 @@ typedef struct
     st_cursor_pos_t         cursor_pos;         // Contains all position info for the cursor
     st_trie_payload_t       cached_action;
     uint8_t                 cache_valid;
-    uint8_t                 as_output_buffer;   // True if buffer traversing the simulated output
 } st_cursor_t;
 
 typedef struct
@@ -84,7 +84,6 @@ typedef struct
 
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
 bool st_find_rule(st_trie_search_t *search, uint16_t offset);
 void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
-bool st_find_longest_chain_cursor(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
+bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset);

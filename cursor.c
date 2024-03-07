@@ -22,7 +22,7 @@ void st_cursor_init(const st_trie_t *trie, st_key_buffer_t *buf, int history, ui
 {
     trie->cursor->buffer = buf;
     trie->cursor->cursor_pos.pos = history;
-    trie->cursor->as_output_buffer = as_output_buffer;
+    trie->cursor->cursor_pos.as_output_buffer = as_output_buffer;
     trie->cursor->cursor_pos.sub_pos = as_output_buffer ? 0 : 255;
     trie->cursor->cursor_pos.segment_len = 0;
     trie->cursor->cache_valid = false;
@@ -34,7 +34,7 @@ uint16_t st_cursor_get_keycode(const st_trie_t *trie)
     if (!keyaction) {
         return KC_NO;
     }
-    if (trie->cursor->as_output_buffer && keyaction->action_taken != ST_DEFAULT_KEY_ACTION && keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
+    if (trie->cursor->cursor_pos.as_output_buffer && keyaction->action_taken != ST_DEFAULT_KEY_ACTION && keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
         const st_trie_payload_t *action = st_cursor_get_action(trie);
         return st_char_to_keycode(CDATA(action->completion_index + action->completion_len - 1 - trie->cursor->cursor_pos.sub_pos));
     } else {
@@ -71,7 +71,7 @@ st_trie_payload_t *st_cursor_get_action(const st_trie_t *trie)
 bool st_cursor_next(const st_trie_t *trie)
 {
     st_cursor_t *cursor = trie->cursor;
-    if (!cursor->as_output_buffer) {
+    if (!cursor->cursor_pos.as_output_buffer) {
         ++cursor->cursor_pos.pos;
         ++cursor->cursor_pos.segment_len;
         return cursor->cursor_pos.pos < cursor->buffer->context_len;

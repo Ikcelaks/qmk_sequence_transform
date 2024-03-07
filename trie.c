@@ -28,10 +28,9 @@
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res)
 {
     st_cursor_init(trie, search, 0, false);
-    st_find_longest_chain_cursor(trie, &res->trie_match, 0, 0);
+    st_find_longest_chain(trie, &res->trie_match, 0);
     st_cursor_init(trie, search, 0, true);
-    st_cursor_print(trie);
-    st_find_longest_chain_cursor(trie, &res->trie_match, 0, 0);
+    st_find_longest_chain(trie, &res->trie_match, 0);
     if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
         return true;
@@ -55,72 +54,97 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
     payload->completion_index = completion_index;
 }
 
+//////////////////////////////////////////////////////////////////////
+bool find_branch_offset(st_trie_t *trie, uint16_t *offset, uint16_t code, uint16_t cur_key)
+{
+    for (; code; *offset += 2, code = TDATA(*offset)) {
+        if (code == cur_key) {
+            // 16bit offset to child node is built from next uint16_t
+            *offset = TDATA(*offset+1);
+            return true;
+        }
+    }
+    return 0;
+}
+
 /**
  * @brief Find longest chain in trie matching the key_buffer. (recursive)
  *
  * @param trie   trie_t struct containing trie data/size
- * @param search key buffer to search for
  * @param res    result containing payload for longest context match
  * @param offset current offset in trie data
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth)
+bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset)
 {
+    bool longer_match_found = false;
+    do {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-    if (offset >= trie->data_size) {
-        uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);
-        return false;
-    }
+        if (offset >= trie->data_size) {
+            uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);
+            return false;
+        }
 #endif
-    uint16_t code = TDATA(offset);
+        uint16_t code = TDATA(offset);
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-    if (!code) {
-        uprintf("find_longest_chain() ERROR: unexpected null code! Offset: %d\n", offset);
-        return false;
-    }
+        if (!code) {
+            uprintf("find_longest_chain() ERROR: unexpected null code! Offset: %d\n", offset);
+            return false;
+        }
+        if (code & TRIE_CODE_MASK) {
+            uprintf("find_longest_chain() ERROR: match found at top of loop! Offset: %d\n", offset);
+            return false;
+        }
 #endif
-	// Match Node if bit 15 is set
-	if (code & TRIE_MATCH_BIT) {
-        // match nodes are side attachments, so decrease depth
-        depth--;
-        // If bit 14 is also set, there is a child node after the completion string
-        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain(trie, search, longest_match, offset+2, depth+1))
-            return true;
-        // this is the longest match, so record it
-        longest_match->trie_match_index = offset;
-        longest_match->seq_match_pos.segment_len = depth + 1;
-        // Found a match so return true!
-        return true;
-	}
-	// Branch Node (with multiple children) if bit 14 is set
-	if (code & TRIE_BRANCH_BIT) {
-        if (depth > search->context_len)
-			return false;
-		code &= TRIE_CODE_MASK;
-        // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = st_key_buffer_get_keycode(search, depth);
-		for (; code; offset += 2, code = TDATA(offset)) {
-            if (code == cur_key) {
-                // 16bit offset to child node is built from next uint16_t
-                const uint16_t child_offset = TDATA(offset+1);
-                // Traverse down child node
-                return st_find_longest_chain(trie, search, longest_match, child_offset, depth+1);
+        // Branch Node (with multiple children) if bit 14 is set
+        if (code & TRIE_BRANCH_BIT) {
+            // uprintf("Branching Offset: %d; Code: %d\n", offset, code);
+            code &= TRIE_CODE_MASK;
+            // Find child key that matches the search buffer at the current depth
+            const uint16_t cur_key = st_cursor_get_keycode(trie);
+            if (!cur_key) { // exhausted buffer; return
+                return longer_match_found;
+            }
+            if (!find_branch_offset(trie, &offset, code, cur_key)) {
+                // Couldn't go deeper; return.
+                return longer_match_found;
+            }
+        } else {
+            // No high bits set, so this is a chain node
+            // Travel down chain until we reach a zero byte, or we no longer match our buffer
+            for (; code; st_cursor_next(trie), code = TDATA(++offset)) {
+                // uprintf("Chaining Offset: %d; Code: %d\n", offset, code);
+                if (code != st_cursor_get_keycode(trie))
+                    return longer_match_found;
+            }
+            // After a chain, there should be a match or branch
+            ++offset;
+        }
+        // Traversed one (or more) buffer keys, check if we are at a match
+        code = TDATA(offset);
+        // Match Node if bit 15 is set
+        if (code & TRIE_MATCH_BIT) {
+            // record this if it is the longest match
+            if (st_cursor_longer_than(trie, &longest_match->seq_match_pos)) {
+                longer_match_found = true;
+                longest_match->trie_match_index = offset;
+                longest_match->seq_match_pos = st_cursor_save(trie);
+            }
+            // If bit 14 is also set, there is a child node after the completion string
+            if (code & TRIE_BRANCH_BIT) {
+                // move offset to next child node and continue walking the trie
+                offset += 2;
+                code = TDATA(offset);
+            } else {
+                // No more matches; return
+                return longer_match_found;
             }
         }
-        // Couldn't go deeper, so return false.
-        return false;
-	}
-    // No high bits set, so this is a chain node
-	// Travel down chain until we reach a zero byte, or we no longer match our buffer
-	for (; code; depth++, code = TDATA(++offset)) {
-		if (depth > search->context_len ||
-            code != st_key_buffer_get_keycode(search, depth))
-			return false;
-	}
-	// After a chain, there should be a leaf or branch
-	return st_find_longest_chain(trie, search, longest_match, offset+1, depth);
+    } while (st_cursor_next(trie));
+    return longer_match_found;
 }
+
 //////////////////////////////////////////////////////////////////////
 int st_trie_get_rule(st_trie_t              *trie,
                      const st_key_buffer_t  *key_buffer,
@@ -275,65 +299,4 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         *transform++ = CDATA(i);
     }
     *transform = 0;
- }
-
-
-bool st_find_longest_chain_cursor(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth)
-{
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-    if (offset >= trie->data_size) {
-        uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);
-        return false;
-    }
-#endif
-    uint16_t code = TDATA(offset);
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-    if (!code) {
-        uprintf("find_longest_chain() ERROR: unexpected null code! Offset: %d\n", offset);
-        return false;
-    }
-#endif
-	// Match Node if bit 15 is set
-	if (code & TRIE_MATCH_BIT) {
-        // match nodes are side attachments, so decrease depth
-        depth--;
-        // record this if it is the longest match
-        if (st_cursor_longer_than(trie, &longest_match->seq_match_pos)) {
-            longest_match->trie_match_index = offset;
-            longest_match->seq_match_pos = st_cursor_save(trie);
-        }
-        // If bit 14 is also set, there is a child node after the completion string
-        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain_cursor(trie, longest_match, offset+2, depth+1))
-            return true;
-        // Found a match so return true!
-        return true;
-	}
-	// Branch Node (with multiple children) if bit 14 is set
-	if (code & TRIE_BRANCH_BIT) {
-		code &= TRIE_CODE_MASK;
-        // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = st_cursor_get_keycode(trie);
-        if (!cur_key) {
-            return false;
-        }
-		for (; code; offset += 2, code = TDATA(offset)) {
-            if (code == cur_key) {
-                // 16bit offset to child node is built from next uint16_t
-                const uint16_t child_offset = TDATA(offset+1);
-                // Traverse down child node
-                st_cursor_next(trie);
-                return st_find_longest_chain_cursor(trie, longest_match, child_offset, depth+1);
-            }
-        }
-        // Couldn't go deeper, so return false.
-        return false;
-	}
-    // No high bits set, so this is a chain node
-	// Travel down chain until we reach a zero byte, or we no longer match our buffer
-	for (; code; depth++, st_cursor_next(trie), code = TDATA(++offset)) {
-		if (code != st_cursor_get_keycode(trie))
-			return false;
-	}
-	// After a chain, there should be a leaf or branch
-	return st_find_longest_chain_cursor(trie, longest_match, offset+1, depth);
 }

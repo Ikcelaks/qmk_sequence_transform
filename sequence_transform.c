@@ -62,7 +62,7 @@ void sequence_transform_task(void) {
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack
-static uint16_t trie_key_stack_data[SEQUENCE_MAX_LENGTH] = {0};
+static uint16_t trie_key_stack_data[MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
     SEQUENCE_MAX_LENGTH,
@@ -73,10 +73,9 @@ static st_key_stack_t trie_stack = {
 // Trie cursor
 static st_cursor_t trie_cursor = {
     &key_buffer,
-    {0, 255,0},
+    {0, 255,0, false},
     {0},
     false,
-    false
 };
 
 //////////////////////////////////////////////////////////////////
