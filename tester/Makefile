@@ -39,6 +39,9 @@ DEPS = qmk_wrappers.h \
 	../sequence_transform_test.h
 
 _OBJ = tester.o \
+	test_perform.o \
+	test_backspace.o \
+	test_find_rule.o \
 	qmk_wrappers.o \
 	tester_utils.o \
 	sim_output_buffer.o \
