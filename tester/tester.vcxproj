@@ -90,7 +90,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -107,7 +107,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -124,7 +124,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -141,7 +141,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
