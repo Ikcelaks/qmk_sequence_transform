@@ -73,6 +73,7 @@ bool st_cursor_next(const st_trie_t *trie)
     st_cursor_t *cursor = trie->cursor;
     if (!cursor->as_output_buffer) {
         ++cursor->cursor_pos.pos;
+        ++cursor->cursor_pos.segment_len;
         return cursor->cursor_pos.pos < cursor->buffer->context_len;
     }
     // Continue processing if simulating output buffer
@@ -80,6 +81,7 @@ bool st_cursor_next(const st_trie_t *trie)
     if (!keyaction) {
         return false;
     }
+    ++cursor->cursor_pos.segment_len;
     if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
         // skip fake key and try again
         ++cursor->cursor_pos.pos;
@@ -153,6 +155,12 @@ void st_cursor_restore(const st_trie_t *trie, st_cursor_pos_t *cursor_pos)
 {
     trie->cursor->cursor_pos = *cursor_pos;
     trie->cursor->cache_valid = false;
+}
+//////////////////////////////////////////////////////////////////
+bool st_cursor_longer_than(const st_trie_t *trie, st_cursor_pos_t *past_pos)
+{
+    return (trie->cursor->cursor_pos.pos << 8) + trie->cursor->cursor_pos.sub_pos
+        > (past_pos->pos << 8) + past_pos->pos;
 }
 //////////////////////////////////////////////////////////////////
 void st_cursor_print(const st_trie_t *trie)

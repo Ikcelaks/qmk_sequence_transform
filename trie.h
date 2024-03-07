@@ -57,7 +57,7 @@ typedef struct
 typedef struct
 {
     uint16_t            trie_match_index;
-    int                 seq_match_len;
+    st_cursor_pos_t     seq_match_pos;
 } st_trie_match_t;
 
 typedef struct

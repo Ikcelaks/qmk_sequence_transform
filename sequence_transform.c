@@ -238,9 +238,9 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     // Main body
     char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_len);
+    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_pos.segment_len);
 
-    const int match_len = res->trie_match.seq_match_len - 1;
+    const int match_len = res->trie_match.seq_match_pos.segment_len - 1;
     char rule_trigger_char = context_string[match_len];
     context_string[match_len] = '\0';
 
@@ -417,7 +417,7 @@ void st_handle_backspace() {
  */
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
-    st_trie_search_result_t res = {{0, 0}, {0, 0, 0, 0}};
+    st_trie_search_result_t res = {{0, {0,0,0}}, {0, 0, 0, 0}};
     if (st_trie_get_completion(&trie, &key_buffer, &res)) {
         st_handle_result(&trie, &res);
         return true;

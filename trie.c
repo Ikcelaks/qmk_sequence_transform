@@ -32,7 +32,7 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
     st_cursor_init(trie, search, 0, true);
     st_cursor_print(trie);
     st_find_longest_chain_cursor(trie, &res->trie_match, 0, 0);
-    if (res->trie_match.seq_match_len > 0) {
+    if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
         return true;
     }
@@ -89,7 +89,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_mat
             return true;
         // this is the longest match, so record it
         longest_match->trie_match_index = offset;
-        longest_match->seq_match_len = depth + 1;
+        longest_match->seq_match_pos.segment_len = depth + 1;
         // Found a match so return true!
         return true;
 	}
@@ -298,9 +298,9 @@ bool st_find_longest_chain_cursor(st_trie_t *trie, st_trie_match_t *longest_matc
         // match nodes are side attachments, so decrease depth
         depth--;
         // record this if it is the longest match
-        if (depth >= longest_match->seq_match_len) {
+        if (st_cursor_longer_than(trie, &longest_match->seq_match_pos)) {
             longest_match->trie_match_index = offset;
-            longest_match->seq_match_len = depth + 1;
+            longest_match->seq_match_pos = st_cursor_save(trie);
         }
         // If bit 14 is also set, there is a child node after the completion string
         if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain_cursor(trie, longest_match, offset+2, depth+1))
