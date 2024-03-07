@@ -99,7 +99,9 @@ bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint
 #endif
         // Branch Node (with multiple children) if bit 14 is set
         if (code & TRIE_BRANCH_BIT) {
-            // uprintf("Branching Offset: %d; Code: %d\n", offset, code);
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
+            uprintf("Branching Offset: %d; Code: %#04X\n", offset, code);
+#endif
             code &= TRIE_CODE_MASK;
             // Find child key that matches the search buffer at the current depth
             const uint16_t cur_key = st_cursor_get_keycode(trie);
@@ -113,11 +115,13 @@ bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint
         } else {
             // No high bits set, so this is a chain node
             // Travel down chain until we reach a zero byte, or we no longer match our buffer
-            for (; code; st_cursor_next(trie), code = TDATA(++offset)) {
-                // uprintf("Chaining Offset: %d; Code: %d\n", offset, code);
+            do {
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
+                uprintf("Chaining Offset: %d; Code: %#04X\n", offset, code);
+#endif
                 if (code != st_cursor_get_keycode(trie))
                     return longer_match_found;
-            }
+            } while ((code = TDATA(++offset)) && st_cursor_next(trie));
             // After a chain, there should be a match or branch
             ++offset;
         }
@@ -125,6 +129,10 @@ bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint
         code = TDATA(offset);
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
+            uprintf("New Match found: (%d, %d) %d\n", trie->cursor->cursor_pos.pos, trie->cursor->cursor_pos.sub_pos, trie->cursor->cursor_pos.segment_len);
+            uprintf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.pos, longest_match->seq_match_pos.sub_pos, longest_match->seq_match_pos.segment_len);
+#endif
             // record this if it is the longest match
             if (st_cursor_longer_than(trie, &longest_match->seq_match_pos)) {
                 longer_match_found = true;

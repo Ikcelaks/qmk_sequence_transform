@@ -24,7 +24,7 @@ void st_cursor_init(const st_trie_t *trie, st_key_buffer_t *buf, int history, ui
     trie->cursor->cursor_pos.pos = history;
     trie->cursor->cursor_pos.as_output_buffer = as_output_buffer;
     trie->cursor->cursor_pos.sub_pos = as_output_buffer ? 0 : 255;
-    trie->cursor->cursor_pos.segment_len = 0;
+    trie->cursor->cursor_pos.segment_len = 1;
     trie->cursor->cache_valid = false;
 }
 //////////////////////////////////////////////////////////////////
@@ -93,12 +93,14 @@ bool st_cursor_next(const st_trie_t *trie)
         // This is a normal keypress to consume
         ++cursor->cursor_pos.pos;
         cursor->cursor_pos.sub_pos = 0;
+        ++cursor->cursor_pos.segment_len;
         // TODO: Handle caching
         return cursor->cursor_pos.pos < cursor->buffer->context_len;
     }
     st_trie_payload_t *action = st_cursor_get_action(trie);
     if (cursor->cursor_pos.sub_pos < action->completion_len - 1) {
         ++cursor->cursor_pos.sub_pos;
+        ++cursor->cursor_pos.segment_len;
         return true;
     }
     // We have exhausted the key_action at the current buffer index
