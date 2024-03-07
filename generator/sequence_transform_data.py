@@ -34,10 +34,12 @@ import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple, Callable
 from datetime import date, datetime
+from datetime import date, datetime
 from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
 
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
 ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
 
 GPL2_HEADER_C_LIKE = f'''\
@@ -77,7 +79,7 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
-    
+
 
 ###############################################################################
 def color_currying(color: str) -> Callable:
@@ -85,7 +87,7 @@ def color_currying(color: str) -> Callable:
         return f"{color}{' '.join(map(str, text))}{bcolors.ENDC}"
 
     return inner
-    
+
 
 ###############################################################################
 red = color_currying(bcolors.RED)
@@ -492,7 +494,7 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
 ###############################################################################
 def sequence_len(node: Tuple[str, str]) -> int:
     return len(node[0])
-    
+
 
 ###############################################################################
 def transform_len(node: Tuple[str, str]) -> int:
@@ -515,9 +517,17 @@ def create_test_rule_c_string(
     sequence: str,
     transform: str
 ) -> str:
-    """ returns a string with the following format: 
+    """ returns a string with the following format:
         { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
     """
+    # we don't want any utf8 symbols in transformation string here
+    transform_dict = {
+        "\\": "\\\\",
+        WORDBREAK_CHAR: " ",
+        **{sym: char for sym, char in zip(MAGIC_CHARS, SEQ_TOKENS_ASCII)}
+    }
+    for (i, j) in transform_dict.items():
+        transform = transform.replace(i, j)
     seq_ints = [char_map[c] for c in sequence] + [0]
     seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
     res = f'    {{ "{transform}", (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }} }},'
@@ -552,11 +562,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
-            test_rule = create_test_rule_c_string(char_map, sequence, transformation) 
+            test_rule = create_test_rule_c_string(char_map, sequence, transformation)
             test_rules_c_strings.append(test_rule)
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
-        transformations.append(f'//    {sequence} -> {transformation}')        
+        transformations.append(f'//    {sequence} -> {transformation}')
 
     header_lines = [
         GPL2_HEADER_C_LIKE,
@@ -571,14 +581,16 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
 
     record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
-    
+
     # token symbols stored as utf8 strings
-    st_seq_tokens = 'static const char *st_seq_tokens[] = { ' + ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS)) + ' };'
+    sym_array_str = ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS))
+    st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
     st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_CHAR}";'
     # ascii versions
-    st_seq_tokens_ascii = 'static const char st_seq_tokens_ascii[] = { ' + ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII)) + ' };'
+    char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
+    st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
-    
+
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         *record_rule_usage,
@@ -626,10 +638,10 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         *tranformations_lines,
         '',
         *trie_data_lines,
-    ]    
+    ]
     with open(data_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
-       
+
      # Write test header file
     sequence_transform_test_h_lines = [
         *header_lines,
@@ -649,7 +661,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
     with open(test_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_test_h_lines))
-        
+
 
 ###############################################################################
 if __name__ == '__main__':
@@ -673,9 +685,9 @@ if __name__ == '__main__':
     try:
         SEQ_TOKENS_ASCII = config['seq_tokens_ascii']
         WORDBREAK_ASCII = config['wordbreak_ascii']
-        MAGIC_CHARS = config['magic_chars']        
+        MAGIC_CHARS = config['magic_chars']
         OUTPUT_FUNC_CHARS = config['output_func_chars']
-        WORDBREAK_CHAR = config['wordbreak_char']        
+        WORDBREAK_CHAR = config['wordbreak_char']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']

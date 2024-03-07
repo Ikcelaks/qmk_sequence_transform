@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "sim_output_buffer.h"
 #include "utils.h"
 
@@ -20,7 +21,7 @@ void sim_output_push(char c)
     if (sim_output_buffer_size < SIM_OUTPUT_BUFFER_CAPACITY - 1) {
         sim_output_buffer[sim_output_buffer_size++] = c;
         sim_output_buffer[sim_output_buffer_size] = 0;
-    }       
+    }
 }
 //////////////////////////////////////////////////////////////////
 void sim_output_pop(int n)
@@ -42,4 +43,13 @@ char *sim_output_get(bool trim_spaces)
 int sim_output_get_size()
 {
     return sim_output_buffer_size;
+}
+//////////////////////////////////////////////////////////////////
+void sim_output_print()
+{
+    printf("output: |");
+    for (int i = 0; i < sim_output_buffer_size; ++i) {
+        printf("%c", sim_output_buffer[i]);
+    }
+    printf("| (%d)\n", sim_output_buffer_size);
 }

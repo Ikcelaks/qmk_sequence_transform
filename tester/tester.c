@@ -3,16 +3,14 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
-#include "qmk_wrappers.h"
+#include "qmk_wrapper.h"
+#include "utils.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
-#include "cursor.h"
-#include "utils.h"
-#include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
-#include "tester_utils.h"
+#include "tester.h"
 #include "sim_output_buffer.h"
 #ifdef WIN32
 #include <windows.h>
@@ -23,95 +21,67 @@
 #endif
 
 //////////////////////////////////////////////////////////////////
+#define ACTION_TEST_ALL_RULES       0
+#define ACTION_TEST_ASCII_STRING    1
+
+//////////////////////////////////////////////////////////////////
+static st_test_action_t actions[] = {
+    [ACTION_TEST_ALL_RULES] = test_all_rules,
+    [ACTION_TEST_ASCII_STRING] = test_ascii_string,
+    0
+};
+
+//////////////////////////////////////////////////////////////////////
+char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1] = {0};
+char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
+// rule search callback
+// (overriden function)
+void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
+{
+    strcpy(missed_rule_seq, rule->sequence);
+    strcpy(missed_rule_transform, rule->transform);
+}
+//////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
+// (overriden function)
 void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
         case KC_BSPC:
             sim_output_pop(1);
             break;
+        case KC_SPACE:
+            // we don't want st_keycode_to_char's translation
+            // of KC_SPACE to st_wordbreak_ascii here
+            sim_output_push(' ');
+            break;
         default:
             sim_output_push(st_keycode_to_char(keycode));
     }
 }
-//////////////////////////////////////////////////////////////////
-// (partial) simulation of process_sequence_transform logic
-// to test st_perform
-void sim_st_perform(const uint16_t *keycodes)
+//////////////////////////////////////////////////////////////////////
+void init_options(int argc, char **argv, st_test_options_t *options)
 {
-    // we don't use st_key_buffer_reset(buf) here because
-    // we don't nec want a space at the start of the buffer
-    st_key_buffer_t *buf = st_get_key_buffer();
-    buf->context_len = 0;
-    for (uint16_t key = *keycodes; key; key = *++keycodes) {
-        st_key_buffer_push(buf, key);
-        // If st_perform doesn't do anything special with this key,
-        // add it to our virtual output buffer
-        if (!st_perform()) {
-            const char c = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
-            sim_output_push(c);
+    options->action = ACTION_TEST_ALL_RULES;
+    options->user_str = 0;
+    options->print_all = false;
+    for (int i = 1; i < argc; ++i) {
+        if (!strcmp(argv[i], "-p")) {
+            options->print_all = true;
+        } else if (!strcmp(argv[i], "-s") && i+1 < argc) {
+            options->user_str = argv[i+1];
+            options->action = ACTION_TEST_ASCII_STRING;
         }
     }
 }
-//////////////////////////////////////////////////////////////////
-// (partial) simulation of process_sequence_transform logic
-// to test enhanced backspace
-void sim_st_enhanced_backspace(const uint16_t *keycodes)
-{
-    for (uint16_t key = *keycodes; key; key = *++keycodes) {
-        tap_code16(KC_BSPC);
-        st_handle_backspace();
-    }
-}
 //////////////////////////////////////////////////////////////////////
-void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
-{
-    // TODO
-}
-//////////////////////////////////////////////////////////////////////
-bool test_rule(const st_test_rule_t *rule)
-{
-    char seq_str[256];
-    sim_output_reset();
-    sim_st_perform(rule->seq_keycodes);
-    // Ignore spaces at the start of output
-    char *output = sim_output_get(true);
-    // Check if our output buffer matches the expected transform string
-    const bool match = !strcmp(output, rule->transform_str);
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
-    bool res = match;
-    if (match) {
-        printf("[\033[0;32mPASS\033[0m] %s ⇒ %s\n", seq_str, output);
-        // Make sure enhanced backspace handling leaves us with an empty
-        // output buffer if we send one backspace for every key sent
-        sim_st_enhanced_backspace(rule->seq_keycodes);
-        const int out_size = sim_output_get_size();
-        if (out_size) {
-            printf("[\033[0;31mFAIL\033[0m] Output buffer size after backspaces: %d\n", out_size);
-            res = false;
-        }
-    } else {
-        printf("[\033[0;31mFAIL\033[0m] %s ⇒ %s (expected: %s)\n", seq_str, output, rule->transform_str);
-    }
-    return res;
-}
-//////////////////////////////////////////////////////////////////////
-int main()
+int main(int argc, char **argv)
 {
 #ifdef WIN32
     // Set UTF8 code page for Windows console
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    int rules = 0, fail = 0;
-    for (; st_test_rules[rules].transform_str; ++rules) {
-        if (!test_rule(&st_test_rules[rules])) {
-            ++fail;
-        }
-    }
-    if (!fail) {
-        printf("\n[\033[0;32mAll %d tests passed!\033[0m]\n", rules);
-    } else {
-        printf("\n[\033[0;31m%d/%d tests failed!\033[0m]\n", fail, rules);
-    }
-    return fail ? 1 : 0;
+    st_test_options_t options;
+    init_options(argc, argv, &options);
+    return actions[options.action](&options);
 }

@@ -1,4 +1,4 @@
-#include "qmk_wrappers.h"
+#include "qmk_wrapper.h"
 #include "tester_utils.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
@@ -10,7 +10,7 @@
 const char *st_get_seq_token_symbol(uint16_t keycode)
 {
     if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
-        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
+        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_token;
     }
@@ -39,16 +39,15 @@ void keycodes_to_ascii_str(const uint16_t *keycodes, char *str)
     *str = 0;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t ascii_to_keycode(char *c)
+uint16_t ascii_to_keycode(char c)
 {
     for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
-        if (*c == st_seq_tokens_ascii[i]) {
+        if (c == st_seq_tokens_ascii[i]) {
             return SPECIAL_KEY_TRIECODE_0 + i;
         }
     }
-    if (*c == st_wordbreak_ascii) {
-        *c = ' ';
+    if (c == st_wordbreak_ascii) {
         return KC_SPACE;
     }
-    return st_char_to_keycode(*c);
+    return st_char_to_keycode(c);
 }

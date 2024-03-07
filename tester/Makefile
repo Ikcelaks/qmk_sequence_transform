@@ -26,9 +26,10 @@ CFLAGS = -I. \
 	-D_CONSOLE \
 	$(OSFLAG)
 
-DEPS = qmk_wrappers.h \
+DEPS = tester.h \
 	tester_utils.h \
 	sim_output_buffer.h \
+	../qmk_wrapper.h \
 	../keybuffer.h \
 	../key_stack.h \
 	../trie.h \
@@ -39,7 +40,12 @@ DEPS = qmk_wrappers.h \
 	../sequence_transform_test.h
 
 _OBJ = tester.o \
-	qmk_wrappers.o \
+	test_all_rules.o \
+	test_ascii_string.o \
+	test_perform.o \
+	test_backspace.o \
+	test_find_rule.o \
+	qmk_wrapper.o \
 	tester_utils.o \
 	sim_output_buffer.o \
 	keybuffer.o \
