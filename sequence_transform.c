@@ -70,6 +70,16 @@ static st_key_stack_t trie_stack = {
 };
 
 //////////////////////////////////////////////////////////////////
+// Trie cursor
+static st_cursor_t trie_cursor = {
+    &key_buffer,
+    {0, 255,0},
+    {0},
+    false,
+    false
+};
+
+//////////////////////////////////////////////////////////////////
 // Trie node and completion data
 static st_trie_t trie = {
     DICTIONARY_SIZE,
@@ -78,7 +88,8 @@ static st_trie_t trie = {
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
     MAX_BACKSPACES,
-    &trie_stack
+    &trie_stack,
+    &trie_cursor
 };
 
 //////////////////////////////////////////////////////////////////
@@ -354,11 +365,16 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
 void st_handle_backspace() {
-    st_cursor_t cursor = {};
-    st_cursor_init(&cursor, &trie, &key_buffer, 0, true);
-    const uint16_t action = st_cursor_get_action(&cursor);
-    if (action == ST_DEFAULT_KEY_ACTION) {
+    st_cursor_init(&trie, &key_buffer, 0, true);
+    const st_trie_payload_t *action = st_cursor_get_action(&trie);
+    if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
+        if (action->completion_len == 0) {
+            // This is a hacky fake key-press. Pop it off the buffer and go again
+            st_key_buffer_pop(&key_buffer, 1);
+            st_handle_backspace();
+            return;
+        }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Undoing backspace after non-matching keypress\n");
         st_key_buffer_print(&key_buffer);
@@ -367,26 +383,20 @@ void st_handle_backspace() {
         st_key_buffer_pop(&key_buffer, 1);
         return;
     }
-    if (action == ST_IGNORE_KEY_ACTION) {
-        // This is a hacky fake key-press. Pop it off the buffer and go again
-        st_key_buffer_pop(&key_buffer, 1);
-        st_handle_backspace();
-        return;
-    }
     // Undo a rule action
-    const int backspaces_needed_count = cursor.cached_action.completion_len - 1;
-    int resend_count = cursor.cached_action.num_backspaces;
+    const int backspaces_needed_count = action->completion_len - 1;
+    int resend_count = action->num_backspaces;
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("Undoing previous key action (%d): bs: %d, restore: %d\n",
-            action, backspaces_needed_count, resend_count);
+    uprintf("Undoing previous key action: bs: %d, restore: %d\n",
+            backspaces_needed_count, resend_count);
     st_key_buffer_print(&key_buffer);
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&cursor, 1);
+        st_cursor_move_to_history(&trie, 1);
         trie.key_stack->size = 0;
-        for (; resend_count > 0; --resend_count, st_cursor_next(&cursor)) {
-            const uint16_t keycode = st_cursor_get_keycode(&cursor);
+        for (; resend_count > 0; --resend_count, st_cursor_next(&trie)) {
+            const uint16_t keycode = st_cursor_get_keycode(&trie);
             if (!keycode) {
                 break;
             }

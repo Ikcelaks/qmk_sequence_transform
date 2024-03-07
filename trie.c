@@ -27,13 +27,11 @@
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res)
 {
-    st_cursor_t cursor = {};
-    st_cursor_init(&cursor, trie, search, 0, false);
-    st_cursor_t output_cursor = {};
-    st_cursor_init(&output_cursor, trie, search, 0, true);
-    st_cursor_print(&output_cursor);
-    st_find_longest_chain_cursor(&cursor, &res->trie_match, 0, 0);
-    st_find_longest_chain_cursor(&output_cursor, &res->trie_match, 0, 0);
+    st_cursor_init(trie, search, 0, false);
+    st_find_longest_chain_cursor(trie, &res->trie_match, 0, 0);
+    st_cursor_init(trie, search, 0, true);
+    st_cursor_print(trie);
+    st_find_longest_chain_cursor(trie, &res->trie_match, 0, 0);
     if (res->trie_match.seq_match_len > 0) {
         st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
         return true;
@@ -41,7 +39,7 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
     return false;
 }
 //////////////////////////////////////////////////////////////////
-void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
+void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
 {
     st_get_payload_from_code(payload, TDATA(match_index), TDATA(match_index+1));
 }
@@ -280,9 +278,8 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
  }
 
 
-bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth)
+bool st_find_longest_chain_cursor(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth)
 {
-    const st_trie_t *trie = cursor->trie;
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
     if (offset >= trie->data_size) {
         uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);
@@ -306,7 +303,7 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
             longest_match->seq_match_len = depth + 1;
         }
         // If bit 14 is also set, there is a child node after the completion string
-        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain_cursor(cursor, longest_match, offset+2, depth+1))
+        if ((code & TRIE_BRANCH_BIT) && st_find_longest_chain_cursor(trie, longest_match, offset+2, depth+1))
             return true;
         // Found a match so return true!
         return true;
@@ -315,7 +312,7 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
 	if (code & TRIE_BRANCH_BIT) {
 		code &= TRIE_CODE_MASK;
         // Find child key that matches the search buffer at the current depth
-        const uint16_t cur_key = st_cursor_get_keycode(cursor);
+        const uint16_t cur_key = st_cursor_get_keycode(trie);
         if (!cur_key) {
             return false;
         }
@@ -324,8 +321,8 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
                 // 16bit offset to child node is built from next uint16_t
                 const uint16_t child_offset = TDATA(offset+1);
                 // Traverse down child node
-                st_cursor_next(cursor);
-                return st_find_longest_chain_cursor(cursor, longest_match, child_offset, depth+1);
+                st_cursor_next(trie);
+                return st_find_longest_chain_cursor(trie, longest_match, child_offset, depth+1);
             }
         }
         // Couldn't go deeper, so return false.
@@ -333,10 +330,10 @@ bool st_find_longest_chain_cursor(st_cursor_t *cursor, st_trie_match_t *longest_
 	}
     // No high bits set, so this is a chain node
 	// Travel down chain until we reach a zero byte, or we no longer match our buffer
-	for (; code; depth++, st_cursor_next(cursor), code = TDATA(++offset)) {
-		if (code != st_cursor_get_keycode(cursor))
+	for (; code; depth++, st_cursor_next(trie), code = TDATA(++offset)) {
+		if (code != st_cursor_get_keycode(trie))
 			return false;
 	}
 	// After a chain, there should be a leaf or branch
-	return st_find_longest_chain_cursor(cursor, longest_match, offset+1, depth);
+	return st_find_longest_chain_cursor(trie, longest_match, offset+1, depth);
 }
