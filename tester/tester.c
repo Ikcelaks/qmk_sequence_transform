@@ -47,6 +47,7 @@ void sim_st_perform(const uint16_t *keycodes)
     // we don't nec want a space at the start of the buffer
     st_key_buffer_t *buf = st_get_key_buffer();
     buf->context_len = 0;
+    sim_output_reset();
     for (uint16_t key = *keycodes; key; key = *++keycodes) {
         st_key_buffer_push(buf, key);
         // If st_perform doesn't do anything special with this key,
@@ -67,35 +68,112 @@ void sim_st_enhanced_backspace(const uint16_t *keycodes)
     }
 }
 //////////////////////////////////////////////////////////////////////
+static char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1] = {0};
+static char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-    // TODO
+    strcpy_s(missed_rule_seq, sizeof(missed_rule_seq), rule->sequence);
+    strcpy_s(missed_rule_transform, sizeof(missed_rule_transform), rule->transform);
 }
 //////////////////////////////////////////////////////////////////////
-bool test_rule(const st_test_rule_t *rule)
+// (partial) simulation of process_sequence_transform logic
+// to test st_find_missed_rule
+void sim_st_find_missed_rule(const uint16_t *keycodes)
+{
+    missed_rule_seq[0] = 0;
+    missed_rule_transform[0] = 0;
+    st_key_buffer_t *buf = st_get_key_buffer();
+    // reset search_len_from_space by first sending a single space
+    st_key_buffer_push(buf, KC_SPACE);
+    st_find_missed_rule();
+    // send input rule seq so we can get output transform to test
+    sim_st_perform(keycodes);
+    buf->context_len = 0;
+    // send the output into input buffer
+    // to simulate user typing it directly
+    char *output = sim_output_get(false);
+    for (char c = *output; c; c = *++output) {
+        const uint16_t key = ascii_to_keycode(&c);
+        st_key_buffer_push(buf, key);
+    }
+    // from this new input buffer, find missed rule
+    st_find_missed_rule();
+}
+//////////////////////////////////////////////////////////////////////
+bool test_rule(const st_test_rule_t *rule, bool print_all)
 {
     char seq_str[256];
-    sim_output_reset();
+    char rule_str[256];
+    char test1_str[256];
+    char test2_str[256];
+    char test3_str[256];
+    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);    
+    sprintf_s(rule_str, sizeof(rule_str),
+        "[rule] %s ⇒ %s", seq_str, rule->transform_str);
+
+    // Test #1: st_perform
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
     char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
-    const bool match = !strcmp(output, rule->transform_str);
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
-    bool res = match;
-    if (match) {
-        printf("[\033[0;32mPASS\033[0m] %s ⇒ %s\n", seq_str, output);
-        // Make sure enhanced backspace handling leaves us with an empty
-        // output buffer if we send one backspace for every key sent
-        sim_st_enhanced_backspace(rule->seq_keycodes);
-        const int out_size = sim_output_get_size();
-        if (out_size) {
-            printf("[\033[0;31mFAIL\033[0m] Output buffer size after backspaces: %d\n", out_size);
-            res = false;
-        }
+    const bool test1_pass = !strcmp(output, rule->transform_str);
+    if (test1_pass) {
+        sprintf_s(test1_str, sizeof(test1_str),
+            "[\033[0;32mpass\033[0m] st_perform() OK!");
     } else {
-        printf("[\033[0;31mFAIL\033[0m] %s ⇒ %s (expected: %s)\n", seq_str, output, rule->transform_str);
-    }    
+        sprintf_s(test1_str, sizeof(test1_str),
+            "[\033[0;31mfail\033[0m] st_perform() output: %s", output);
+    }
+
+    // Test #2: st_handle_backspace
+    // Make sure enhanced backspace handling leaves us with an empty
+    // output buffer if we send one backspace for every key sent
+    sim_st_enhanced_backspace(rule->seq_keycodes);
+    const int out_size = sim_output_get_size();
+    const bool test2_pass = out_size == 0;
+    if (test2_pass) {
+        sprintf_s(test2_str, sizeof(test2_str),
+            "[\033[0;32mpass\033[0m] st_handle_backspace() OK!");
+    } else {
+        sprintf_s(test2_str, sizeof(test2_str),
+            "[\033[0;31mfail\033[0m] st_handle_backspace() left %d keys in buffer!", out_size);
+    }
+
+    // Test #3: st_find_missed_rule
+    sim_st_find_missed_rule(rule->seq_keycodes);
+    const bool test3_pass = !strcmp(missed_rule_transform, rule->transform_str);
+    if (test3_pass) {
+        sprintf_s(test3_str, sizeof(test3_str),
+            "[\033[0;32mpass\033[0m] st_find_missed_rule() OK!");
+    } else {
+        if (strlen(missed_rule_seq)) {
+            sprintf_s(test3_str, sizeof(test3_str),
+                "[\033[0;31mfail\033[0m] st_find_missed_rule() found: %s ⇒ %s",
+                missed_rule_seq, missed_rule_transform);
+        } else {
+            sprintf_s(test3_str, sizeof(test3_str),
+                "[\033[0;31mfail\033[0m] st_find_missed_rule() found nothing!");
+        }
+    }
+
+    // Print test results
+    const bool res = test1_pass
+        && test2_pass
+        && test3_pass;
+    if (res && !print_all) {
+        return res;
+    }
+    puts(rule_str);
+    if (print_all || !test1_pass) {
+        puts(test1_str);
+    }
+    if (print_all || !test2_pass) {
+        puts(test2_str);
+    }
+    if (print_all || !test3_pass) {
+        puts(test3_str);        
+    }
+    puts("");
     return res;
 }
 //////////////////////////////////////////////////////////////////////
@@ -107,7 +185,7 @@ int main()
 #endif
     int rules = 0, fail = 0;
     for (; st_test_rules[rules].transform_str; ++rules) {
-        if (!test_rule(&st_test_rules[rules])) {
+        if (!test_rule(&st_test_rules[rules], true)) {
             ++fail;
         }
     }
