@@ -1,6 +1,7 @@
 #include "qmk_wrapper.h"
 #include "keybuffer.h"
 #include "sequence_transform.h"
+#include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
 #include "sim_output_buffer.h"
 #include "tester.h"

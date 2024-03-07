@@ -5,9 +5,11 @@
 
 #include "qmk_wrapper.h"
 #include "utils.h"
+#include "keybuffer.h"
+#include "key_stack.h"
+#include "trie.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
-#include "tester_utils.h"
 #include "tester.h"
 #include "sim_output_buffer.h"
 #ifdef WIN32
@@ -19,19 +21,29 @@
 #endif
 
 //////////////////////////////////////////////////////////////////
-static const char *test_pass_str = "[\033[0;32mpass\033[0m]";
-static const char *test_fail_str = "[\033[0;31mfail\033[0m]";
+#define ACTION_TEST_ALL_RULES       0
+#define ACTION_TEST_ASCII_STRING    1
 
 //////////////////////////////////////////////////////////////////
-static st_test_info_t tests[] = {
-    { test_perform,     "st_perform",           { false, 0 } },
-    { test_backspace,   "st_handle_backspace",  { false, 0 } },
-    { test_find_rule,   "st_find_missed_rule",  { false, 0 } },
-    { 0,                0,                      { false, 0 } }
+static st_test_action_t actions[] = {
+    [ACTION_TEST_ALL_RULES] = test_all_rules,
+    [ACTION_TEST_ASCII_STRING] = test_ascii_string,
+    0
 };
 
+//////////////////////////////////////////////////////////////////////
+char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1] = {0};
+char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
+// rule search callback
+// (overriden function)
+void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
+{
+    strcpy_s(missed_rule_seq, sizeof(missed_rule_seq), rule->sequence);
+    strcpy_s(missed_rule_transform, sizeof(missed_rule_transform), rule->transform);
+}
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
+// (overriden function)
 void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
@@ -48,51 +60,28 @@ void tap_code16(uint16_t keycode)
     }   
 }
 //////////////////////////////////////////////////////////////////////
-int test_rule(const st_test_rule_t *rule, bool print_all)
+void init_options(int argc, char **argv, st_test_options_t *options)
 {
-    // Call all the tests and gather results
-    bool all_pass = true;
-    for (int i = 0; tests[i].func; ++i) {
-        st_test_result_t *res = &tests[i].res;
-        tests[i].func(rule, res);
-        all_pass = all_pass && res->pass;
-    }    
-    if (all_pass && !print_all) {
-        return all_pass;
+    options->action = ACTION_TEST_ALL_RULES;
+    options->user_str = 0;
+    options->print_all = false;
+    for (int i = 1; i < argc; ++i) {
+        if (!strcmp(argv[i], "-p")) {
+            options->print_all = true;
+        } else if (!strcmp(argv[i], "-s") && i+1 < argc) {
+            options->user_str = argv[i+1];
+            options->action = ACTION_TEST_ASCII_STRING;
+        }
     }
-    // Print test results
-    char seq_str[256];
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);    
-    printf("[rule] %s ⇒ %s\n", seq_str, rule->transform_str);
-    for (int i = 0; tests[i].func; ++i) {
-        const st_test_info_t *test = &tests[i];
-        const bool pass = test->res.pass;
-        if (print_all || !pass) {
-            printf("%s %s() %s\n",
-                   pass ? test_pass_str : test_fail_str,
-                   test->name,
-                   test->res.message);
-        }        
-    }
-    puts("");
-    return all_pass ? 1 : 0;
 }
 //////////////////////////////////////////////////////////////////////
-int main()
+int main(int argc, char **argv)
 {
 #ifdef WIN32
     // Set UTF8 code page for Windows console
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    int rules = 0, pass = 0;
-    for (; st_test_rules[rules].transform_str; ++rules) {
-        pass += test_rule(&st_test_rules[rules], true);
-    }
-    const int fail = rules - pass;
-    if (!fail) {
-        printf("\n[\033[0;32mAll %d tests passed!\033[0m]\n", rules);
-    } else {
-        printf("\n[\033[0;31m%d/%d tests failed!\033[0m]\n", fail, rules);
-    }
-    return fail;
+    st_test_options_t options;
+    init_options(argc, argv, &options);
+    return actions[options.action](&options);
 }

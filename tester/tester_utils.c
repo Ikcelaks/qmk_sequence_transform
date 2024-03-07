@@ -39,16 +39,15 @@ void keycodes_to_ascii_str(const uint16_t *keycodes, char *str)
     *str = 0;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t ascii_to_keycode(char *c)
+uint16_t ascii_to_keycode(char c)
 {
     for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
-        if (*c == st_seq_tokens_ascii[i]) {
+        if (c == st_seq_tokens_ascii[i]) {
             return SPECIAL_KEY_TRIECODE_0 + i;
         }
     }
-    if (*c == st_wordbreak_ascii) {
-        *c = ' ';
+    if (c == st_wordbreak_ascii) {
         return KC_SPACE;
     }
-    return st_char_to_keycode(*c);
+    return st_char_to_keycode(c);
 }

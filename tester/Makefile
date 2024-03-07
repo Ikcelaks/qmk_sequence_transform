@@ -39,6 +39,8 @@ DEPS = tester.h \
 	../sequence_transform_test.h
 
 _OBJ = tester.o \
+	test_all_rules.o \
+	test_ascii_string.o \
 	test_perform.o \
 	test_backspace.o \
 	test_find_rule.o \

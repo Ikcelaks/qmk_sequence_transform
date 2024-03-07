@@ -164,6 +164,8 @@
     <ClCompile Include="sim_output_buffer.c" />
     <ClCompile Include="tester.c" />
     <ClCompile Include="tester_utils.c" />
+    <ClCompile Include="test_all_rules.c" />
+    <ClCompile Include="test_ascii_string.c" />
     <ClCompile Include="test_backspace.c" />
     <ClCompile Include="test_find_rule.c" />
     <ClCompile Include="test_perform.c" />

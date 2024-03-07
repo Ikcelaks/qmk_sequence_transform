@@ -10,14 +10,6 @@
 #include "tester.h"
 
 //////////////////////////////////////////////////////////////////////
-static char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1] = {0};
-static char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
-void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
-{
-    strcpy_s(missed_rule_seq, sizeof(missed_rule_seq), rule->sequence);
-    strcpy_s(missed_rule_transform, sizeof(missed_rule_transform), rule->transform);
-}
-//////////////////////////////////////////////////////////////////////
 // (partial) simulation of process_sequence_transform logic
 // to test st_find_missed_rule
 void sim_st_find_missed_rule(const uint16_t *keycodes)
@@ -35,7 +27,7 @@ void sim_st_find_missed_rule(const uint16_t *keycodes)
     // to simulate user typing it directly
     char *output = sim_output_get(false);
     for (char c = *output; c; c = *++output) {
-        const uint16_t key = ascii_to_keycode(&c);
+        const uint16_t key = ascii_to_keycode(c);
         st_key_buffer_push(buf, key);
     }
     // from this new input buffer, find missed rule

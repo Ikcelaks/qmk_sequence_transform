@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "sim_output_buffer.h"
 #include "utils.h"
 
@@ -42,4 +43,13 @@ char *sim_output_get(bool trim_spaces)
 int sim_output_get_size()
 {
     return sim_output_buffer_size;
+}
+//////////////////////////////////////////////////////////////////
+void sim_output_print()
+{
+    printf("output: |");
+    for (int i = 0; i < sim_output_buffer_size; ++i) {
+        printf("%c", sim_output_buffer[i]);
+    }
+    printf("| (%d)\n", sim_output_buffer_size);
 }
