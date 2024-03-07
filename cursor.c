@@ -167,3 +167,16 @@ void st_cursor_print(const st_trie_t *trie)
     uprintf("| (%d)\n", trie->cursor->buffer->context_len);
     st_cursor_restore(trie, &cursor_pos);
 }
+//////////////////////////////////////////////////////////////////
+bool st_cursor_push_to_stack(const st_trie_t *trie, int count)
+{
+    trie->key_stack->size = 0;
+    for (; count > 0; --count, st_cursor_next(trie)) {
+        const uint16_t keycode = st_cursor_get_keycode(trie);
+        if (!keycode) {
+            return false;
+        }
+        st_key_stack_push(trie->key_stack, keycode);
+    }
+    return true;
+}

@@ -22,4 +22,5 @@ bool                    st_cursor_next(const st_trie_t *trie);
 bool                    st_cursor_move_to_history(const st_trie_t *trie, int history);
 st_cursor_pos_t         st_cursor_save(const st_trie_t *trie);
 void                    st_cursor_restore(const st_trie_t *trie, st_cursor_pos_t *cursor_pos);
+bool                    st_cursor_push_to_stack(const st_trie_t *trie, int count);
 void                    st_cursor_print(const st_trie_t *trie);
