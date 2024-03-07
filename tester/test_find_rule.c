@@ -42,13 +42,13 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
     sim_st_find_missed_rule(rule->seq_keycodes);
     res->pass = !strcmp(missed_rule_transform, rule->transform_str);
     if (res->pass) {
-        sprintf(message, "OK!");
+        snprintf(message, sizeof(message), "OK!");
     } else {
         if (strlen(missed_rule_seq)) {
-            sprintf(message, "found: %s ⇒ %s",
+            snprintf(message, sizeof(message), "found: %s ⇒ %s",
                 missed_rule_seq, missed_rule_transform);
         } else {
-            sprintf(message, "found nothing!");
+            snprintf(message, sizeof(message), "found nothing!");
         }
     }
 }

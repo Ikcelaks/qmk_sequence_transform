@@ -38,8 +38,10 @@ char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
 // (overriden function)
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-    strcpy(missed_rule_seq, rule->sequence);
-    strcpy(missed_rule_transform, rule->transform);
+    missed_rule_seq[0] = 0;
+    missed_rule_transform[0] = 0;
+    strncat(missed_rule_seq, rule->sequence, SEQUENCE_MAX_LENGTH);
+    strncat(missed_rule_transform, rule->transform, TRANSFORM_MAX_LEN);
 }
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
