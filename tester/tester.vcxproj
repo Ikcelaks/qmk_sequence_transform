@@ -160,7 +160,7 @@
     <ClCompile Include="..\sequence_transform.c" />
     <ClCompile Include="..\trie.c" />
     <ClCompile Include="..\utils.c" />
-    <ClCompile Include="qmk_wrappers.c" />
+    <ClCompile Include="qmk_wrapper.c" />
     <ClCompile Include="sim_output_buffer.c" />
     <ClCompile Include="tester.c" />
     <ClCompile Include="tester_utils.c" />
@@ -170,12 +170,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\keybuffer.h" />
+    <ClInclude Include="..\qmk_wrapper.h" />
     <ClInclude Include="..\sequence_transform.h" />
     <ClInclude Include="..\sequence_transform_data.h" />
     <ClInclude Include="..\sequence_transform_test.h" />
     <ClInclude Include="..\trie.h" />
     <ClInclude Include="..\utils.h" />
-    <ClInclude Include="qmk_wrappers.h" />
     <ClInclude Include="sim_output_buffer.h" />
     <ClInclude Include="tester.h" />
     <ClInclude Include="tester_utils.h" />

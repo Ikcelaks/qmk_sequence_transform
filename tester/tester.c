@@ -3,7 +3,7 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
-#include "qmk_wrappers.h"
+#include "qmk_wrapper.h"
 #include "utils.h"
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"

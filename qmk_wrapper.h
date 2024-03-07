@@ -5,6 +5,8 @@
 
 #ifndef ST_TESTER
 
+// If a .c file needs a QMK include, this should add it here,
+// and include "qmk_wrapper.h" instead.
 #include "quantum.h"
 #include "print.h"
 #include "send_string.h"

@@ -1,4 +1,4 @@
-#include "qmk_wrappers.h"
+#include "qmk_wrapper.h"
 
 #define KCLUT_ENTRY(a, b, c, d, e, f, g, h) \
     ( ((a) ? 1 : 0) << 0 \
