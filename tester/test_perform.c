@@ -37,8 +37,8 @@ void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
     // Check if our output buffer matches the expected transform string
     res->pass = !strcmp(output, rule->transform_str);
     if (res->pass) {
-        sprintf_s(message, sizeof(message), "OK!");
+        sprintf(message, "OK!");
     } else {
-        sprintf_s(message, sizeof(message), "output: %s", output);
+        sprintf(message, "output: %s", output);
     }
 }

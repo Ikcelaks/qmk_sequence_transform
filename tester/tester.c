@@ -38,8 +38,8 @@ char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
 // (overriden function)
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-    strcpy_s(missed_rule_seq, sizeof(missed_rule_seq), rule->sequence);
-    strcpy_s(missed_rule_transform, sizeof(missed_rule_transform), rule->transform);
+    strcpy(missed_rule_seq, rule->sequence);
+    strcpy(missed_rule_transform, rule->transform);
 }
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
@@ -57,7 +57,7 @@ void tap_code16(uint16_t keycode)
             break;
         default:
             sim_output_push(st_keycode_to_char(keycode));
-    }   
+    }
 }
 //////////////////////////////////////////////////////////////////////
 void init_options(int argc, char **argv, st_test_options_t *options)
