@@ -27,6 +27,7 @@ CFLAGS = -I. \
 	$(OSFLAG)	
 
 DEPS = qmk_wrappers.h \
+	tester.h \
 	tester_utils.h \
 	sim_output_buffer.h \
 	../keybuffer.h \

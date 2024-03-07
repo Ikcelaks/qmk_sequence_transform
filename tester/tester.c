@@ -12,6 +12,7 @@
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
 #include "tester_utils.h"
+#include "tester.h"
 #include "sim_output_buffer.h"
 #ifdef WIN32
 #include <windows.h>
@@ -20,6 +21,18 @@
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
+
+//////////////////////////////////////////////////////////////////
+static const char *test_pass_str = "[\033[0;32mpass\033[0m]";
+static const char *test_fail_str = "[\033[0;31mfail\033[0m]";
+
+//////////////////////////////////////////////////////////////////
+static st_test_info_t tests[] = {
+    { test_perform,     "st_perform",           { false, 0 } },
+    { test_backspace,   "st_handle_backspace",  { false, 0 } },
+    { test_find_rule,   "st_find_missed_rule",  { false, 0 } },
+    { 0,                0,                      { false, 0 } }
+};
 
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
@@ -100,81 +113,87 @@ void sim_st_find_missed_rule(const uint16_t *keycodes)
     st_find_missed_rule();
 }
 //////////////////////////////////////////////////////////////////////
-bool test_rule(const st_test_rule_t *rule, bool print_all)
+void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    char seq_str[256];
-    char rule_str[256];
-    char test1_str[256];
-    char test2_str[256];
-    char test3_str[256];
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);    
-    sprintf_s(rule_str, sizeof(rule_str),
-        "[rule] %s ⇒ %s", seq_str, rule->transform_str);
-
+    static char message[256];
+    res->message = message;
     // Test #1: st_perform
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
     char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
-    const bool test1_pass = !strcmp(output, rule->transform_str);
-    if (test1_pass) {
-        sprintf_s(test1_str, sizeof(test1_str),
-            "[\033[0;32mpass\033[0m] st_perform() OK!");
+    res->pass = !strcmp(output, rule->transform_str);
+    if (res->pass) {
+        sprintf_s(message, sizeof(message), "OK!");
     } else {
-        sprintf_s(test1_str, sizeof(test1_str),
-            "[\033[0;31mfail\033[0m] st_perform() output: %s", output);
+        sprintf_s(message, sizeof(message), "output: %s", output);
     }
-
+}
+//////////////////////////////////////////////////////////////////////
+void test_backspace(const st_test_rule_t *rule, st_test_result_t *res)
+{
+    static char message[256];
+    res->message = message;
     // Test #2: st_handle_backspace
     // Make sure enhanced backspace handling leaves us with an empty
     // output buffer if we send one backspace for every key sent
     sim_st_enhanced_backspace(rule->seq_keycodes);
     const int out_size = sim_output_get_size();
-    const bool test2_pass = out_size == 0;
-    if (test2_pass) {
-        sprintf_s(test2_str, sizeof(test2_str),
-            "[\033[0;32mpass\033[0m] st_handle_backspace() OK!");
+    res->pass = out_size == 0;
+    if (res->pass) {
+        sprintf_s(message, sizeof(message), "OK!");
     } else {
-        sprintf_s(test2_str, sizeof(test2_str),
-            "[\033[0;31mfail\033[0m] st_handle_backspace() left %d keys in buffer!", out_size);
+        sprintf_s(message, sizeof(message), "left %d keys in buffer!", out_size);
     }
-
+}
+//////////////////////////////////////////////////////////////////////
+void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
+{
+    static char message[256];
+    res->message = message;
     // Test #3: st_find_missed_rule
     sim_st_find_missed_rule(rule->seq_keycodes);
-    const bool test3_pass = !strcmp(missed_rule_transform, rule->transform_str);
-    if (test3_pass) {
-        sprintf_s(test3_str, sizeof(test3_str),
-            "[\033[0;32mpass\033[0m] st_find_missed_rule() OK!");
+    res->pass = !strcmp(missed_rule_transform, rule->transform_str);
+    if (res->pass) {
+        sprintf_s(message, sizeof(message), "OK!");
     } else {
         if (strlen(missed_rule_seq)) {
-            sprintf_s(test3_str, sizeof(test3_str),
-                "[\033[0;31mfail\033[0m] st_find_missed_rule() found: %s ⇒ %s",
+            sprintf_s(message, sizeof(message), "found: %s ⇒ %s",
                 missed_rule_seq, missed_rule_transform);
         } else {
-            sprintf_s(test3_str, sizeof(test3_str),
-                "[\033[0;31mfail\033[0m] st_find_missed_rule() found nothing!");
+            sprintf_s(message, sizeof(message), "found nothing!");
         }
     }
-
+}
+//////////////////////////////////////////////////////////////////////
+int test_rule(const st_test_rule_t *rule, bool print_all)
+{
+    // Call all the tests and gather results
+    bool all_pass = true;
+    for (int i = 0; tests[i].func; ++i) {
+        st_test_result_t *res = &tests[i].res;
+        tests[i].func(rule, res);
+        all_pass = all_pass && res->pass;
+    }    
+    if (all_pass && !print_all) {
+        return all_pass;
+    }
     // Print test results
-    const bool res = test1_pass
-        && test2_pass
-        && test3_pass;
-    if (res && !print_all) {
-        return res;
-    }
-    puts(rule_str);
-    if (print_all || !test1_pass) {
-        puts(test1_str);
-    }
-    if (print_all || !test2_pass) {
-        puts(test2_str);
-    }
-    if (print_all || !test3_pass) {
-        puts(test3_str);        
+    char seq_str[256];
+    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);    
+    printf("[rule] %s ⇒ %s\n", seq_str, rule->transform_str);
+    for (int i = 0; tests[i].func; ++i) {
+        const st_test_info_t *test = &tests[i];
+        const bool pass = test->res.pass;
+        if (print_all || !pass) {
+            printf("%s %s() %s\n",
+                   pass ? test_pass_str : test_fail_str,
+                   test->name,
+                   test->res.message);
+        }        
     }
     puts("");
-    return res;
+    return all_pass ? 1 : 0;
 }
 //////////////////////////////////////////////////////////////////////
 int main()
@@ -183,16 +202,15 @@ int main()
     // Set UTF8 code page for Windows console
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    int rules = 0, fail = 0;
+    int rules = 0, pass = 0;
     for (; st_test_rules[rules].transform_str; ++rules) {
-        if (!test_rule(&st_test_rules[rules], true)) {
-            ++fail;
-        }
+        pass += test_rule(&st_test_rules[rules], true);
     }
+    const int fail = rules - pass;
     if (!fail) {
         printf("\n[\033[0;32mAll %d tests passed!\033[0m]\n", rules);
     } else {
         printf("\n[\033[0;31m%d/%d tests failed!\033[0m]\n", fail, rules);
     }
-    return fail ? 1 : 0;
+    return fail;
 }
