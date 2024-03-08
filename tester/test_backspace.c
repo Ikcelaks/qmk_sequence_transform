@@ -27,8 +27,8 @@ void test_backspace(const st_test_rule_t *rule, st_test_result_t *res)
     const int out_size = sim_output_get_size();
     res->pass = out_size == 0;
     if (res->pass) {
-        sprintf(message, "OK!");
+        snprintf(message, sizeof(message), "OK!");
     } else {
-        sprintf(message, "left %d keys in buffer!", out_size);
+        snprintf(message, sizeof(message), "left %d keys in buffer!", out_size);
     }
 }
