@@ -13,9 +13,9 @@
 
 #ifdef SEQUENCE_TRANSFORM_LOG_TIME
 #   define st_log_time(F) { \
-               const int t = timer_read32(); \
+               const uint32_t t = timer_read32(); \
                F; \
-               uprintf(#F##" time: %d\n", timer_elapsed32(t)); \
+               uprintf("%s time: %lu\n", #F, timer_elapsed32(t)); \
            }            
 #else
 #   define st_log_time(F) F;
