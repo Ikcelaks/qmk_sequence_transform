@@ -48,7 +48,7 @@ static st_key_buffer_t key_buffer = {
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
-uint16_t get_buffer_keycode(int index) {
+uint16_t sequence_transform_past_keycode(int index) {
     return st_key_buffer_get_keycode(&key_buffer, index);
 }
 
