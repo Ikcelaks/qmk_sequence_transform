@@ -116,15 +116,15 @@ bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_mat
 	return st_find_longest_chain(trie, search, longest_match, offset+1, depth);
 }
 //////////////////////////////////////////////////////////////////////
-int st_trie_get_rule(st_trie_t              *trie,
-                     const st_key_buffer_t  *key_buffer,
-                     int                    search_len_start,
-                     st_trie_rule_t         *res)
+bool st_trie_get_rule(st_trie_t              *trie,
+                      const st_key_buffer_t  *key_buffer,
+                      int                    search_len_start,
+                      st_trie_rule_t         *rule)
 {
     st_trie_search_t search;
     search.trie = trie;
     search.key_buffer = key_buffer;
-    search.result = res;
+    search.result = rule;
     search.max_transform_len = 0;
     const int max_skip_levels = 1 + trie->max_backspaces;
     for (int len = search_len_start; len < key_buffer->context_len; ++len) {
@@ -134,15 +134,14 @@ int st_trie_get_rule(st_trie_t              *trie,
             search.search_len = len + search.skip_levels;
             if (search.search_len > key_buffer->context_len)
                 break;
-            //uprintf("  searching from len %d, skips: %d\n", len, search.skip_levels);
+            //printf("searching from len %d, skips: %d\n", len, search.skip_levels);
             trie->key_stack->size = 0;
-            st_find_rule(&search, 0);
-            if (search.max_transform_len) {
-                return len + res->payload.completion_len;
+            if (st_find_rule(&search, 0)) {
+                return true;
             }
         }
     }
-    return search_len_start;
+    return false;
 }
 //////////////////////////////////////////////////////////////////////
 bool st_find_rule(st_trie_search_t *search, uint16_t offset)
@@ -169,9 +168,7 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
         if (search->skip_levels != skips || key_stack->size <= skips) {
             return false;
         }
-        st_check_rule_match(&payload, search);
-        // Found a match so return true!
-        return true;
+        return st_check_rule_match(&payload, search);
     }
     // BRANCH node if bit 14 is set
     if (code & TRIE_BRANCH_BIT) {
@@ -221,19 +218,20 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
+bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
 {
     st_trie_t *trie = search->trie;
     st_trie_rule_t *res = search->result;
     //uprintf("checking match at index %d\n", payload->completion_index);
     // Early return if:
-    // 1. potential transform len is smaller than our current best
-    // 2. potential transform len is bigger than search buffer
+    // 1. potential transform len doesn't reach end of search buffer
+    // 2. potential transform len is smaller than our current best
     int clen = search->search_len - search->skip_levels;
     const int transform_len = clen + payload->completion_len;
-    if (transform_len < search->max_transform_len ||
-        transform_len > search->key_buffer->context_len) {
-        return;
+    //printf("  checking match at index %d, tlen: %d\n", payload->completion_index, transform_len);
+    if (transform_len != search->key_buffer->context_len ||
+        transform_len < search->max_transform_len) {
+        return false;
     }
     //uprintf("  testing completion: ");
     // Check if completed string matches what comes next in our search buffer
@@ -245,11 +243,11 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         //uprintf("[%02X, %02X] ", keycode, buffer_keycode);
         if (keycode != buffer_keycode) {
             //uprintf("  no match.\n");
-            return;
+            return false;
         }
     }
     // Save payload data and max_transform_len in result
-    search->max_transform_len = clen;
+    search->max_transform_len = transform_len;
     res->payload = *payload;
     // Fill the result sequence and start of transform
     char *seq = res->sequence;
@@ -269,4 +267,5 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         *transform++ = CDATA(i);
     }
     *transform = 0;
+    return true;
  }

@@ -17,9 +17,6 @@ void sim_st_find_missed_rule(const uint16_t *keycodes)
     missed_rule_seq[0] = 0;
     missed_rule_transform[0] = 0;
     st_key_buffer_t *buf = st_get_key_buffer();
-    // reset search_len_from_space by first sending a single space
-    st_key_buffer_push(buf, KC_SPACE);
-    st_find_missed_rule();
     // send input rule seq so we can get output transform to test
     sim_st_perform(keycodes);
     buf->context_len = 0;
