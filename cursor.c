@@ -141,12 +141,13 @@ bool st_cursor_next(const st_trie_t *trie)
     }
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_move_to_history(const st_trie_t *trie, int history)
+bool st_cursor_move_to_history(const st_trie_t *trie, int history, uint8_t as_output_buffer)
 {
-    st_cursor_t *cursor = trie->cursor;
+    st_cursor_t * const cursor = trie->cursor;
     cursor->cache_valid = false;    // invalidate cache
     cursor->cursor_pos.pos = history;
     cursor->cursor_pos.sub_pos = 0;
+    cursor->cursor_pos.as_output_buffer = as_output_buffer;
     return history < cursor->buffer->context_len;
 }
 //////////////////////////////////////////////////////////////////

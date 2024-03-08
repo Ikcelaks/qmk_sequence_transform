@@ -19,7 +19,7 @@ void                    st_cursor_init(const st_trie_t *trie, st_key_buffer_t *b
 uint16_t                st_cursor_get_keycode(const st_trie_t *trie);
 st_trie_payload_t       *st_cursor_get_action(const st_trie_t *trie);
 bool                    st_cursor_next(const st_trie_t *trie);
-bool                    st_cursor_move_to_history(const st_trie_t *trie, int history);
+bool                    st_cursor_move_to_history(const st_trie_t *trie, int history, uint8_t as_output_buffer);
 st_cursor_pos_t         st_cursor_save(const st_trie_t *trie);
 void                    st_cursor_restore(const st_trie_t *trie, st_cursor_pos_t *cursor_pos);
 bool                    st_cursor_longer_than(const st_trie_t *trie, st_cursor_pos_t *past_pos);

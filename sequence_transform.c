@@ -215,49 +215,42 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_record_send_key(uint16_t keycode) {
-    st_key_buffer_push(&key_buffer, keycode);
-    st_send_key(keycode);
-}
-//////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_repeat_key()
+uint16_t search_for_regular_keypress(void)
 {
-    st_key_action_t *keyaction = NULL;
+    uint16_t keycode = KC_NO;
     for (int i = 1; i < key_buffer.context_len; ++i) {
-        keyaction = st_key_buffer_get(&key_buffer, i);
-        if (!keyaction || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+        keycode = st_key_buffer_get_keycode(&key_buffer, i);
+        if (!keycode || !(keycode & SPECIAL_KEY_TRIECODE_0)) {
             break;
         }
     }
+    return keycode ? keycode : KC_NO;
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+void st_handle_repeat_key(void)
+{
+    const uint16_t last_regular_keypress = search_for_regular_keypress();
+    if (last_regular_keypress) {
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("repeat keycode: 0x%04X\n", keyaction->keypressed);
+        uprintf("repeat keycode: 0x%04X\n", last_regular_keypress);
 #endif
-    if (keyaction) {
-        *st_key_buffer_get(&key_buffer, 0) = *keyaction;
-        st_send_key(keyaction->keypressed);
+        st_send_key(last_regular_keypress);
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-    // Main body
-    char context_string[SEQUENCE_MAX_LENGTH + 1];
-    st_key_buffer_to_str(&key_buffer, context_string, res->trie_match.seq_match_pos.segment_len);
+    st_cursor_init(trie, &key_buffer, 0, false);
+    const uint16_t rule_trigger_keycode = st_cursor_get_keycode(trie);
+    const st_trie_payload_t *rule_action = st_cursor_get_action(trie);
+    const bool is_repeat = rule_action->func_code == 1;
+    const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
+    st_cursor_move_to_history(trie, 1, res->trie_match.seq_match_pos.as_output_buffer);
+    st_cursor_push_to_stack(trie, prev_seq_len);
+    char seq_str[prev_seq_len + 1];
+    st_key_stack_to_str(trie->key_stack, seq_str);
 
-    const int match_len = res->trie_match.seq_match_pos.segment_len - 1;
-    char rule_trigger_char = context_string[match_len];
-    context_string[match_len] = '\0';
-
-    const bool is_repeat = KEY_AT(0) == SPECIAL_KEY_TRIECODE_0+1 && match_len == 0;
-
-    if (is_repeat) {
-        uint16_t last_key = KEY_AT(1);
-
-        context_string[0] = st_keycode_to_char(last_key);
-        context_string[1] = '\0';
-    }
-
-    uprintf("st_rule,%s,%d,%c,", context_string, res->trie_payload.num_backspaces, rule_trigger_char);
+    uprintf("st_rule,%s,%d,%c,", seq_str, res->trie_payload.num_backspaces, st_keycode_to_char(rule_trigger_keycode));
 
     // Completion string
     const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
@@ -271,7 +264,7 @@ void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
     switch (res->trie_payload.func_code) {
         case 1:  // repeat
             if (is_repeat)
-                uprintf("%s", context_string);
+                uprintf("%c", st_keycode_to_char(search_for_regular_keypress()));
             break;
 
         case 2:  // set one-shot shift
@@ -331,11 +324,10 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
 #endif
-
-    log_rule(trie, res);
-
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
+    // Log newly added rule match
+    log_rule(trie, res);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
@@ -397,7 +389,7 @@ void st_handle_backspace() {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&trie, 1);
+        st_cursor_move_to_history(&trie, 1, true);
         if (st_cursor_push_to_stack(&trie, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
