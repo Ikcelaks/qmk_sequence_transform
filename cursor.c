@@ -170,15 +170,16 @@ bool st_cursor_longer_than(const st_trie_t *trie, st_cursor_pos_t *past_pos)
 //////////////////////////////////////////////////////////////////
 void st_cursor_print(const st_trie_t *trie)
 {
+#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_cursor_pos_t cursor_pos = st_cursor_save(trie);
     uprintf("cursor: |");
     while (trie->cursor->cursor_pos.pos < trie->cursor->buffer->context_len) {
-        uint16_t key = st_cursor_get_keycode(trie);
-        uprintf("%c", st_keycode_to_char(key));
+        uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(trie)));
         st_cursor_next(trie);
     }
     uprintf("| (%d)\n", trie->cursor->buffer->context_len);
     st_cursor_restore(trie, &cursor_pos);
+#endif
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_push_to_stack(const st_trie_t *trie, int count)
