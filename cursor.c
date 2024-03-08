@@ -85,13 +85,14 @@ bool st_cursor_next(const st_trie_t *trie)
     if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
         // skip fake key and try again
         ++cursor->cursor_pos.pos;
+        cursor->cache_valid = false;
         cursor->cursor_pos.sub_pos = 0;
-        // TODO: Handle caching
         return st_cursor_next(trie);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
         ++cursor->cursor_pos.pos;
+        cursor->cache_valid = false;
         cursor->cursor_pos.sub_pos = 0;
         ++cursor->cursor_pos.segment_len;
         // TODO: Handle caching
@@ -109,6 +110,7 @@ bool st_cursor_next(const st_trie_t *trie)
     while (true) {
         // move to next key in buffer
         ++cursor->cursor_pos.pos;
+        cursor->cache_valid = false;
         keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
         if (!keyaction) {
             // We reached the end without finding the next output key

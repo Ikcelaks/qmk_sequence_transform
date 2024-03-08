@@ -34,12 +34,10 @@ import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple, Callable
 from datetime import date, datetime
-from datetime import date, datetime
 from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
 ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
 
 GPL2_HEADER_C_LIKE = f'''\
@@ -80,7 +78,6 @@ class bcolors:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
-
 ###############################################################################
 def color_currying(color: str) -> Callable:
     def inner(*text: Any) -> str:
@@ -88,21 +85,17 @@ def color_currying(color: str) -> Callable:
 
     return inner
 
-
 ###############################################################################
 red = color_currying(bcolors.RED)
 cyan = color_currying(bcolors.CYAN)
-
 
 ###############################################################################
 def err(*text: Any) -> str:
     return red("Error:", *text)
 
-
 ###############################################################################
 def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
     return [(char, start + i) for i, char in enumerate(chars)]
-
 
 ###############################################################################
 def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
@@ -119,14 +112,12 @@ def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
         *[(chr(c), c + KC_A - ord('a')) for c in range(ord('a'), ord('z') + 1)]
     ])
 
-
 ###############################################################################
 def quiet_print(*args, **kwargs):
     if IS_QUIET:
         return
 
     print(*args, **kwargs)
-
 
 ###############################################################################
 def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
@@ -142,7 +133,6 @@ def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
         (char, OUTPUT_FUNC_1 + i)
         for i, char in enumerate(output_func_chars)
     ])
-
 
 ###############################################################################
 def parse_file(
@@ -186,7 +176,6 @@ def parse_file(
 
     return rules
 
-
 ###############################################################################
 def make_trie(
     seq_dict: List[Tuple[str, str]],
@@ -219,7 +208,6 @@ def make_trie(
         })
 
     return trie
-
 
 ###############################################################################
 def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
@@ -300,7 +288,6 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
     traverse_trienode(trie)
     return outputs
 
-
 ###############################################################################
 def parse_file_lines(
     file_name: str, separator: str, comment: str
@@ -325,7 +312,6 @@ def parse_file_lines(
 
                 context, correction = tokens
                 yield line_number, context, correction
-
 
 ###############################################################################
 def serialize_outputs(
@@ -358,7 +344,6 @@ def serialize_outputs(
         completions_map,
         max_completion_len
     )
-
 
 ###############################################################################
 def serialize_trie(
@@ -475,7 +460,6 @@ def serialize_trie(
     # Serialize final table.
     return [b for node in table for b in serialize(node)]
 
-
 ###############################################################################
 def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
@@ -490,26 +474,21 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
 
     return [uint16_offset]
 
-
 ###############################################################################
 def sequence_len(node: Tuple[str, str]) -> int:
     return len(node[0])
-
 
 ###############################################################################
 def transform_len(node: Tuple[str, str]) -> int:
     return len(node[1])
 
-
 ###############################################################################
 def byte_to_hex(b: int) -> str:
     return f'0x{b:02X}'
 
-
 ###############################################################################
 def uint16_to_hex(b: int) -> str:
     return f'0x{b:04X}'
-
 
 ###############################################################################
 def create_test_rule_c_string(
@@ -661,7 +640,6 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
     with open(test_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_test_h_lines))
-
 
 ###############################################################################
 if __name__ == '__main__':
