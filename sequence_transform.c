@@ -48,6 +48,11 @@ static st_key_buffer_t key_buffer = {
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
+uint16_t sequence_transform_past_keycode(int index) {
+    return st_key_buffer_get_keycode(&key_buffer, index);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
 // Add KC_SPC on timeout
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;

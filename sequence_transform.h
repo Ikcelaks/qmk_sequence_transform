@@ -22,6 +22,7 @@
 bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule);
 void post_process_sequence_transform(void);
+uint16_t sequence_transform_past_keycode(int index);
 
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 void sequence_transform_task(void);
