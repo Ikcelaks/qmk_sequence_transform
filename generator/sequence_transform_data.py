@@ -77,6 +77,7 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+    
 
 ###############################################################################
 def color_currying(color: str) -> Callable:
@@ -84,18 +85,22 @@ def color_currying(color: str) -> Callable:
         return f"{color}{' '.join(map(str, text))}{bcolors.ENDC}"
 
     return inner
+    
 
 ###############################################################################
 red = color_currying(bcolors.RED)
 cyan = color_currying(bcolors.CYAN)
 
+
 ###############################################################################
 def err(*text: Any) -> str:
     return red("Error:", *text)
 
+
 ###############################################################################
 def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
     return [(char, start + i) for i, char in enumerate(chars)]
+
 
 ###############################################################################
 def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
@@ -112,12 +117,14 @@ def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
         *[(chr(c), c + KC_A - ord('a')) for c in range(ord('a'), ord('z') + 1)]
     ])
 
+
 ###############################################################################
 def quiet_print(*args, **kwargs):
     if IS_QUIET:
         return
 
     print(*args, **kwargs)
+
 
 ###############################################################################
 def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
@@ -133,6 +140,7 @@ def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
         (char, OUTPUT_FUNC_1 + i)
         for i, char in enumerate(output_func_chars)
     ])
+
 
 ###############################################################################
 def parse_file(
@@ -176,6 +184,7 @@ def parse_file(
 
     return rules
 
+
 ###############################################################################
 def make_trie(
     seq_dict: List[Tuple[str, str]],
@@ -208,6 +217,7 @@ def make_trie(
         })
 
     return trie
+
 
 ###############################################################################
 def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
@@ -288,6 +298,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
     traverse_trienode(trie)
     return outputs
 
+
 ###############################################################################
 def parse_file_lines(
     file_name: str, separator: str, comment: str
@@ -312,6 +323,7 @@ def parse_file_lines(
 
                 context, correction = tokens
                 yield line_number, context, correction
+
 
 ###############################################################################
 def serialize_outputs(
@@ -344,6 +356,7 @@ def serialize_outputs(
         completions_map,
         max_completion_len
     )
+
 
 ###############################################################################
 def serialize_trie(
@@ -460,6 +473,7 @@ def serialize_trie(
     # Serialize final table.
     return [b for node in table for b in serialize(node)]
 
+
 ###############################################################################
 def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
@@ -474,21 +488,26 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
 
     return [uint16_offset]
 
+
 ###############################################################################
 def sequence_len(node: Tuple[str, str]) -> int:
     return len(node[0])
+    
 
 ###############################################################################
 def transform_len(node: Tuple[str, str]) -> int:
     return len(node[1])
 
+
 ###############################################################################
 def byte_to_hex(b: int) -> str:
     return f'0x{b:02X}'
 
+
 ###############################################################################
 def uint16_to_hex(b: int) -> str:
     return f'0x{b:04X}'
+
 
 ###############################################################################
 def create_test_rule_c_string(
@@ -496,7 +515,7 @@ def create_test_rule_c_string(
     sequence: str,
     transform: str
 ) -> str:
-    """ returns a string with the following format:
+    """ returns a string with the following format: 
         { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
     """
     # we don't want any utf8 symbols in transformation string here
@@ -541,11 +560,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
-            test_rule = create_test_rule_c_string(char_map, sequence, transformation)
+            test_rule = create_test_rule_c_string(char_map, sequence, transformation) 
             test_rules_c_strings.append(test_rule)
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
-        transformations.append(f'//    {sequence} -> {transformation}')
+        transformations.append(f'//    {sequence} -> {transformation}')        
 
     header_lines = [
         GPL2_HEADER_C_LIKE,
@@ -560,7 +579,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
 
     record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
-
+    
     # token symbols stored as utf8 strings
     sym_array_str = ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS))
     st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
@@ -569,7 +588,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
     st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
-
+    
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         *record_rule_usage,
@@ -617,10 +636,10 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         *tranformations_lines,
         '',
         *trie_data_lines,
-    ]
+    ]    
     with open(data_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
-
+       
      # Write test header file
     sequence_transform_test_h_lines = [
         *header_lines,
@@ -640,6 +659,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
     with open(test_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_test_h_lines))
+        
 
 ###############################################################################
 if __name__ == '__main__':
@@ -663,9 +683,9 @@ if __name__ == '__main__':
     try:
         SEQ_TOKENS_ASCII = config['seq_tokens_ascii']
         WORDBREAK_ASCII = config['wordbreak_ascii']
-        MAGIC_CHARS = config['magic_chars']
+        MAGIC_CHARS = config['magic_chars']        
         OUTPUT_FUNC_CHARS = config['output_func_chars']
-        WORDBREAK_CHAR = config['wordbreak_char']
+        WORDBREAK_CHAR = config['wordbreak_char']        
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
