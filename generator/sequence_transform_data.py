@@ -302,6 +302,15 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
+    square_brackets_group = re.findall(r"\[(\w+)]", pattern)
+    if square_brackets_group:
+        match = square_brackets_group[0]
+
+        return generate_matches(pattern.replace(
+            f"[{match}]",
+            f"({'|'.join(match)})"
+        ))
+
     patterns = []
     groups = re.findall(r"\((?:\w\|?)+\)\??", pattern)
 
