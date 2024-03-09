@@ -305,7 +305,7 @@ def generate_matches(pattern) -> list[tuple[str, str]]:
     patterns = [("", pattern)]
 
     for i, pattern in enumerate([pattern]):
-        groups = re.findall(r"\((?:\w\|?)+\)\??", pattern)
+        groups = re.findall(r"\(\w+(?:\|\w+)+\)\??", pattern)
 
         if not groups:
             return patterns
