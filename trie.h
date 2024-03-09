@@ -69,4 +69,4 @@ void st_get_payload_from_match_index(st_trie_t *trie, st_trie_payload_t *payload
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
 bool st_find_longest_chain(st_trie_t *trie, st_key_buffer_t *search, st_trie_match_t *longest_match, uint16_t offset, uint8_t depth);
 bool st_find_rule(st_trie_search_t *search, uint16_t offset);
-bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
+bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search, uint16_t offset);

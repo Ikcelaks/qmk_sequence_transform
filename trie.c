@@ -15,6 +15,7 @@
 #include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
+#include "sequence_transform_data.h"
 
 #define TRIE_MATCH_BIT      0x8000
 #define TRIE_BRANCH_BIT     0x4000
@@ -28,6 +29,7 @@ bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_se
 {
     if (st_find_longest_chain(trie, search, &res->trie_match, 0, 0)) {
         st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
+        //printf("  search match @%d\n", res->trie_match.trie_match_index);
         return true;
     }
     return false;
@@ -132,8 +134,6 @@ bool st_trie_get_rule(st_trie_t              *trie,
         // Each skip level allows for a magic key or deleted char.
         for (search.skip_levels = 1; search.skip_levels <= max_skip_levels; ++search.skip_levels) {
             search.search_len = len + search.skip_levels;
-            if (search.search_len > key_buffer->context_len)
-                break;
             //printf("searching from len %d, skips: %d\n", len, search.skip_levels);
             trie->key_stack->size = 0;
             if (st_find_rule(&search, 0)) {
@@ -150,7 +150,7 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
 #define OFFSET_BUFFER_VAL st_key_buffer_get_keycode(key_buffer, key_stack->size - search->search_len)
     st_trie_t *trie = search->trie;
     const st_key_buffer_t *key_buffer = search->key_buffer;
-    st_key_stack_t *key_stack = trie->key_stack;    
+    st_key_stack_t *key_stack = trie->key_stack;
     uint16_t code = TDATA(offset);
     // Match Node if bit 15 is set
     if (code & TRIE_MATCH_BIT) {
@@ -168,7 +168,7 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
         if (search->skip_levels != skips || key_stack->size <= skips) {
             return false;
         }
-        return st_check_rule_match(&payload, search);
+        return st_check_rule_match(&payload, search, offset);
     }
     // BRANCH node if bit 14 is set
     if (code & TRIE_BRANCH_BIT) {
@@ -218,46 +218,86 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
+bool stack_contains_unexpanded_seq(const st_key_stack_t *s)
+{
+    for (int i = 1; i < s->size; ++i) {
+        const uint16_t key = s->buffer[i];
+        if (st_is_seq_token_keycode(key))
+            return true;
+    }
+    return false;
+}
+//////////////////////////////////////////////////////////////////////
+bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search, uint16_t offset)
 {
     st_trie_t *trie = search->trie;
+    const st_key_stack_t *key_stack = trie->key_stack;
+    const st_key_buffer_t *key_buffer = search->key_buffer;
     st_trie_rule_t *res = search->result;
-    //uprintf("checking match at index %d\n", payload->completion_index);
+    const int completion_end = payload->completion_index + payload->completion_len;
+    const int backspaces = payload->num_backspaces;
     // Early return if:
     // 1. potential transform len doesn't reach end of search buffer
     // 2. potential transform len is smaller than our current best
     int clen = search->search_len - search->skip_levels;
+    //int clen = search->search_len - 1 - backspaces;
     const int transform_len = clen + payload->completion_len;
-    //printf("  checking match at index %d, tlen: %d\n", payload->completion_index, transform_len);
-    if (transform_len != search->key_buffer->context_len ||
+    /*char stackstr[128];
+    char comp[128];
+    char *c = comp;
+    for (int i = payload->completion_index; i < completion_end; ++i) *c++ = CDATA(i);
+    *c = 0;
+    st_key_stack_to_str(key_stack, stackstr);
+    printf("  checking match @%d, tlen: %d, clen: %d, stack: |%s|, comp: |%s|(%d bs)\n",
+            offset, transform_len, key_buffer->context_len, stackstr, comp, backspaces);*/
+    if (transform_len != key_buffer->context_len ||
         transform_len < search->max_transform_len) {
         return false;
     }
-    //uprintf("  testing completion: ");
-    // Check if completed string matches what comes next in our search buffer
-    const int completion_end = payload->completion_index + payload->completion_len;    
-    for (int i = payload->completion_index; i < completion_end; ++i, ++clen) {
-        const char ascii_code = CDATA(i);
-        const uint16_t keycode = st_char_to_keycode(tolower(ascii_code));
-        const uint16_t buffer_keycode = st_key_buffer_get_keycode(search->key_buffer, -(clen+1));
-        //uprintf("[%02X, %02X] ", keycode, buffer_keycode);
-        if (keycode != buffer_keycode) {
-            //uprintf("  no match.\n");
+    // If stack contains an un-expanded sequence, and this rule
+    // requires backspaces, we cannot properly check this rule
+    if (stack_contains_unexpanded_seq(key_stack) && backspaces) {
+        //printf("  untestable rule!\n");
+        return false;
+    }
+    // Check that the stack matches the input buffer
+    //printf("  testing stack: ");
+    for (int i = 1 + backspaces, j = 0; i < key_stack->size; ++i, ++j) {
+        const uint16_t stack_key = key_stack->buffer[i];
+        const uint16_t buf_key = st_key_buffer_get_keycode(key_buffer, j+payload->completion_len);
+        //printf("[%02X(%c), %02X(%c)] ", stack_key, st_keycode_to_char(stack_key),
+        //        buf_key, st_keycode_to_char(buf_key));
+        if (stack_key != buf_key) {
+            //printf("  no match.\n");
             return false;
         }
     }
+    // Check if completed string matches what comes next in our search buffer
+    //printf("  testing completion: ");
+    for (int i = payload->completion_index; i < completion_end; ++i, ++clen) {
+        const char ascii_code = CDATA(i);
+        const uint16_t comp_key = st_char_to_keycode(tolower(ascii_code));
+        const uint16_t buf_key = st_key_buffer_get_keycode(key_buffer, -(clen+1));
+        //printf("[%02X(%c), %02X(%c)] ", comp_key, ascii_code,
+        //        buf_key, st_keycode_to_char(buf_key));
+        if (comp_key != buf_key) {
+            //printf("  no match.\n");
+            return false;
+        }
+    }
+    //printf("  match!\n");
     // Save payload data and max_transform_len in result
     search->max_transform_len = transform_len;
     res->payload = *payload;
     // Fill the result sequence and start of transform
     char *seq = res->sequence;
     char *transform = res->transform;
-    for (int i = trie->key_stack->size - 1; i >= 0; --i) {
-        const uint16_t keycode = trie->key_stack->buffer[i];
+    for (int i = key_stack->size - 1; i >= 0; --i) {
+        const uint16_t keycode = key_stack->buffer[i];
         const char c = st_keycode_to_char(keycode);
         *seq++ = c;
-        if (i >= 1 + payload->num_backspaces &&
-            !(i == trie->key_stack->size - 1 && keycode == KC_SPACE)) {
+        if (i >= 1 + backspaces &&
+            !(i == key_stack->size - 1 && keycode == KC_SPACE)) {
             *transform++ = c;
         }
     }
