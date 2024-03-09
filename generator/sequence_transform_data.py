@@ -29,7 +29,6 @@ Examples:
   :d@r        -> developer
 """
 
-import os.path
 import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple, Callable
@@ -66,6 +65,7 @@ OUTPUT_FUNC_COUNT_MAX = 7
 max_backspaces = 0
 S = lambda code: MOD_LSFT | code
 
+
 class bcolors:
     RED = "\033[91m"
     GREEN = "\033[92m"
@@ -77,7 +77,7 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
-    
+
 
 ###############################################################################
 def color_currying(color: str) -> Callable:
@@ -85,7 +85,7 @@ def color_currying(color: str) -> Callable:
         return f"{color}{' '.join(map(str, text))}{bcolors.ENDC}"
 
     return inner
-    
+
 
 ###############################################################################
 red = color_currying(bcolors.RED)
@@ -98,24 +98,24 @@ def err(*text: Any) -> str:
 
 
 ###############################################################################
-def generate_range(start: int, chars: str) -> list[tuple[str, int]]:
-    return [(char, start + i) for i, char in enumerate(chars)]
+def map_range(start: int, chars: str) -> dict[str, int]:
+    return {char: start + i for i, char in enumerate(chars)}
 
 
 ###############################################################################
 def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
-    return dict([
-        *generate_range(KC_SEMICOLON, ";'`,./"),
-        *generate_range(S(KC_SEMICOLON), ":\"~<>?"),
-        *generate_range(KC_MINUS, "-=[]\\"),
-        *generate_range(S(KC_MINUS), "_+\{\}|"),
-        *generate_range(KC_1, qmk_digits),
-        *generate_range(S(KC_1), "!@#$%^&*()"),
-        *generate_range(KC_MAGIC_0, magic_chars),
-        (wordbreak_char, KC_SPC),  # "Word break" character.
+    return {
+        **map_range(KC_SEMICOLON, ";'`,./"),
+        **map_range(S(KC_SEMICOLON), ":\"~<>?"),
+        **map_range(KC_MINUS, "-=[]\\"),
+        **map_range(S(KC_MINUS), "_+\{\}|"),
+        **map_range(KC_1, qmk_digits),
+        **map_range(S(KC_1), "!@#$%^&*()"),
+        **map_range(KC_MAGIC_0, magic_chars),
 
-        *[(chr(c), c + KC_A - ord('a')) for c in range(ord('a'), ord('z') + 1)]
-    ])
+        wordbreak_char: KC_SPC,  # "Word break" character.
+        **{chr(c): c + KC_A - ord('a') for c in range(ord('a'), ord('z') + 1)}
+    }
 
 
 ###############################################################################
@@ -492,7 +492,7 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
 ###############################################################################
 def sequence_len(node: Tuple[str, str]) -> int:
     return len(node[0])
-    
+
 
 ###############################################################################
 def transform_len(node: Tuple[str, str]) -> int:
@@ -531,6 +531,7 @@ def create_test_rule_c_string(
     res = f'    {{ "{transform}", (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }} }},'
     return res
 
+
 ###############################################################################
 def generate_sequence_transform_data(data_header_file, test_header_file):
     char_map = generate_context_char_map(MAGIC_CHARS, WORDBREAK_CHAR)
@@ -560,11 +561,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
-            test_rule = create_test_rule_c_string(char_map, sequence, transformation) 
+            test_rule = create_test_rule_c_string(char_map, sequence, transformation)
             test_rules_c_strings.append(test_rule)
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
-        transformations.append(f'//    {sequence} -> {transformation}')        
+        transformations.append(f'//    {sequence} -> {transformation}')
 
     header_lines = [
         GPL2_HEADER_C_LIKE,
@@ -578,8 +579,6 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         *transformations,
     ]
 
-    record_rule_usage = ["#define RECORD_RULE_USAGE"] * RECORD_RULE_USAGE
-    
     # token symbols stored as utf8 strings
     sym_array_str = ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS))
     st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
@@ -588,10 +587,9 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
     st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
-    
+
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
-        *record_rule_usage,
         '',
         f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
@@ -636,11 +634,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         *tranformations_lines,
         '',
         *trie_data_lines,
-    ]    
+    ]
     with open(data_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
-       
-     # Write test header file
+
+    # Write test header file
     sequence_transform_test_h_lines = [
         *header_lines,
         '',
@@ -659,7 +657,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
     with open(test_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_test_h_lines))
-        
+
 
 ###############################################################################
 if __name__ == '__main__':
@@ -683,16 +681,15 @@ if __name__ == '__main__':
     try:
         SEQ_TOKENS_ASCII = config['seq_tokens_ascii']
         WORDBREAK_ASCII = config['wordbreak_ascii']
-        MAGIC_CHARS = config['magic_chars']        
+        MAGIC_CHARS = config['magic_chars']
         OUTPUT_FUNC_CHARS = config['output_func_chars']
-        WORDBREAK_CHAR = config['wordbreak_char']        
+        WORDBREAK_CHAR = config['wordbreak_char']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
     except KeyError as e:
         raise KeyError(f"Incorrect config! {e} key is missing.")
 
-    RECORD_RULE_USAGE = config.get('record_rule_usage', True)
     IS_QUIET = config.get("quiet", True)
 
     if cli_args.quiet:
