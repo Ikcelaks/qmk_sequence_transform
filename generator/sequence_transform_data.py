@@ -302,25 +302,23 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
-    patterns = [("", pattern)]
+    patterns = []
 
-    for i, pattern in enumerate([pattern]):
-        groups = re.findall(r"\(\w+(?:\|\w+)+\)\??", pattern)
+    groups = re.findall(r"\(\w+(?:\|\w+)+\)\??", pattern)
 
-        if not groups:
-            return patterns
+    if not groups:
+        return [("", pattern)]
 
-        patterns = []
-        match = groups[0]
-        elements = re.findall("\w+", match)
+    match = groups[0]
+    elements = re.findall("\w+", match)
 
-        patterns.extend([
-            (element, pattern.replace(match, element))
-            for element in elements
-        ])
+    patterns.extend([
+        (element, pattern.replace(match, element))
+        for element in elements
+    ])
 
-        if "?" in match:
-            patterns.append(("", pattern.replace(match, "")))
+    if "?" in match:
+        patterns.append(("", pattern.replace(match, "")))
 
     return patterns
 
