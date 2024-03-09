@@ -29,6 +29,7 @@ Examples:
   :d@r        -> developer
 """
 
+import re
 import textwrap
 import json
 from typing import Any, Dict, Iterator, List, Tuple, Callable
@@ -300,6 +301,39 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
 
 
 ###############################################################################
+def generate_matches(pattern) -> list[tuple[str, str]]:
+    patterns = [("", pattern)]
+
+    for i, pattern in enumerate([pattern]):
+        groups = re.findall(r"\((?:\w\|?)+\)\??", pattern)
+
+        if not groups:
+            return patterns
+
+        patterns = []
+        match = groups[0]
+        elements = re.findall("\w+", match)
+
+        patterns.extend([
+            (element, pattern.replace(match, element))
+            for element in elements
+        ])
+
+        if "?" in match:
+            patterns.append(("", pattern.replace(match, "")))
+
+    return patterns
+
+
+###############################################################################
+def parse_tokens(tokens: List[str]) -> Iterator[Tuple[int, str, str]]:
+    full_sequence, transform = tokens
+
+    for token, sequence in generate_matches(full_sequence):
+        yield sequence, transform.replace(r"\1", token)
+
+
+###############################################################################
 def parse_file_lines(
     file_name: str, separator: str, comment: str
 ) -> Iterator[Tuple[int, str, str]]:
@@ -321,8 +355,8 @@ def parse_file_lines(
                         f'{err(line_number)}: Invalid syntax: "{red(line)}"'
                     )
 
-                context, correction = tokens
-                yield line_number, context, correction
+                for context, correction in parse_tokens(tokens):
+                    yield line_number, context, correction
 
 
 ###############################################################################
