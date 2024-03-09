@@ -10,7 +10,7 @@
 const char *st_get_seq_token_symbol(uint16_t keycode)
 {
     if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
-        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];
+        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_token;
     }

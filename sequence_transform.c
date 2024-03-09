@@ -234,8 +234,8 @@ void st_handle_repeat_key(void)
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("repeat keycode: 0x%04X\n", last_regular_keypress);
 #endif
-        st_key_buffer_pop(&key_buffer, 1);
-        st_key_buffer_push(&key_buffer, last_regular_keypress);
+        st_key_buffer_get(&key_buffer, 0)->keypressed = last_regular_keypress;
+        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
         st_send_key(last_regular_keypress);
     }
 }

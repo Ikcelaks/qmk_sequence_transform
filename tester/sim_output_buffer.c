@@ -21,7 +21,7 @@ void sim_output_push(char c)
     if (sim_output_buffer_size < SIM_OUTPUT_BUFFER_CAPACITY - 1) {
         sim_output_buffer[sim_output_buffer_size++] = c;
         sim_output_buffer[sim_output_buffer_size] = 0;
-    }
+    }       
 }
 //////////////////////////////////////////////////////////////////
 void sim_output_pop(int n)

@@ -1,6 +1,7 @@
 #pragma once
 
-#define SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
+#define SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER
+
 
 extern char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1];
 extern char missed_rule_transform[TRANSFORM_MAX_LEN + 1];
