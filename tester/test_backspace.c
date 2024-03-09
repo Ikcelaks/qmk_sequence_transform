@@ -25,9 +25,8 @@ void test_backspace(const st_test_rule_t *rule, st_test_result_t *res)
     // output buffer if we send one backspace for every key sent
     sim_st_enhanced_backspace(rule->seq_keycodes);
     const int out_size = sim_output_get_size();
-    res->pass = out_size == 0;
-    if (res->pass) {
-        snprintf(message, sizeof(message), "OK!");
+    if (out_size == 0) {
+        res->code = TEST_OK;
     } else {
         snprintf(message, sizeof(message), "left %d keys in buffer!", out_size);
     }

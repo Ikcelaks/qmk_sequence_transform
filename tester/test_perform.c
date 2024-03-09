@@ -35,9 +35,8 @@ void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
     // Ignore spaces at the start of output
     char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
-    res->pass = !strcmp(output, rule->transform_str);
-    if (res->pass) {
-        snprintf(message, sizeof(message), "OK!");
+    if (!strcmp(output, rule->transform_str)) {
+        res->code = TEST_OK;
     } else {
         snprintf(message, sizeof(message), "output: %s", output);
     }
