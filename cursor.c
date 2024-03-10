@@ -8,7 +8,6 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include "qmk_wrapper.h"
-#include <stdint.h>
 #include "cursor.h"
 #include "keybuffer.h"
 #include "key_stack.h"

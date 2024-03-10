@@ -39,6 +39,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
 void st_handle_backspace(void);
+uint8_t st_get_virtual_output(char *buf, uint8_t count);
 
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void);
