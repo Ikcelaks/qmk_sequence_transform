@@ -10,10 +10,10 @@
 // compare the virtual output buffer state to the sim output buffer
 bool compare_output(char *virtual_output, char *sim_output, int count)
 {
-    // we don't use st_key_buffer_reset(buf) here because
-    // we don't nec want a space at the start of the buffer
     for (int i = 0; i < count; i++) {
-        if ((sim_output[i] == ' ' ? st_wordbreak_ascii : sim_output[i]) != virtual_output[count - 1 - i]) {
+        const char simc = sim_output[i] == ' ' ? st_wordbreak_ascii : sim_output[i];
+        const char virc = virtual_output[count - 1 - i];
+        if (simc != virc) {
             return false;
         }
     }
@@ -22,24 +22,21 @@ bool compare_output(char *virtual_output, char *sim_output, int count)
 //////////////////////////////////////////////////////////////////////
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    static char message[300];
+    static char message[512];
     res->message = message;
-    // Test #2: test_virtual_output
-    // sim_st_perform was run in o previous test
-    // Ignore spaces at the start of output
+    // sim_st_perform was run in a previous test
     char *sim_output = sim_output_get(false);
-    // Test virtual output
-    const int expected_len = strlen(sim_output);
+    const int sim_len = sim_output_get_size();
     char virtual_output[256];
-    int length = st_get_virtual_output(virtual_output, 255);
-    if (length != expected_len) {
+    const int virt_len = st_get_virtual_output(virtual_output, 255);
+    if (virt_len != sim_len) {
         res->pass = false;
-        snprintf(message, sizeof(message), "virtual_output incorrect length (%d); expected (%d)", length, expected_len);
+        snprintf(message, sizeof(message), "virt len (%d) != sim len (%d)", virt_len, sim_len);
     }
-    res->pass = compare_output(virtual_output, sim_output, length);
+    res->pass = compare_output(virtual_output, sim_output, virt_len);
     if (res->pass) {
         snprintf(message, sizeof(message), "OK!");
     } else {
-        snprintf(message, sizeof(message), "virtual_output: %s", virtual_output);
+        snprintf(message, sizeof(message), "mismatch! virt: |%s| sim: |%s|", virtual_output, sim_output);
     }
 }
