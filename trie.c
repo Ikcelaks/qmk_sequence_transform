@@ -113,10 +113,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
             code &= TRIE_CODE_MASK;
             // Find child key that matches the search buffer at the current depth
             const uint16_t cur_key = st_cursor_get_keycode(cursor);
-            if (!cur_key) { // exhausted buffer; return
-                return longer_match_found;
-            }
-            if (!find_branch_offset(trie, &offset, code, cur_key)) {
+            if (!cur_key || !find_branch_offset(trie, &offset, code, cur_key)) {
                 // Couldn't go deeper; return.
                 return longer_match_found;
             }
@@ -317,4 +314,13 @@ void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         *transform++ = CDATA(i);
     }
     *transform = 0;
+}
+
+void st_completion_to_str(const st_trie_t *trie, st_trie_payload_t *payload, char *buf)
+{
+    const uint16_t completion_end = payload->completion_index + payload->completion_len;
+    for (uint16_t i = payload->completion_index; i < completion_end; ++i) {
+        *buf++ = CDATA(i);
+    }
+    *buf = '\0';
 }

@@ -85,7 +85,6 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (!keyaction) {
         return false;
     }
-    ++cursor->cursor_pos.segment_len;
     if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
         // skip fake key and try again
         ++cursor->cursor_pos.index;
@@ -95,12 +94,13 @@ bool st_cursor_next(st_cursor_t *cursor)
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
-        ++cursor->cursor_pos.index;
+        if (++cursor->cursor_pos.index >= cursor->buffer->context_len) {
+            return false;
+        }
         cursor->cache_valid = false;
         cursor->cursor_pos.sub_index = 0;
         ++cursor->cursor_pos.segment_len;
-        // TODO: Handle caching
-        return cursor->cursor_pos.index < cursor->buffer->context_len;
+        return true;
     }
     st_trie_payload_t *action = st_cursor_get_action(cursor);
     if (cursor->cursor_pos.sub_index < action->completion_len - 1) {
@@ -113,7 +113,9 @@ bool st_cursor_next(st_cursor_t *cursor)
     int backspaces = action->num_backspaces;
     while (true) {
         // move to next key in buffer
-        ++cursor->cursor_pos.index;
+        if (++cursor->cursor_pos.index >= cursor->buffer->context_len) {
+            return false;
+        }
         cursor->cache_valid = false;
         keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
         if (!keyaction) {
@@ -128,6 +130,7 @@ bool st_cursor_next(st_cursor_t *cursor)
             if (backspaces == 0) {
                 // This is a real keypress and no more backspaces to consume
                 cursor->cursor_pos.sub_index = 0;
+                ++cursor->cursor_pos.segment_len;
                 return true;
             }
             // consume one backspace
@@ -139,6 +142,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         if (backspaces < action->completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
             cursor->cursor_pos.sub_index = backspaces;
+            ++cursor->cursor_pos.segment_len;
             return true;
         }
         backspaces -= action->completion_len - action->num_backspaces;
@@ -184,7 +188,7 @@ void st_cursor_print(st_cursor_t *cursor)
         uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
         st_cursor_next(cursor);
     }
-    uprintf("| (%d)\n", cursor->buffer->context_len);
+    uprintf("| (%d:%d)\n", cursor->buffer->context_len, cursor->cursor_pos.segment_len);
     st_cursor_restore(cursor, &cursor_pos);
 // #endif
 }

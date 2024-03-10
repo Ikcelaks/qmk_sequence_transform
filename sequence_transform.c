@@ -26,7 +26,6 @@ static uint32_t backspace_timer = 0;
 static bool post_process_do_rule_search = false;
 #endif
 
-#define CDATA(L) pgm_read_byte(&trie->completions[L])
 #define KEY_AT(i) st_key_buffer_get_keycode(&key_buffer, (i))
 
 //////////////////////////////////////////////////////////////////
@@ -96,6 +95,10 @@ static st_cursor_t trie_cursor = {
     {0},
     false,
 };
+
+//////////////////////////////////////////////////////////////////
+// Completion string buffer
+static char completion_buf[COMPLETION_MAX_LENGTH + 1];
 
 //////////////////////////////////////////////////////////////////
 #ifdef ST_TESTER
@@ -241,27 +244,22 @@ void st_handle_repeat_key(void)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+void log_rule(st_trie_search_result_t *res, char *completion_str) {
+#if defined(RECORD_RULE_USAGE) //&& defined(CONSOLE_ENABLE)
     st_cursor_init(&trie_cursor, 0, false);
-    const uint16_t rule_trigger_keycode = st_cursor_get_keycode(trie);
-    const st_trie_payload_t *rule_action = st_cursor_get_action(trie);
+    const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
+    const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
     const bool is_repeat = rule_action->func_code == 1;
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
     st_cursor_move_to_history(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
-    st_cursor_push_to_stack(trie, prev_seq_len);
-    char seq_str[prev_seq_len + 1];
-    st_key_stack_to_str(trie->key_stack, seq_str);
+    st_cursor_push_to_stack(&trie_cursor, prev_seq_len);
+    char seq_str[MAX(prev_seq_len, res->trie_payload.completion_len) + 1];
+    st_key_stack_to_str(trie.key_stack, seq_str);
 
     uprintf("st_rule,%s,%d,%c,", seq_str, res->trie_payload.num_backspaces, st_keycode_to_char(rule_trigger_keycode));
 
     // Completion string
-    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
-
-    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
-        char ascii_code = CDATA(i);
-        uprintf("%c", ascii_code);
-    }
+    uprintf(completion_str);
 
     // Special function cases
     switch (res->trie_payload.func_code) {
@@ -329,16 +327,17 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 #endif
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
+    // fill completion buffer
+    st_completion_to_str(trie, &res->trie_payload, completion_buf);
     // Log newly added rule match
-    log_rule(trie, res);
+    log_rule(res, completion_buf);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
     const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
-    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && CDATA(completion_end - 1) == ' ');
-    for (uint16_t i = res->trie_payload.completion_index; i < completion_end; ++i) {
-        char ascii_code = CDATA(i);
-        st_send_key(st_char_to_keycode(ascii_code));
+    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && completion_buf[completion_end - 1] == ' ');
+    for (char *c = completion_buf; *c; ++c) {
+        st_send_key(st_char_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {
         case 1:  // repeat
