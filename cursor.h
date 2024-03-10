@@ -8,8 +8,6 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #pragma once
 
-#include "keybuffer.h"
-#include "key_stack.h"
 #include "trie.h"
 
 //////////////////////////////////////////////////////////////////

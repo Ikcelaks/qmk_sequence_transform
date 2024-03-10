@@ -22,16 +22,16 @@ bool compare_output(char *virtual_output, char *sim_output, int count)
 //////////////////////////////////////////////////////////////////////
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    static char message[256];
+    static char message[300];
     res->message = message;
     // Test #2: test_virtual_output
-    sim_st_perform(rule->seq_keycodes);
+    // sim_st_perform was run in o previous test
     // Ignore spaces at the start of output
     char *sim_output = sim_output_get(true);
     // Test virtual output
     const int expected_len = strlen(sim_output);
     char virtual_output[256];
-    int length = st_get_virtual_output(virtual_output, expected_len);
+    int length = st_get_virtual_output(virtual_output, 255);
     if (length != expected_len) {
         res->pass = false;
         snprintf(message, sizeof(message), "virtual_output incorrect length (%d); expected (%d)", length, expected_len);

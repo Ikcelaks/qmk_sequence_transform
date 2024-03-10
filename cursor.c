@@ -8,11 +8,11 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include "qmk_wrapper.h"
-#include "cursor.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
+#include "cursor.h"
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
