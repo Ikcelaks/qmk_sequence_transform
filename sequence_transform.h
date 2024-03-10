@@ -13,8 +13,8 @@
 #include "action.h"
 #include "keybuffer.h"
 #include "key_stack.h"
-#include "cursor.h"
 #include "trie.h"
+#include "cursor.h"
 
 //////////////////////////////////////////////////////////////////
 // Public API

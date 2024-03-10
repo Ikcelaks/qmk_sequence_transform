@@ -38,7 +38,6 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
 {
     static char message[256];
     res->message = message;
-    // Test #3: st_find_missed_rule
     sim_st_find_missed_rule(rule->seq_keycodes);
     res->pass = !strcmp(missed_rule_transform, rule->transform_str);
     if (res->pass) {

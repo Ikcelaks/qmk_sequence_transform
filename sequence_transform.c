@@ -67,20 +67,12 @@ void sequence_transform_task(void) {
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack
-static uint16_t trie_key_stack_data[MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)] = {0};
+#define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
+static uint16_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
-    SEQUENCE_MAX_LENGTH,
+    ST_STACK_SIZE,
     0
-};
-
-//////////////////////////////////////////////////////////////////
-// Trie cursor
-static st_cursor_t trie_cursor = {
-    &key_buffer,
-    {0, 255,0, false},
-    {0},
-    false,
 };
 
 //////////////////////////////////////////////////////////////////
@@ -92,8 +84,17 @@ static st_trie_t trie = {
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
     MAX_BACKSPACES,
-    &trie_stack,
-    &trie_cursor
+    &trie_stack
+};
+
+//////////////////////////////////////////////////////////////////
+// Trie cursor
+static st_cursor_t trie_cursor = {
+    &key_buffer,
+    &trie,
+    {0, 255,0, false},
+    {0},
+    false,
 };
 
 //////////////////////////////////////////////////////////////////
@@ -242,12 +243,12 @@ void st_handle_repeat_key(void)
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-    st_cursor_init(trie, &key_buffer, 0, false);
+    st_cursor_init(&trie_cursor, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(trie);
     const st_trie_payload_t *rule_action = st_cursor_get_action(trie);
     const bool is_repeat = rule_action->func_code == 1;
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
-    st_cursor_move_to_history(trie, 1, res->trie_match.seq_match_pos.as_output_buffer);
+    st_cursor_move_to_history(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
     st_cursor_push_to_stack(trie, prev_seq_len);
     char seq_str[prev_seq_len + 1];
     st_key_stack_to_str(trie->key_stack, seq_str);
@@ -363,8 +364,8 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
 void st_handle_backspace() {
-    st_cursor_init(&trie, &key_buffer, 0, true);
-    const st_trie_payload_t *action = st_cursor_get_action(&trie);
+    st_cursor_init(&trie_cursor, 0, true);
+    const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
         if (action->completion_len == 0) {
@@ -391,8 +392,8 @@ void st_handle_backspace() {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&trie, 1, true);
-        if (st_cursor_push_to_stack(&trie, resend_count)) {
+        st_cursor_move_to_history(&trie_cursor, 1, true);
+        if (st_cursor_push_to_stack(&trie_cursor, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
@@ -415,9 +416,9 @@ void st_handle_backspace() {
  */
 uint8_t st_get_virtual_output(char *buf, uint8_t count)
 {
-    st_cursor_init(&trie, &key_buffer, 0, true);
-    for (int i = 0; i < count; ++i, st_cursor_next(&trie)) {
-        const uint16_t keycode = st_cursor_get_keycode(&trie);
+    st_cursor_init(&trie_cursor, 0, true);
+    for (int i = 0; i < count; ++i, st_cursor_next(&trie_cursor)) {
+        const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);
         if (!keycode) {
             return i;
         }
@@ -434,7 +435,7 @@ uint8_t st_get_virtual_output(char *buf, uint8_t count)
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
     st_trie_search_result_t res = {{0, {0,0,0}}, {0, 0, 0, 0}};
-    if (st_trie_get_completion(&trie, &key_buffer, &res)) {
+    if (st_trie_get_completion(&trie_cursor, &res)) {
         st_handle_result(&trie, &res);
         return true;
     }
