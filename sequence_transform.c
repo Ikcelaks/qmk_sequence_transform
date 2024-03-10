@@ -409,6 +409,24 @@ void st_handle_backspace() {
 #endif
 
 /**
+ * @brief Fills the provided buffer with up to `count` characters from the virtual output
+ *
+ * @return the number of characters written to the buffer
+ */
+uint8_t st_get_virtual_output(char *buf, uint8_t count)
+{
+    st_cursor_init(&trie, &key_buffer, 0, true);
+    for (int i = 0; i < count; ++i, st_cursor_next(&trie)) {
+        const uint16_t keycode = st_cursor_get_keycode(&trie);
+        if (!keycode) {
+            return i;
+        }
+        buf[i] = st_keycode_to_char(keycode);
+    }
+    return count;
+}
+
+/**
  * @brief Performs sequence transform if a match is found in the trie
  *
  * @return true if sequence transform was performed

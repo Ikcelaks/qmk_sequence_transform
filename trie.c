@@ -98,7 +98,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint
             uprintf("find_longest_chain() ERROR: unexpected null code! Offset: %d\n", offset);
             return false;
         }
-        if (code & TRIE_CODE_MASK) {
+        if (code & TRIE_MATCH_BIT) {
             uprintf("find_longest_chain() ERROR: match found at top of loop! Offset: %d\n", offset);
             return false;
         }
