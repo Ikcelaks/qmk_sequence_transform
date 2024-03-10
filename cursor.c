@@ -73,6 +73,7 @@ bool st_cursor_next(const st_trie_t *trie)
     if (!cursor->cursor_pos.as_output_buffer) {
         ++cursor->cursor_pos.pos;
         ++cursor->cursor_pos.segment_len;
+        cursor->cache_valid = false;
         return cursor->cursor_pos.pos < cursor->buffer->context_len;
     }
     // Continue processing if simulating output buffer
@@ -136,7 +137,7 @@ bool st_cursor_next(const st_trie_t *trie)
             cursor->cursor_pos.sub_pos = backspaces;
             return true;
         }
-        backspaces -= action->completion_len;
+        backspaces -= action->completion_len - action->num_backspaces;
     }
 }
 //////////////////////////////////////////////////////////////////
@@ -169,7 +170,7 @@ bool st_cursor_longer_than(const st_trie_t *trie, st_cursor_pos_t *past_pos)
 //////////////////////////////////////////////////////////////////
 void st_cursor_print(const st_trie_t *trie)
 {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
+// #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_cursor_pos_t cursor_pos = st_cursor_save(trie);
     uprintf("cursor: |");
     while (trie->cursor->cursor_pos.pos < trie->cursor->buffer->context_len) {
@@ -178,7 +179,7 @@ void st_cursor_print(const st_trie_t *trie)
     }
     uprintf("| (%d)\n", trie->cursor->buffer->context_len);
     st_cursor_restore(trie, &cursor_pos);
-#endif
+// #endif
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_push_to_stack(const st_trie_t *trie, int count)

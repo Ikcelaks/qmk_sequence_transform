@@ -27,7 +27,7 @@ void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
     // Test #2: test_virtual_output
     // sim_st_perform was run in o previous test
     // Ignore spaces at the start of output
-    char *sim_output = sim_output_get(true);
+    char *sim_output = sim_output_get(false);
     // Test virtual output
     const int expected_len = strlen(sim_output);
     char virtual_output[256];
