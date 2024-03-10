@@ -106,8 +106,10 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
 #endif
         // Branch Node (with multiple children) if bit 14 is set
         if (code & TRIE_BRANCH_BIT) {
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
             // TODO: st_debug(ST_LOG_TRIE_SEARCH_BIT, "Branching Offset: %d; Code: %#04X\n", offset, code);
             uprintf("Branching Offset: %d; Code: %#04X\n", offset, code);
+#endif
             code &= TRIE_CODE_MASK;
             // Find child key that matches the search buffer at the current depth
             const uint16_t cur_key = st_cursor_get_keycode(cursor);
@@ -122,8 +124,10 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
             // No high bits set, so this is a chain node
             // Travel down chain until we reach a zero byte, or we no longer match our buffer
             do {
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
                 // TODO: st_debug(ST_LOG_TRIE_SEARCH_BIT, "Chaining Offset: %d; Code: %#04X\n", offset, code);
                 uprintf("Chaining Offset: %d; Code: %#04X\n", offset, code);
+#endif
                 if (code != st_cursor_get_keycode(cursor))
                     return longer_match_found;
             } while ((code = TDATA(++offset)) && st_cursor_next(cursor));
@@ -134,9 +138,11 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         code = TDATA(offset);
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
+#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
             // TODO: st_debug(ST_LOG_TRIE_SEARCH_BIT,...
             uprintf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.pos, cursor->cursor_pos.sub_pos, cursor->cursor_pos.segment_len);
             uprintf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.pos, longest_match->seq_match_pos.sub_pos, longest_match->seq_match_pos.segment_len);
+#endif
             // record this if it is the longest match
             if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
                 longer_match_found = true;

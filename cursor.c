@@ -170,9 +170,8 @@ bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *pas
 {
     const int cur_pos = (cursor->cursor_pos.pos << 8)
         + cursor->cursor_pos.sub_pos;
-    // FIXME: is it intended that we're not using sub_pos for this one?
     const int old_pos = (past_pos->pos << 8)
-        + past_pos->pos;
+        + past_pos->sub_pos;
     return cur_pos > old_pos;
 }
 //////////////////////////////////////////////////////////////////
