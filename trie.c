@@ -140,8 +140,8 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         if (code & TRIE_MATCH_BIT) {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
             // TODO: st_debug(ST_LOG_TRIE_SEARCH_BIT,...
-            uprintf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.pos, cursor->cursor_pos.sub_pos, cursor->cursor_pos.segment_len);
-            uprintf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.pos, longest_match->seq_match_pos.sub_pos, longest_match->seq_match_pos.segment_len);
+            uprintf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
+            uprintf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
 #endif
             // record this if it is the longest match
             if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {

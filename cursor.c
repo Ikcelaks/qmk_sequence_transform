@@ -19,9 +19,9 @@
 //////////////////////////////////////////////////////////////////
 void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
 {
-    cursor->cursor_pos.pos = history;
+    cursor->cursor_pos.index = history;
     cursor->cursor_pos.as_output_buffer = as_output_buffer;
-    cursor->cursor_pos.sub_pos = as_output_buffer ? 0 : 255;
+    cursor->cursor_pos.sub_index = as_output_buffer ? 0 : 255;
     cursor->cursor_pos.segment_len = 1;
     cursor->cache_valid = false;
 }
@@ -29,7 +29,7 @@ void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
 uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
 {
     const st_trie_t *trie = cursor->trie;
-    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
     if (!keyaction) {
         return KC_NO;
     }
@@ -38,7 +38,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
         keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
         const st_trie_payload_t *action = st_cursor_get_action(cursor);
         int index = action->completion_index;
-        index += action->completion_len - 1 - cursor->cursor_pos.sub_pos;
+        index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
         return st_char_to_keycode(CDATA(index));
     } else {
         return keyaction->keypressed;
@@ -51,7 +51,7 @@ st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     if (cursor->cache_valid) {
         return action;
     }
-    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
     if (!keyaction) {
         return NULL;
     }
@@ -75,36 +75,36 @@ st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 bool st_cursor_next(st_cursor_t *cursor)
 {
     if (!cursor->cursor_pos.as_output_buffer) {
-        ++cursor->cursor_pos.pos;
+        ++cursor->cursor_pos.index;
         ++cursor->cursor_pos.segment_len;
         cursor->cache_valid = false;
-        return cursor->cursor_pos.pos < cursor->buffer->context_len;
+        return cursor->cursor_pos.index < cursor->buffer->context_len;
     }
     // Continue processing if simulating output buffer
-    st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
+    st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
     if (!keyaction) {
         return false;
     }
     ++cursor->cursor_pos.segment_len;
     if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
         // skip fake key and try again
-        ++cursor->cursor_pos.pos;
+        ++cursor->cursor_pos.index;
         cursor->cache_valid = false;
-        cursor->cursor_pos.sub_pos = 0;
+        cursor->cursor_pos.sub_index = 0;
         return st_cursor_next(cursor);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
-        ++cursor->cursor_pos.pos;
+        ++cursor->cursor_pos.index;
         cursor->cache_valid = false;
-        cursor->cursor_pos.sub_pos = 0;
+        cursor->cursor_pos.sub_index = 0;
         ++cursor->cursor_pos.segment_len;
         // TODO: Handle caching
-        return cursor->cursor_pos.pos < cursor->buffer->context_len;
+        return cursor->cursor_pos.index < cursor->buffer->context_len;
     }
     st_trie_payload_t *action = st_cursor_get_action(cursor);
-    if (cursor->cursor_pos.sub_pos < action->completion_len - 1) {
-        ++cursor->cursor_pos.sub_pos;
+    if (cursor->cursor_pos.sub_index < action->completion_len - 1) {
+        ++cursor->cursor_pos.sub_index;
         ++cursor->cursor_pos.segment_len;
         return true;
     }
@@ -113,9 +113,9 @@ bool st_cursor_next(st_cursor_t *cursor)
     int backspaces = action->num_backspaces;
     while (true) {
         // move to next key in buffer
-        ++cursor->cursor_pos.pos;
+        ++cursor->cursor_pos.index;
         cursor->cache_valid = false;
-        keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
+        keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
         if (!keyaction) {
             // We reached the end without finding the next output key
             return false;
@@ -127,7 +127,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
             if (backspaces == 0) {
                 // This is a real keypress and no more backspaces to consume
-                cursor->cursor_pos.sub_pos = 0;
+                cursor->cursor_pos.sub_index = 0;
                 return true;
             }
             // consume one backspace
@@ -138,7 +138,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         action = st_cursor_get_action(cursor);
         if (backspaces < action->completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
-            cursor->cursor_pos.sub_pos = backspaces;
+            cursor->cursor_pos.sub_index = backspaces;
             return true;
         }
         backspaces -= action->completion_len - action->num_backspaces;
@@ -149,8 +149,8 @@ bool st_cursor_move_to_history(st_cursor_t *cursor, int history, uint8_t as_outp
 {
     // invalidate cache
     cursor->cache_valid = false;
-    cursor->cursor_pos.pos = history;
-    cursor->cursor_pos.sub_pos = 0;
+    cursor->cursor_pos.index = history;
+    cursor->cursor_pos.sub_index = 0;
     cursor->cursor_pos.as_output_buffer = as_output_buffer;
     return history < cursor->buffer->context_len;
 }
@@ -168,10 +168,10 @@ void st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *past_pos)
 {
-    const int cur_pos = (cursor->cursor_pos.pos << 8)
-        + cursor->cursor_pos.sub_pos;
-    const int old_pos = (past_pos->pos << 8)
-        + past_pos->sub_pos;
+    const int cur_pos = (cursor->cursor_pos.index << 8)
+        + cursor->cursor_pos.sub_index;
+    const int old_pos = (past_pos->index << 8)
+        + past_pos->sub_index;
     return cur_pos > old_pos;
 }
 //////////////////////////////////////////////////////////////////
@@ -180,7 +180,7 @@ void st_cursor_print(st_cursor_t *cursor)
 // #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
-    while (cursor->cursor_pos.pos < cursor->buffer->context_len) {
+    while (cursor->cursor_pos.index < cursor->buffer->context_len) {
         uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
         st_cursor_next(cursor);
     }

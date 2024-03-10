@@ -21,8 +21,8 @@ typedef struct
 
 typedef struct
 {
-    int     pos;                // buffer index of cursor position
-    int     sub_pos;            // Sub-position within the current buffer position
+    int     index;                // buffer index of cursor position
+    int     sub_index;            // Sub-position within the current buffer position
     int     segment_len;        // Number of elements traversed
     uint8_t as_output_buffer;   // True if buffer traversing the simulated output
 } st_cursor_pos_t;
