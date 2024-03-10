@@ -29,14 +29,6 @@ typedef struct
 
 typedef struct
 {
-    st_key_buffer_t         *buffer;            // buffer
-    st_cursor_pos_t         cursor_pos;         // Contains all position info for the cursor
-    st_trie_payload_t       cached_action;
-    uint8_t                 cache_valid;
-} st_cursor_t;
-
-typedef struct
-{
     size_t          data_size;          // size in words of data buffer
     const uint16_t  *data;              // serialized trie node data
     size_t          completions_size;   // size in bytes of completions data buffer
@@ -44,8 +36,16 @@ typedef struct
     uint8_t         completion_max_len; // max len of all completion strings
     uint8_t         max_backspaces;     // max backspaces for all completions
     st_key_stack_t * const  key_stack;  // key stack used for searches
-    st_cursor_t * const cursor;         // cursor that traverses the buffer
 } st_trie_t;
+
+typedef struct
+{
+    st_key_buffer_t const * const buffer;           // input buffer this cursor traverses
+    st_trie_t const * const       trie;             // trie used for traversing virtual output buffer
+    st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
+    st_trie_payload_t             cached_action;
+    uint8_t                       cache_valid;
+} st_cursor_t;
 
 typedef struct
 {
@@ -66,7 +66,7 @@ typedef struct
     st_trie_payload_t   trie_payload;
 } st_trie_search_result_t;
 
-bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res);
+bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
 int st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, int search_len_start, st_trie_rule_t *res);
 
 //////////////////////////////////////////////////////////////////
@@ -86,4 +86,4 @@ void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *p
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
 bool st_find_rule(st_trie_search_t *search, uint16_t offset);
 void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
-bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint16_t offset);
+bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);

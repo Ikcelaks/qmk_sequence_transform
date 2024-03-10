@@ -17,9 +17,8 @@
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
 //////////////////////////////////////////////////////////////////
-void st_cursor_init(st_cursor_t *cursor, st_key_buffer_t *buf, int history, uint8_t as_output_buffer)
+void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
 {
-    cursor->buffer = buf;
     cursor->cursor_pos.pos = history;
     cursor->cursor_pos.as_output_buffer = as_output_buffer;
     cursor->cursor_pos.sub_pos = as_output_buffer ? 0 : 255;
@@ -27,9 +26,9 @@ void st_cursor_init(st_cursor_t *cursor, st_key_buffer_t *buf, int history, uint
     cursor->cache_valid = false;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t st_cursor_get_keycode(const st_trie_t *trie)
+uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
 {
-    st_cursor_t *cursor = trie->cursor;
+    const st_trie_t *trie = cursor->trie;
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.pos);
     if (!keyaction) {
         return KC_NO;
@@ -37,7 +36,7 @@ uint16_t st_cursor_get_keycode(const st_trie_t *trie)
     if (cursor->cursor_pos.as_output_buffer &&
         keyaction->action_taken != ST_DEFAULT_KEY_ACTION &&
         keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
-        const st_trie_payload_t *action = st_cursor_get_action(trie);
+        const st_trie_payload_t *action = st_cursor_get_action(cursor);
         int index = action->completion_index;
         index += action->completion_len - 1 - cursor->cursor_pos.sub_pos;
         return st_char_to_keycode(CDATA(index));
@@ -46,9 +45,8 @@ uint16_t st_cursor_get_keycode(const st_trie_t *trie)
     }
 }
 //////////////////////////////////////////////////////////////////
-st_trie_payload_t *st_cursor_get_action(const st_trie_t *trie)
+st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 {
-    st_cursor_t *cursor = trie->cursor;
     st_trie_payload_t *action = &cursor->cached_action;
     if (cursor->cache_valid) {
         return action;
@@ -68,15 +66,14 @@ st_trie_payload_t *st_cursor_get_action(const st_trie_t *trie)
         action->num_backspaces = 0;
         action->func_code = 0;
     } else {
-        st_get_payload_from_match_index(trie, action, keyaction->action_taken);
+        st_get_payload_from_match_index(cursor->trie, action, keyaction->action_taken);
     }
     cursor->cache_valid = true;
     return action;
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_next(const st_trie_t *trie)
+bool st_cursor_next(st_cursor_t *cursor)
 {
-    st_cursor_t *cursor = trie->cursor;
     if (!cursor->cursor_pos.as_output_buffer) {
         ++cursor->cursor_pos.pos;
         ++cursor->cursor_pos.segment_len;
@@ -94,7 +91,7 @@ bool st_cursor_next(const st_trie_t *trie)
         ++cursor->cursor_pos.pos;
         cursor->cache_valid = false;
         cursor->cursor_pos.sub_pos = 0;
-        return st_cursor_next(trie);
+        return st_cursor_next(cursor);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
@@ -105,7 +102,7 @@ bool st_cursor_next(const st_trie_t *trie)
         // TODO: Handle caching
         return cursor->cursor_pos.pos < cursor->buffer->context_len;
     }
-    st_trie_payload_t *action = st_cursor_get_action(trie);
+    st_trie_payload_t *action = st_cursor_get_action(cursor);
     if (cursor->cursor_pos.sub_pos < action->completion_len - 1) {
         ++cursor->cursor_pos.sub_pos;
         ++cursor->cursor_pos.segment_len;
@@ -138,7 +135,7 @@ bool st_cursor_next(const st_trie_t *trie)
             continue;
         }
         // Load payload of key that performed action
-        action = st_cursor_get_action(trie);
+        action = st_cursor_get_action(cursor);
         if (backspaces < action->completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
             cursor->cursor_pos.sub_pos = backspaces;
@@ -169,9 +166,8 @@ void st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos)
     cursor->cache_valid = false;
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_longer_than(const st_trie_t *trie, const st_cursor_pos_t *past_pos)
+bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *past_pos)
 {
-    st_cursor_t *cursor = trie->cursor;
     const int cur_pos = (cursor->cursor_pos.pos << 8)
         + cursor->cursor_pos.sub_pos;
     // FIXME: is it intended that we're not using sub_pos for this one?
@@ -180,30 +176,29 @@ bool st_cursor_longer_than(const st_trie_t *trie, const st_cursor_pos_t *past_po
     return cur_pos > old_pos;
 }
 //////////////////////////////////////////////////////////////////
-void st_cursor_print(const st_trie_t *trie)
+void st_cursor_print(st_cursor_t *cursor)
 {
 // #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    st_cursor_t *cursor = trie->cursor;
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
     while (cursor->cursor_pos.pos < cursor->buffer->context_len) {
-        uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(trie)));
-        st_cursor_next(trie);
+        uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
+        st_cursor_next(cursor);
     }
     uprintf("| (%d)\n", cursor->buffer->context_len);
     st_cursor_restore(cursor, &cursor_pos);
 // #endif
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_push_to_stack(const st_trie_t *trie, int count)
+bool st_cursor_push_to_stack(st_cursor_t *cursor, int count)
 {
-    trie->key_stack->size = 0;
-    for (; count > 0; --count, st_cursor_next(trie)) {
-        const uint16_t keycode = st_cursor_get_keycode(trie);
+    cursor->trie->key_stack->size = 0;
+    for (; count > 0; --count, st_cursor_next(cursor)) {
+        const uint16_t keycode = st_cursor_get_keycode(cursor);
         if (!keycode) {
             return false;
         }
-        st_key_stack_push(trie->key_stack, keycode);
+        st_key_stack_push(cursor->trie->key_stack, keycode);
     }
     return true;
 }
