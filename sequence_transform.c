@@ -245,7 +245,7 @@ void st_handle_repeat_key(void)
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_search_result_t *res, char *completion_str) {
-#if defined(RECORD_RULE_USAGE) //&& defined(CONSOLE_ENABLE)
+#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
     st_cursor_init(&trie_cursor, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
     const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
