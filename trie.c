@@ -13,8 +13,8 @@
 #include <ctype.h>
 #include "keybuffer.h"
 #include "key_stack.h"
-#include "cursor.h"
 #include "trie.h"
+#include "cursor.h"
 #include "utils.h"
 
 #define TRIE_MATCH_BIT      0x8000
@@ -27,10 +27,10 @@
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_trie_t *trie, st_key_buffer_t *search, st_trie_search_result_t *res)
 {
-    st_cursor_init(trie, search, 0, false);
+    st_cursor_init(trie->cursor, search, 0, false);
     st_find_longest_chain(trie, &res->trie_match, 0);
 #ifdef SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER
-    st_cursor_init(trie, search, 0, true);
+    st_cursor_init(trie->cursor, search, 0, true);
 
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
     st_cursor_print(trie);
@@ -143,7 +143,7 @@ bool st_find_longest_chain(st_trie_t *trie, st_trie_match_t *longest_match, uint
             if (st_cursor_longer_than(trie, &longest_match->seq_match_pos)) {
                 longer_match_found = true;
                 longest_match->trie_match_index = offset;
-                longest_match->seq_match_pos = st_cursor_save(trie);
+                longest_match->seq_match_pos = st_cursor_save(trie->cursor);
             }
             // If bit 14 is also set, there is a child node after the completion string
             if (code & TRIE_BRANCH_BIT) {

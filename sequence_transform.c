@@ -242,12 +242,12 @@ void st_handle_repeat_key(void)
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_t *trie, st_trie_search_result_t *res) {
 #if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
-    st_cursor_init(trie, &key_buffer, 0, false);
+    st_cursor_init(trie->cursor, &key_buffer, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(trie);
     const st_trie_payload_t *rule_action = st_cursor_get_action(trie);
     const bool is_repeat = rule_action->func_code == 1;
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
-    st_cursor_move_to_history(trie, 1, res->trie_match.seq_match_pos.as_output_buffer);
+    st_cursor_move_to_history(trie->cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
     st_cursor_push_to_stack(trie, prev_seq_len);
     char seq_str[prev_seq_len + 1];
     st_key_stack_to_str(trie->key_stack, seq_str);
@@ -363,7 +363,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
 void st_handle_backspace() {
-    st_cursor_init(&trie, &key_buffer, 0, true);
+    st_cursor_init(trie.cursor, &key_buffer, 0, true);
     const st_trie_payload_t *action = st_cursor_get_action(&trie);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
@@ -391,7 +391,7 @@ void st_handle_backspace() {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&trie, 1, true);
+        st_cursor_move_to_history(trie.cursor, 1, true);
         if (st_cursor_push_to_stack(&trie, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
@@ -415,7 +415,7 @@ void st_handle_backspace() {
  */
 uint8_t st_get_virtual_output(char *buf, uint8_t count)
 {
-    st_cursor_init(&trie, &key_buffer, 0, true);
+    st_cursor_init(trie.cursor, &key_buffer, 0, true);
     for (int i = 0; i < count; ++i, st_cursor_next(&trie)) {
         const uint16_t keycode = st_cursor_get_keycode(&trie);
         if (!keycode) {
