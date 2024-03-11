@@ -37,6 +37,8 @@ from datetime import date, datetime
 from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
+from itertools import chain
+
 
 ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
 
@@ -344,18 +346,15 @@ def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, st
 
 ###############################################################################
 def get_regex_section(file_content: str) -> list[str]:
-    regex_start = f"{COMMENT_STR} regex start\n+"
-    regex_end = f"\n+{COMMENT_STR} regex end"
+    regex_start = f"{COMMENT_STR}REGEX_START\n+"
+    regex_end = f"\n+{COMMENT_STR}REGEX_END"
 
-    regex_lines = re.findall(
+    regex_zones = re.findall(
         f"{regex_start}((?:.+\n??)+){regex_end}",
         file_content
     )
 
-    if regex_lines:
-        regex_lines = regex_lines[0].split("\n")
-
-    return regex_lines
+    return list(chain.from_iterable(zone.split("\n") for zone in regex_zones))
 
 
 ###############################################################################
