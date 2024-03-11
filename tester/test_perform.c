@@ -30,7 +30,6 @@ void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
 {
     static char message[256];
     res->message = message;
-    // Test #1: st_perform
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
     char *output = sim_output_get(true);

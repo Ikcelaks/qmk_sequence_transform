@@ -14,6 +14,7 @@
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
+#include "cursor.h"
 
 //////////////////////////////////////////////////////////////////
 // Public API
@@ -33,12 +34,12 @@ static inline void sequence_transform_task(void) {}
 // Internal
 
 bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods);
-void st_record_send_key(uint16_t keycode);
 void st_handle_repeat_key(void);
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
 void st_handle_backspace(void);
+uint8_t st_get_virtual_output(char *buf, uint8_t count);
 
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void);

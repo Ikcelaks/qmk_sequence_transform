@@ -18,10 +18,11 @@ static const char *test_result_str[] = {
 
 //////////////////////////////////////////////////////////////////
 static st_test_info_t rule_tests[] = {
-    { test_perform,     "st_perform",           { false, 0 } },
-    { test_backspace,   "st_handle_backspace",  { false, 0 } },
-    { test_find_rule,   "st_find_missed_rule",  { false, 0 } },
-    { 0,                0,                      { false, 0 } }
+    { test_perform,         "st_perform",           { false, 0 } },
+    { test_virtual_output,  "st_virtual_output",    { false, 0 } },
+    { test_backspace,       "st_handle_backspace",  { false, 0 } },
+    { test_find_rule,       "st_find_missed_rule",  { false, 0 } },
+    { 0,                    0,                      { false, 0 } }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -46,7 +47,7 @@ int test_rule(const st_test_rule_t *rule, bool print_all)
     }
     // Print test results
     char seq_str[256];
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);    
+    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
     printf("[rule] %s ⇒ %s\n", seq_str, rule->transform_str);
     for (int i = 0; rule_tests[i].func; ++i) {
         const st_test_info_t *test = &rule_tests[i];
@@ -56,7 +57,7 @@ int test_rule(const st_test_rule_t *rule, bool print_all)
                    test_result_str[test->res.code],
                    test->name,
                    pass ? "OK!" : test->res.message);
-        }        
+        }
     }
     puts("");
     return all_pass ? 1 : 0;
