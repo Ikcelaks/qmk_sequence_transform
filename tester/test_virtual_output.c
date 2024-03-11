@@ -30,12 +30,11 @@ void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
     char virtual_output[256];
     const int virt_len = st_get_virtual_output(virtual_output, 255);
     if (virt_len != sim_len) {
-        res->pass = false;
         snprintf(message, sizeof(message), "virt len (%d) != sim len (%d)", virt_len, sim_len);
+        return;
     }
-    res->pass = compare_output(virtual_output, sim_output, virt_len);
-    if (res->pass) {
-        snprintf(message, sizeof(message), "OK!");
+    if (compare_output(virtual_output, sim_output, virt_len)) {
+        res->code = TEST_OK;
     } else {
         snprintf(message, sizeof(message), "mismatch! virt: |%s| sim: |%s|", virtual_output, sim_output);
     }
