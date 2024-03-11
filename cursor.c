@@ -34,8 +34,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
         return KC_NO;
     }
     if (cursor->cursor_pos.as_output_buffer &&
-        keyaction->action_taken != ST_DEFAULT_KEY_ACTION &&
-        keyaction->action_taken != ST_IGNORE_KEY_ACTION) {
+        keyaction->action_taken != ST_DEFAULT_KEY_ACTION) {
         const st_trie_payload_t *action = st_cursor_get_action(cursor);
         int index = action->completion_index;
         index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
@@ -60,11 +59,6 @@ st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
         action->completion_len = 1;
         action->num_backspaces = 0;
         action->func_code = 0;
-    } else if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
-        action->completion_index = ST_DEFAULT_KEY_ACTION;
-        action->completion_len = 0;
-        action->num_backspaces = 0;
-        action->func_code = 0;
     } else {
         st_get_payload_from_match_index(cursor->trie, action, keyaction->action_taken);
     }
@@ -84,13 +78,6 @@ bool st_cursor_next(st_cursor_t *cursor)
     st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
     if (!keyaction) {
         return false;
-    }
-    if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
-        // skip fake key and try again
-        ++cursor->cursor_pos.index;
-        cursor->cache_valid = false;
-        cursor->cursor_pos.sub_index = 0;
-        return st_cursor_next(cursor);
     }
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
@@ -121,10 +108,6 @@ bool st_cursor_next(st_cursor_t *cursor)
         if (!keyaction) {
             // We reached the end without finding the next output key
             return false;
-        }
-        if (keyaction->action_taken == ST_IGNORE_KEY_ACTION) {
-            // skip fake key
-            continue;
         }
         if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
             if (backspaces == 0) {

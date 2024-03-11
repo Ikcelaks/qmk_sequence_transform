@@ -14,9 +14,9 @@
 typedef struct
 {
     uint16_t    completion_index;   // index to start of completion string in trie_t.completions
-    uint8_t     completion_len;     // length of completion string
-    uint8_t     num_backspaces;     // number of backspaces to send before the completion string
-    uint8_t     func_code;          // special function code
+    int     completion_len;     // length of completion string
+    int     num_backspaces;     // number of backspaces to send before the completion string
+    int     func_code;          // special function code
 } st_trie_payload_t;
 
 typedef struct
