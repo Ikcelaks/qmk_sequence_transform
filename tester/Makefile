@@ -22,9 +22,11 @@ CFLAGS = -I. \
 	-I.. \
 	-DST_TESTER \
 	-DSEQUENCE_TRANSFORM_MISSED_RULES \
+	-DSEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER \
+	-DSEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS \
 	-DNO_PRINT \
 	-D_CONSOLE \
-	$(OSFLAG)	
+	$(OSFLAG)
 
 DEPS = tester.h \
 	tester_utils.h \
@@ -33,6 +35,7 @@ DEPS = tester.h \
 	../keybuffer.h \
 	../key_stack.h \
 	../trie.h \
+	../cursor.h \
 	../utils.h \
 	../sequence_transform.h \
 	../sequence_transform_data.h \
@@ -42,6 +45,7 @@ _OBJ = tester.o \
 	test_all_rules.o \
 	test_ascii_string.o \
 	test_perform.o \
+	test_virtual_output.o \
 	test_backspace.o \
 	test_find_rule.o \
 	qmk_wrapper.o \
@@ -50,6 +54,7 @@ _OBJ = tester.o \
 	keybuffer.o \
 	key_stack.o \
 	trie.o \
+	cursor.o \
 	utils.o \
 	sequence_transform.o
 
@@ -63,7 +68,7 @@ $(ODIR)/%.o: %.c $(DEPS)
 tester: $(OBJ)
 	@$(CC) -o $@ $^ $(CFLAGS)
 	@echo "Build successful!"
-	
+
 .PHONY: clean
 
 clean:

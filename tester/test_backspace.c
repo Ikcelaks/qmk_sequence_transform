@@ -20,7 +20,7 @@ void test_backspace(const st_test_rule_t *rule, st_test_result_t *res)
 {
     static char message[256];
     res->message = message;
-    // Test #2: st_handle_backspace
+    // This expects input and output buffers to have been set by a previous test!
     // Make sure enhanced backspace handling leaves us with an empty
     // output buffer if we send one backspace for every key sent
     sim_st_enhanced_backspace(rule->seq_keycodes);

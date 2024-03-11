@@ -16,7 +16,7 @@
                const uint32_t t = timer_read32(); \
                F; \
                uprintf("%s time: %lu\n", #F, timer_elapsed32(t)); \
-           }            
+           }
 #else
 #   define st_log_time(F) F;
 #endif
@@ -33,6 +33,8 @@
 #define st_log_time(F) F;
 
 #define TAPPING_TERM 200
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 extern const uint8_t ascii_to_shift_lut[16];
 extern const uint8_t ascii_to_keycode_lut[128];
