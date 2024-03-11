@@ -37,7 +37,6 @@ from datetime import date, datetime
 from string import digits
 from pathlib import Path
 from argparse import ArgumentParser
-from itertools import chain
 
 
 ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
@@ -350,9 +349,7 @@ def parse_file_lines(
 ) -> Iterator[Tuple[int, str, str]]:
     """Parses lines read from `file_name` into context-correction pairs."""
     with open(file_name, 'rt', encoding="utf-8") as file:
-        file_content = file.read()
-
-    lines = file_content.split("\n")
+        lines = file.readlines()
 
     regex_start = f"{COMMENT_STR}REGEX_START"
     regex_end = f"{COMMENT_STR}REGEX_END"
@@ -360,16 +357,19 @@ def parse_file_lines(
 
     for line_number, line in enumerate(lines, 1):
         line = line.strip()
-        if not line: continue
 
-        if line.find(regex_start) == 0:
+        if not line:
+            continue
+
+        if line == regex_start:
             in_regex_zone = True
             continue
-        if line.find(regex_end) == 0:
+
+        if line == regex_end:
             in_regex_zone = False
             continue
 
-        if line.find(comment) != 0:
+        if not line.startswith(comment):
             # Parse syntax "sequence -> transformation".
             # Using strip to ignore indenting.
             tokens = [token.strip() for token in line.split(separator, 1)]
