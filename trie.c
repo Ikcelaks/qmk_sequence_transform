@@ -353,12 +353,14 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     *transform = 0;
     return true;
 }
-
-void st_completion_to_str(const st_trie_t *trie, st_trie_payload_t *payload, char *buf)
+//////////////////////////////////////////////////////////////////////
+void st_completion_to_str(const st_trie_t *trie,
+                          const st_trie_payload_t *payload,
+                          char *str)
 {
     const uint16_t completion_end = payload->completion_index + payload->completion_len;
     for (uint16_t i = payload->completion_index; i < completion_end; ++i) {
-        *buf++ = CDATA(i);
+        *str++ = CDATA(i);
     }
-    *buf = '\0';
+    *str = '\0';
 }
