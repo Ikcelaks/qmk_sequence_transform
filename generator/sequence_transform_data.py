@@ -332,11 +332,30 @@ def generate_matches(pattern) -> list[tuple[str, str]]:
 
 
 ###############################################################################
-def parse_tokens(tokens: List[str]) -> Iterator[Tuple[int, str, str]]:
+def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, str, str]]:
     full_sequence, transform = tokens
 
-    for token, sequence in generate_matches(full_sequence):
-        yield sequence, transform.replace(r"\1", token)
+    if parse_regex:
+        for token, sequence in generate_matches(full_sequence):
+            yield sequence, transform.replace(r"\1", token)
+    else:
+        yield full_sequence, transform
+
+
+###############################################################################
+def get_regex_section(file_content: str) -> list[str]:
+    regex_start = f"{COMMENT_STR} regex start\n+"
+    regex_end = f"\n+{COMMENT_STR} regex end"
+
+    regex_lines = re.findall(
+        f"{regex_start}((?:.+\n??)+){regex_end}",
+        file_content
+    )
+
+    if regex_lines:
+        regex_lines = regex_lines[0].split("\n")
+
+    return regex_lines
 
 
 ###############################################################################
@@ -344,25 +363,28 @@ def parse_file_lines(
     file_name: str, separator: str, comment: str
 ) -> Iterator[Tuple[int, str, str]]:
     """Parses lines read from `file_name` into context-correction pairs."""
-    line_number = 0
-
     with open(file_name, 'rt', encoding="utf-8") as file:
-        for line in file:
-            line_number += 1
-            line = line.strip()
+        file_content = file.read()
 
-            if line and line.find(comment) != 0:
-                # Parse syntax "sequence -> transformation".
-                # Using strip to ignore indenting.
-                tokens = [token.strip() for token in line.split(separator, 1)]
+    regex_lines = get_regex_section(file_content)
+    lines = file_content.split("\n")
 
-                if len(tokens) != 2 or not tokens[0]:
-                    raise SystemExit(
-                        f'{err(line_number)}: Invalid syntax: "{red(line)}"'
-                    )
+    for line_number, line in enumerate(lines, 1):
+        line = line.strip()
 
-                for context, correction in parse_tokens(tokens):
-                    yield line_number, context, correction
+        if line and line.find(comment) != 0:
+            # Parse syntax "sequence -> transformation".
+            # Using strip to ignore indenting.
+            tokens = [token.strip() for token in line.split(separator, 1)]
+
+            if len(tokens) != 2 or not tokens[0]:
+                raise SystemExit(
+                    f'{err(line_number)}: Invalid syntax: "{red(line)}"'
+                )
+
+            is_regex_line = line in regex_lines
+            for context, correction in parse_tokens(tokens, is_regex_line):
+                yield line_number, context, correction
 
 
 ###############################################################################
