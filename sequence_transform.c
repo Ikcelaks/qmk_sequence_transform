@@ -97,10 +97,6 @@ static st_cursor_t trie_cursor = {
 };
 
 //////////////////////////////////////////////////////////////////
-// Completion string buffer
-static char completion_buf[COMPLETION_MAX_LENGTH + 1];
-
-//////////////////////////////////////////////////////////////////
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
@@ -321,6 +317,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // fill completion buffer
+    char completion_buf[COMPLETION_MAX_LENGTH + 1];
     st_completion_to_str(trie, &res->trie_payload, completion_buf);
     // Log newly added rule match
     log_rule(res, completion_buf);
