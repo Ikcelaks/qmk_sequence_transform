@@ -1,0 +1,1607 @@
+[rule] ␣cond✪ ⇒ condition
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣cons✪ ⇒ consider
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣cont✪ ⇒ continue
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣deep✪ ⇒ deeply
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣down✪ ⇒ download
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣dist✪ ⇒ distance
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣incl✪ ⇒ include
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣incr✪ ⇒ increase
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣like✪ ⇒ likely
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣part✪ ⇒ particular
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣pret✪ ⇒ pretty
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣prev✪ ⇒ previous
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣prev☆ ⇒ preview
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣prog✪ ⇒ program
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣prop✪ ⇒ property
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣some✪ ⇒ sometimes
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣them✪ ⇒ themselves
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣abs✪ ⇒ absolutely
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣act✪ ⇒ actually
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣aft✪ ⇒ after
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^a* ⇒ after
+
+[rule] ␣alg✪ ⇒ algorithm
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣alm✪ ⇒ almost
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣alr✪ ⇒ already
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣alt✪ ⇒ although
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣alw✪ ⇒ always
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ama✪ ⇒ amazing
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ans✪ ⇒ answer
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bea✪ ⇒ beautiful
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bec✪ ⇒ because
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bef✪ ⇒ before
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^b@ ⇒ before
+
+[rule] ␣beg✪ ⇒ beginning
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣beh✪ ⇒ behind
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bei✪ ⇒ being
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bel✪ ⇒ believe
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ben✪ ⇒ benefit
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bes✪ ⇒ besides
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bet☆ ⇒ between
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bet✪ ⇒ better
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bew✪ ⇒ beware
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bey✪ ⇒ beyond
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣cor✪ ⇒ correct
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣def☆ ⇒ definitely
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣dif✪ ⇒ different
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣dir✪ ⇒ directly
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣dec✪ ⇒ decision
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣doa✪ ⇒ doable
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣doi✪ ⇒ doing
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ear☆ ⇒ early
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣edu✪ ⇒ education
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ele✪ ⇒ element
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣eno✪ ⇒ enough
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣esp✪ ⇒ especially
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣exc✪ ⇒ except
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣exp✪ ⇒ explain
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣exp☆ ⇒ experience
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fig✪ ⇒ figure
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fin✪ ⇒ finally
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fol✪ ⇒ follow
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fur✪ ⇒ further
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fut✪ ⇒ future
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣hil☆ ⇒ hilarious
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣gen✪ ⇒ general
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣get✪ ⇒ getting
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣gon✪ ⇒ gonna
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣gov✪ ⇒ government
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣him✪ ⇒ himself
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣how✪ ⇒ however
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣imp✪ ⇒ important
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣inf✪ ⇒ information
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ins✪ ⇒ instead
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣lan✪ ⇒ language
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣len✪ ⇒ length
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣lit✪ ⇒ little
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣loc✪ ⇒ location
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣man✪ ⇒ manner
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣man☆ ⇒ manage
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣mat✪ ⇒ matter
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣men✪ ⇒ mention
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣met✪ ⇒ method
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣mid✪ ⇒ middle
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣mov✪ ⇒ movement
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] nec✪ ⇒ necessary
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣not✪ ⇒ nothing
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣num✪ ⇒ number
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣obj✪ ⇒ object
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣oft✪ ⇒ often
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣opt✪ ⇒ option
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣org✪ ⇒ organization
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣oth✪ ⇒ other
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^o@ ⇒ other
+
+[rule] ␣out✪ ⇒ outside
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣piz✪ ⇒ pizza
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣phy✪ ⇒ physic
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣pos☆ ⇒ position
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣pos✪ ⇒ possible
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣qua✪ ⇒ quality
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣rea✪ ⇒ reason
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣rec✪ ⇒ receive
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣rem✪ ⇒ remain
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣req✪ ⇒ required
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣res✪ ⇒ result
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ret✪ ⇒ return
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^r@ ⇒ return
+
+[rule] ␣sof✪ ⇒ software
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sec✪ ⇒ security
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ser✪ ⇒ service
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sit✪ ⇒ situation
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sol✪ ⇒ solution
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sti✪ ⇒ still
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sti☆ ⇒ stick
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] sti☆ ⇒ stic
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣sys✪ ⇒ system
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣the☆ ⇒ they
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣thr✪ ⇒ through
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣tod✪ ⇒ today
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣tog☆ ⇒ together
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣tog✪ ⇒ toggle
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣tow✪ ⇒ towards
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣twi✪ ⇒ twice
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣unb✪ ⇒ unbelievable
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣und✪ ⇒ understand
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣var✪ ⇒ variable
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣vol✪ ⇒ volume
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣whe✪ ⇒ whether
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣wha✪ ⇒ whatever
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣wea✪ ⇒ weather
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣wor☆ ⇒ world
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣af✪ ⇒ affect
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣am✪ ⇒ amount
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣an✪ ⇒ another
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣av☆ ⇒ average
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣av✪ ⇒ available
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ca✪ ⇒ can't
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣du✪ ⇒ during
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ei✪ ⇒ either
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣em✪ ⇒ email
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣eq✪ ⇒ equal
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ex✪ ⇒ example
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣fu✪ ⇒ fuck
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣gi✪ ⇒ give
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ht✪ ⇒ https://
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣im✪ ⇒ immediate
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣li✪ ⇒ like
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^l@ ⇒ like
+
+[rule] ␣me✪ ⇒ meet
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣mi✪ ⇒ might
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ni✪ ⇒ nice
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ob✪ ⇒ obvious
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣on✪ ⇒ only
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣or✪ ⇒ original
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ot✪ ⇒ other
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: ^o@ ⇒ other
+
+[rule] po☆ ⇒ point
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣pr✪ ⇒ problem
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣si✪ ⇒ size
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣so☆ ⇒ some
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣so✪ ⇒ soon
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ti✪ ⇒ time
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ri✪ ⇒ right
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣un✪ ⇒ unless
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣up☆ ⇒ update
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣up✪ ⇒ upper
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣ur☆ ⇒ url
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣us✪ ⇒ usually
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣va✪ ⇒ value
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣va☆ ⇒ various
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣wi✪ ⇒ with
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣a✪ ⇒ about
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣a☆ ⇒ after
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣b✪ ⇒ before
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣e✪ ⇒ every
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣f☆ ⇒ from
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣f✪ ⇒ function
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣i☆ ⇒ I'm
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣k✪ ⇒ know
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣l✪ ⇒ like
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣o✪ ⇒ other
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣p✪ ⇒ people
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣q✪ ⇒ question
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣r✪ ⇒ return
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣s✪ ⇒ something
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣t✪ ⇒ that
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣v✪ ⇒ very
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣w✪ ⇒ which
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣y☆ ⇒ you
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣y✪ ⇒ yeah
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ab☆ ⇒ abo
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] an☆ ⇒ ano
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] od☆ ⇒ oda
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ot☆ ⇒ ota
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ut☆ ⇒ ute
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] us☆ ⇒ use
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ud☆ ⇒ ude
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ub☆ ⇒ ube
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ul☆ ⇒ ule
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ur☆ ⇒ ure
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] un☆ ⇒ une
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] xp☆ ⇒ xpl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] xc☆ ⇒ xcl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] se☆ ⇒ sec
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ca☆ ⇒ cas
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] co☆ ⇒ cos
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ce☆ ⇒ ces
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] te☆ ⇒ ted
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] wa☆ ⇒ wav
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] we☆ ⇒ wev
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] wi☆ ⇒ wiv
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] wo☆ ⇒ wov
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] s☆✪ ⇒ sch
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] e☆✪ ⇒ euh
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ap☆ ⇒ apt
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] op☆ ⇒ opt
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ep☆ ⇒ ept
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rep☆ ⇒ repl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] dep☆ ⇒ depl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] crip☆ ⇒ cript
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] eip☆ ⇒ eipt
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rup☆ ⇒ rupt
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] tc✪ ⇒ tch
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found shorter sequence rule: t* ⇒ tch
+
+[rule] rc✪ ⇒ rch
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rt✪ ⇒ rtment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] est✪ ⇒ estment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ust✪ ⇒ ustment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] nt✪ ⇒ ntment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] reat✪ ⇒ reatment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] nt☆ ⇒ ntment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found diff sequence for same transform: nt@ ⇒ ntment
+
+[rule] rt☆ ⇒ rtment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() found diff sequence for same transform: rt@ ⇒ rtment
+
+[rule] st☆ ⇒ stment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] eat☆ ⇒ eatment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] uit☆ ⇒ uitment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] mit☆ ⇒ mitment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rig☆ ⇒ rigs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] pig☆ ⇒ pigs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] dig☆ ⇒ digs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ig☆ ⇒ ight
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] oug☆ ⇒ ought
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] aug☆ ⇒ augh
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] me✪ ⇒ ment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ma✪ ⇒ mak
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] la✪ ⇒ lak
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ta✪ ⇒ tak
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ea✪ ⇒ eak
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] am✪ ⇒ ame
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] gram✪ ⇒ gramm
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] eam✪ ⇒ eamm
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] sham✪ ⇒ shame
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ham✪ ⇒ hamm
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] meti☆ ⇒ metimes
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣bu☆ ⇒ buy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣gu☆ ⇒ guy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] olic☆ ⇒ olicy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] urac☆ ⇒ uracy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rmac☆ ⇒ rmacy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ocrac☆ ⇒ ocracy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] vac☆ ⇒ vacy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] gac☆ ⇒ gacy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ec☆ ⇒ eck
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] uc☆ ⇒ uck
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ac☆ ⇒ ack
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] oc☆ ⇒ ock
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ic☆ ⇒ ick
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] st✪ ⇒ sts
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] rs✪ ⇒ rst
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ous☆ ⇒ ously
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] doc☆ ⇒ docs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] judge✪ ⇒ judgment
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ent✪ ⇒ ently
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] cop☆ ⇒ copy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] j☆ ⇒ join
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] jo✪ ⇒ joy
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] vie✪ ⇒ view
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] other✪ ⇒ otherwise
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣real✪ ⇒ really
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣real☆ ⇒ realize
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] loo☆ ⇒ look
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] boo☆ ⇒ book
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] pub✪ ⇒ publ
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] uld✪ ⇒ uldn't
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] uld✪☆ ⇒ uld've
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] ␣are✪ ⇒ aren't
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣do✪ ⇒ don't
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣does✪ ⇒ doesn't
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣i☆✪ ⇒ I'll
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] ␣i☆✪☆ ⇒ I've
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] ␣y☆✪ ⇒ you're
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣y☆✪☆ ⇒ you'll
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] ␣y☆✪☆✪ ⇒ you've
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] they✪ ⇒ they're
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] they're☆ ⇒ they'll
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] they'll✪ ⇒ they've
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] u☆ ⇒ ue
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] e☆ ⇒ eu
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] o☆ ⇒ oa
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] a☆ ⇒ ao
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] s☆ ⇒ sc
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] c☆ ⇒ cs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] r☆ ⇒ rl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] l☆ ⇒ lr
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] g☆ ⇒ gs
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] w☆ ⇒ ws
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] b☆ ⇒ bl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] h✪ ⇒ ho
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] p☆ ⇒ pl
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣☆ ⇒ the
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] k☆ ⇒ king
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] k✪ ⇒ ked
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] i✪ ⇒ ion
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] i☆ ⇒ ious
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] y✪ ⇒ ying
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] v☆ ⇒ ver
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] q☆ ⇒ qu
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] z☆ ⇒ zone
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] z✪ ⇒ zation
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] t☆ ⇒ tch
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] lar✪ ⇒ larly
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣☆✪ ⇒ them
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ☆☆ ⇒ *m
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+[rule] ,✪ ⇒ , and
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule (space in transform)!
+
+[rule] .✪ ⇒ .\
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] -✪ ⇒ ->
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣d✪ ⇒ develop
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣d✪r ⇒ developer
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣d✪d ⇒ developed
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣d✪m ⇒ development
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;32mpass[0m] st_find_missed_rule() OK!
+
+[rule] ␣☆o␣ ⇒ those 
+[[0;32mpass[0m] st_perform() OK!
+[[0;32mpass[0m] st_handle_backspace() OK!
+[[0;33mwarn[0m] st_find_missed_rule() untestable rule!
+
+
+[[0;32mAll 321 tests passed![0m]
