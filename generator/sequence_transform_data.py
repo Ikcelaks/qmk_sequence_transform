@@ -345,19 +345,6 @@ def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, st
 
 
 ###############################################################################
-def get_regex_section(file_content: str) -> list[str]:
-    regex_start = f"{COMMENT_STR}REGEX_START\n+"
-    regex_end = f"\n+{COMMENT_STR}REGEX_END"
-
-    regex_zones = re.findall(
-        f"{regex_start}((?:.+\n??)+){regex_end}",
-        file_content
-    )
-
-    return list(chain.from_iterable(zone.split("\n") for zone in regex_zones))
-
-
-###############################################################################
 def parse_file_lines(
     file_name: str, separator: str, comment: str
 ) -> Iterator[Tuple[int, str, str]]:
@@ -365,13 +352,24 @@ def parse_file_lines(
     with open(file_name, 'rt', encoding="utf-8") as file:
         file_content = file.read()
 
-    regex_lines = get_regex_section(file_content)
     lines = file_content.split("\n")
+
+    regex_start = f"{COMMENT_STR}REGEX_START"
+    regex_end = f"{COMMENT_STR}REGEX_END"
+    in_regex_zone = False
 
     for line_number, line in enumerate(lines, 1):
         line = line.strip()
+        if not line: continue
 
-        if line and line.find(comment) != 0:
+        if line.find(regex_start) == 0:
+            in_regex_zone = True
+            continue
+        if line.find(regex_end) == 0:
+            in_regex_zone = False
+            continue
+
+        if line.find(comment) != 0:
             # Parse syntax "sequence -> transformation".
             # Using strip to ignore indenting.
             tokens = [token.strip() for token in line.split(separator, 1)]
@@ -381,8 +379,7 @@ def parse_file_lines(
                     f'{err(line_number)}: Invalid syntax: "{red(line)}"'
                 )
 
-            is_regex_line = line in regex_lines
-            for context, correction in parse_tokens(tokens, is_regex_line):
+            for context, correction in parse_tokens(tokens, in_regex_zone):
                 yield line_number, context, correction
 
 
@@ -576,7 +573,7 @@ def create_test_rule_c_string(
     sequence: str,
     transform: str
 ) -> str:
-    """ returns a string with the following format: 
+    """ returns a string with the following format:
         { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
     """
     # we don't want any utf8 symbols in transformation string here
