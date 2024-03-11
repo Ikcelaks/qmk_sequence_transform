@@ -249,7 +249,7 @@ void log_rule(st_trie_search_result_t *res, char *completion_str) {
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
     st_cursor_move_to_history(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
     st_cursor_push_to_stack(&trie_cursor, prev_seq_len);
-    char seq_str[MAX(prev_seq_len, res->trie_payload.completion_len) + 1];
+    char seq_str[SEQUENCE_MAX_LENGTH + 1];
     st_key_stack_to_str(trie.key_stack, seq_str);
 
     uprintf("st_rule,%s,%d,%c,", seq_str, res->trie_payload.num_backspaces, st_keycode_to_char(rule_trigger_keycode));
@@ -324,16 +324,16 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // fill completion buffer
-    char completion_buf[res->trie_payload.completion_len + 1];
-    st_completion_to_str(trie, &res->trie_payload, completion_buf);
+    char completion_str[COMPLETION_MAX_LENGTH + 1];
+    st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
-    log_rule(res, completion_buf);
+    log_rule(res, completion_str);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
     const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
-    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && completion_buf[completion_end - 1] == ' ');
-    for (char *c = completion_buf; *c; ++c) {
+    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && completion_str[completion_end - 1] == ' ');
+    for (char *c = completion_str; *c; ++c) {
         st_send_key(st_char_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {
