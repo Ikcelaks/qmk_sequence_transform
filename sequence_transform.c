@@ -399,14 +399,16 @@ void st_handle_backspace() {
 uint8_t st_get_virtual_output(char *buf, uint8_t count)
 {
     st_cursor_init(&trie_cursor, 0, true);
-    for (int i = 0; i < count; ++i, st_cursor_next(&trie_cursor)) {
+    int i = 0;
+    for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
         const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);
         if (!keycode) {
-            return i;
+            break;
         }
         buf[i] = st_keycode_to_char(keycode);
     }
-    return count;
+    buf[i] = '\0';
+    return i;
 }
 
 /**

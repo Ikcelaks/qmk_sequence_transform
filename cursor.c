@@ -31,10 +31,11 @@ bool cursor_advance_if_completion_exhausted(st_cursor_t *cursor)
             }
             cursor->cache_valid = false;
             st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
-            if (!keyaction) {
-                // We reached the end without finding the next output key
-                return false;
-            }
+            // Below is an assert that should be made
+            // if (!keyaction) {
+            //     // We reached the end without finding the next output key
+            //     return false;
+            // }
             if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
                 if (backspaces == 0) {
                     // This is a real keypress and no more backspaces to consume
@@ -134,8 +135,11 @@ bool st_cursor_next(st_cursor_t *cursor)
         }
         cursor->cache_valid = false;
         cursor->cursor_pos.sub_index = 0;
-        ++cursor->cursor_pos.segment_len;
-        return true;
+        if (cursor_advance_if_completion_exhausted(cursor)) {
+            ++cursor->cursor_pos.segment_len;
+            return true;
+        }
+        return false;
     }
     // This is a key with an action and completion, increment the sub_index
     // and advance to the next key in the key buffer if we exceeded the completion length
