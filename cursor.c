@@ -88,6 +88,9 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
     }
 }
 //////////////////////////////////////////////////////////////////
+// DO NOT USE externally when cursor is initialized to act
+// as a virtual output. Behavior is not stable in the presence
+// of `st_cursor_get_keycode` in virtual output mode
 st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 {
     st_trie_payload_t *action = &cursor->cached_action;
@@ -178,16 +181,6 @@ bool st_cursor_next(st_cursor_t *cursor)
     }
     ++cursor->cursor_pos.segment_len;
     return true;
-}
-//////////////////////////////////////////////////////////////////
-bool st_cursor_move_to_history(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
-{
-    // invalidate cache
-    cursor->cache_valid = false;
-    cursor->cursor_pos.index = history;
-    cursor->cursor_pos.sub_index = 0;
-    cursor->cursor_pos.as_output_buffer = as_output_buffer;
-    return history < cursor->buffer->context_len;
 }
 //////////////////////////////////////////////////////////////////
 st_cursor_pos_t st_cursor_save(const st_cursor_t *cursor)

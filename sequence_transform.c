@@ -346,7 +346,8 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
 void st_handle_backspace() {
-    st_cursor_init(&trie_cursor, 0, true);
+    // initialize cursor as input cursor, so that `st_cursor_get_action` is stable
+    st_cursor_init(&trie_cursor, 0, false);
     const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
@@ -373,7 +374,8 @@ void st_handle_backspace() {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&trie_cursor, 1, true);
+        // reinitialize cursor as output cursor one keystroke before the previous action
+        st_cursor_init(&trie_cursor, 1, true);
         if (st_cursor_push_to_stack(&trie_cursor, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
