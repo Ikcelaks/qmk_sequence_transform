@@ -121,8 +121,11 @@ bool st_cursor_next(st_cursor_t *cursor)
         if (cursor->cursor_pos.index < cursor->buffer->context_len) {
             ++cursor->cursor_pos.segment_len;
             return true;
+        } else {
+            // leave `index` at the End position
+            cursor->cursor_pos.index = cursor->buffer->context_len;
+            return false;
         }
-        return false;
     }
     // Continue processing if simulating output buffer
     st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);

@@ -100,6 +100,7 @@ static st_cursor_t trie_cursor = {
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
+st_cursor_t *st_get_cursor(void) { return &trie_cursor; }
 #endif
 
 /**
