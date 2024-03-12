@@ -395,9 +395,12 @@ void st_handle_backspace() {
 /**
  * @brief Fills the provided buffer with up to `count` characters from the virtual output
  *
- * @return the number of characters written to the buffer
+ * @param str char* to write the virtual output to. Will be null terminated.
+ * @param history int 0 for the current output. N for the output N keypresses ago.
+ * @param count int representing the number of characters requested. str must be hold `count + 1` chars
+ * @return the number of characters written to the str not including the null terminator
  */
-uint8_t st_get_virtual_output(char *buf, uint8_t count)
+uint8_t st_get_virtual_output(char *str, uint8_t count)
 {
     st_cursor_init(&trie_cursor, 0, true);
     int i = 0;
@@ -406,9 +409,9 @@ uint8_t st_get_virtual_output(char *buf, uint8_t count)
         if (!keycode) {
             break;
         }
-        buf[i] = st_keycode_to_char(keycode);
+        str[i] = st_keycode_to_char(keycode);
     }
-    buf[i] = '\0';
+    str[i] = '\0';
     return i;
 }
 
