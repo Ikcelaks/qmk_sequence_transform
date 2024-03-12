@@ -16,7 +16,6 @@
 #include "trie.h"
 #include "cursor.h"
 #include "utils.h"
-#include "sequence_transform_data.h"
 
 #define TRIE_MATCH_BIT      0x8000
 #define TRIE_BRANCH_BIT     0x4000
@@ -188,6 +187,28 @@ bool st_trie_get_rule(st_trie_t              *trie,
     return false;
 }
 //////////////////////////////////////////////////////////////////////
+// Utility function to print debug info about a potential rule match,
+// done here so we don't make a mess in st_check_rule_match and
+// read stack/completion strings before we actually need to.
+// TODO: wrap this and its call around ST_DEBUG ifdef
+void debug_rule_match(const st_trie_payload_t *payload,
+                      const st_trie_search_t *search,
+                      uint16_t offset)
+{
+    st_trie_t *trie = search->trie;
+    const st_key_stack_t *key_stack = trie->key_stack;
+    const st_key_buffer_t *key_buffer = search->key_buffer;
+    char stackstr[key_stack->size + 1];
+    char compstr[payload->completion_len + 1];
+    st_completion_to_str(trie, payload, compstr);
+    st_key_stack_to_str(key_stack, stackstr);
+    int clen = search->search_len - search->skip_levels;
+    const int transform_len = clen + payload->completion_len;
+    const int backspaces = payload->num_backspaces;
+    uprintf("  checking match @%d, tlen: %d, clen: %d, stack: |%s|, comp: |%s|(%d bs)\n",
+            offset, transform_len, key_buffer->context_len, stackstr, compstr, backspaces);
+}
+//////////////////////////////////////////////////////////////////////
 bool st_find_rule(st_trie_search_t *search, uint16_t offset)
 {
 // Simulate future buffer keys by offsetting buffer access
@@ -212,7 +233,9 @@ bool st_find_rule(st_trie_search_t *search, uint16_t offset)
         if (search->skip_levels != skips || key_stack->size <= skips) {
             return false;
         }
-        return st_check_rule_match(&payload, search, offset);
+        // TODO: wrap around ST_DEBUG ifdef
+        //debug_rule_match(&payload, search, offset);
+        return st_check_rule_match(&payload, search);
     }
     // BRANCH node if bit 14 is set
     if (code & TRIE_BRANCH_BIT) {
@@ -272,34 +295,24 @@ bool stack_contains_unexpanded_seq(const st_key_stack_t *s)
     return false;
 }
 //////////////////////////////////////////////////////////////////////
-bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search, uint16_t offset)
+bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
 {
     st_trie_t *trie = search->trie;
     const st_key_stack_t *key_stack = trie->key_stack;
     const st_key_buffer_t *key_buffer = search->key_buffer;
-    st_trie_rule_t *res = search->result;
-    const int completion_end = payload->completion_index + payload->completion_len;
-    const int backspaces = payload->num_backspaces;
+    st_trie_rule_t *res = search->result;    
     // Early return if:
     // 1. potential transform len doesn't reach end of search buffer
     // 2. potential transform len is smaller than our current best
     int clen = search->search_len - search->skip_levels;
-    //int clen = search->search_len - 1 - backspaces;
     const int transform_len = clen + payload->completion_len;
-    /*char stackstr[128];
-    char comp[128];
-    char *c = comp;
-    for (int i = payload->completion_index; i < completion_end; ++i) *c++ = CDATA(i);
-    *c = 0;
-    st_key_stack_to_str(key_stack, stackstr);
-    printf("  checking match @%d, tlen: %d, clen: %d, stack: |%s|, comp: |%s|(%d bs)\n",
-            offset, transform_len, key_buffer->context_len, stackstr, comp, backspaces);*/
     if (transform_len != key_buffer->context_len ||
         transform_len < search->max_transform_len) {
         return false;
     }
     // If stack contains an un-expanded sequence, and this rule
     // requires backspaces, we cannot properly check this rule
+    const int backspaces = payload->num_backspaces;
     if (stack_contains_unexpanded_seq(key_stack) && backspaces) {
         //printf("  untestable rule!\n");
         return false;
@@ -318,6 +331,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     }
     // Check if completed string matches what comes next in our search buffer
     //printf("  testing completion: ");
+    const int completion_end = payload->completion_index + payload->completion_len;
     for (int i = payload->completion_index; i < completion_end; ++i, ++clen) {
         const char ascii_code = CDATA(i);
         const uint16_t comp_key = st_char_to_keycode(tolower(ascii_code));
