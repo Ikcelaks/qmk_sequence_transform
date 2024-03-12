@@ -317,15 +317,13 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // fill completion buffer
-    char completion_str[COMPLETION_MAX_LENGTH + 1];
+    char completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
     st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
     log_rule(res, completion_str);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    const uint16_t completion_end = res->trie_payload.completion_index + res->trie_payload.completion_len;
-    bool ends_with_wordbreak = (res->trie_payload.completion_len > 0 && completion_str[completion_end - 1] == ' ');
     for (char *c = completion_str; *c; ++c) {
         st_send_key(st_char_to_keycode(*c));
     }
@@ -336,18 +334,6 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
             break;
-        case 3:  // disable auto-wordbreak
-            ends_with_wordbreak = false;
-    }
-    if (ends_with_wordbreak && KEY_AT(0) != KC_SPC) {
-        // If the last key in an action outputs a wordbreak character, we need to mark in the buffer
-        // that we are at a word break. Currently, we must hack this by appending a fake KC_SPC to the buffer.
-        // We mark the action as ST_IGNORE_KEY_ACTION to designate that this is a fake key press with
-        // no associated output. We skip this fake space if the key that triggered the output ending with a
-        // wordbreak was a space. All of this convoluted logic will be removed when proper tagging support is
-        // added in a future feature
-        st_key_buffer_push(&key_buffer, KC_SPC);
-        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_IGNORE_KEY_ACTION;
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
