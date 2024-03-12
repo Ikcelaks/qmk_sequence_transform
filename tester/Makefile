@@ -1,19 +1,21 @@
-ifeq ($(QMKPATH),)
-  $(error Please set the QMKPATH env var to your qmk_firmware directory)
-endif
+CC			:= gcc
+PYTHON		:= python3
+ODIR		:= build
+QMKPATH		?= /home/qmk/qmk_firmware
+ST_GEN_PY	?= ../generator/sequence_transform_data.py
+ST_DICT 	?= ../../sequence_transform_dict.txt
+ST_CONFIG	?= ../../sequence_transform_config.json
+ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT)
 
-CC = gcc
-
-ODIR = build
-
-vpath %.c  ./ ../
+vpath %.c  ./:../
 
 OSFLAG :=
 ifeq ($(OS),Windows_NT)
 	OSFLAG += -D WIN32
 endif
 
-CFLAGS = -I. \
+CFLAGS := -Werror \
+	-I. \
 	-I$(QMKPATH)/platforms \
 	-I$(QMKPATH)/quantum \
 	-I$(QMKPATH)/quantum/sequencer \
@@ -27,7 +29,10 @@ CFLAGS = -I. \
 	-D_CONSOLE \
 	$(OSFLAG)
 
-DEPS = tester.h \
+ST_GEN_OUT := ../sequence_transform_data.h \
+	../sequence_transform_test.h
+
+DEPS := tester.h \
 	tester_utils.h \
 	sim_output_buffer.h \
 	../qmk_wrapper.h \
@@ -37,10 +42,9 @@ DEPS = tester.h \
 	../cursor.h \
 	../utils.h \
 	../sequence_transform.h \
-	../sequence_transform_data.h \
-	../sequence_transform_test.h
+	$(ST_GEN_OUT)
 
-_OBJ = tester.o \
+_OBJ := tester.o \
 	test_all_rules.o \
 	test_ascii_string.o \
 	test_perform.o \
@@ -58,6 +62,14 @@ _OBJ = tester.o \
 	sequence_transform.o
 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+all: gen tester
+
+$(ST_GEN_OUT): $(ST_GEN_IN)
+	@echo Running generator
+	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
+
+gen: $(ST_GEN_OUT) 
 
 $(ODIR)/%.o: %.c $(DEPS)
 	@echo Compiling $<
