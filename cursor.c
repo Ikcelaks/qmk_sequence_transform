@@ -67,9 +67,6 @@ void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
     cursor->cursor_pos.sub_index = as_output_buffer ? 0 : 255;
     cursor->cursor_pos.segment_len = 1;
     cursor->cache_valid = false;
-    if (as_output_buffer) {
-        cursor_advance_if_completion_exhausted(cursor);
-    }
 }
 //////////////////////////////////////////////////////////////////
 uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
@@ -81,6 +78,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
     }
     if (cursor->cursor_pos.as_output_buffer &&
         keyaction->action_taken != ST_DEFAULT_KEY_ACTION) {
+        cursor_advance_if_completion_exhausted(cursor);
         const st_trie_payload_t *action = st_cursor_get_action(cursor);
         int index = action->completion_index;
         index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
@@ -135,21 +133,51 @@ bool st_cursor_next(st_cursor_t *cursor)
         }
         cursor->cache_valid = false;
         cursor->cursor_pos.sub_index = 0;
-        if (cursor_advance_if_completion_exhausted(cursor)) {
-            ++cursor->cursor_pos.segment_len;
-            return true;
-        }
-        return false;
-    }
-    // This is a key with an action and completion, increment the sub_index
-    // and advance to the next key in the key buffer if we exceeded the completion length
-    ++cursor->cursor_pos.sub_index;
-    if (cursor_advance_if_completion_exhausted(cursor)) {
         ++cursor->cursor_pos.segment_len;
         return true;
     }
-    // unable to advance due to hitting the end of the buffer.
-    return false;
+    // This is a key with an action and completion, increment the sub_index
+    // and advance to the next key in the key buffer if we exceeded the completion length
+    st_trie_payload_t *action = st_cursor_get_action(cursor);
+    ++cursor->cursor_pos.sub_index;
+    if (cursor->cursor_pos.sub_index >= action->completion_len) {
+        // we have exceeded the length of the completion string
+        // advance to the next key that contains output
+        int backspaces = action->num_backspaces;
+        while (true) {
+            // move to next key in buffer
+            if (++cursor->cursor_pos.index >= cursor->buffer->context_len) {
+                return false;
+            }
+            cursor->cache_valid = false;
+            st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
+            // Below is an assert that should be made
+            // if (!keyaction) {
+            //     // We reached the end without finding the next output key
+            //     return false;
+            // }
+            if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+                if (backspaces == 0) {
+                    // This is a real keypress and no more backspaces to consume
+                    cursor->cursor_pos.sub_index = 0;
+                    break;
+                }
+                // consume one backspace
+                --backspaces;
+                continue;
+            }
+            // Load payload of key that performed action
+            action = st_cursor_get_action(cursor);
+            if (backspaces < action->completion_len) {
+                // This action contains the next output key. Find it's sub_pos and return true
+                cursor->cursor_pos.sub_index = backspaces;
+                break;
+            }
+            backspaces -= action->completion_len - action->num_backspaces;
+        }
+    }
+    ++cursor->cursor_pos.segment_len;
+    return true;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_move_to_history(st_cursor_t *cursor, int history, uint8_t as_output_buffer)

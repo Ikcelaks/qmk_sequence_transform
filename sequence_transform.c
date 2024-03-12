@@ -350,12 +350,6 @@ void st_handle_backspace() {
     const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
-        if (action->completion_len == 0) {
-            // This is a hacky fake key-press. Pop it off the buffer and go again
-            st_key_buffer_pop(&key_buffer, 1);
-            st_handle_backspace();
-            return;
-        }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Undoing backspace after non-matching keypress\n");
         st_key_buffer_print(&key_buffer);
@@ -365,8 +359,13 @@ void st_handle_backspace() {
         return;
     }
     // Undo a rule action
-    const int backspaces_needed_count = action->completion_len - 1;
+    int backspaces_needed_count = action->completion_len - 1;
     int resend_count = action->num_backspaces;
+    if (backspaces_needed_count < 0) {
+        // The natural backspace is unwanted. We need to resend that extra keypress
+        resend_count -= backspaces_needed_count;
+        backspaces_needed_count = 0;
+    }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("Undoing previous key action: bs: %d, restore: %d\n",
             backspaces_needed_count, resend_count);
