@@ -347,10 +347,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     }
     *seq = 0;
     // Finish writing transform
-    for (int i = payload->completion_index; i < completion_end; ++i) {
-        *transform++ = CDATA(i);
-    }
-    *transform = 0;
+    st_completion_to_str(trie, payload, transform);
     return true;
 }
 //////////////////////////////////////////////////////////////////////
