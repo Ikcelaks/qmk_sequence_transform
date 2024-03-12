@@ -158,15 +158,15 @@ def parse_file(
 
     file_lines = parse_file_lines(file_name, separator, comment)
     context_set = set()
+    duplicated_rules = []
     rules = []
 
     for line_number, context, completion in file_lines:
         if context in context_set:
-            print(
+            duplicated_rules.append(
                 f'{err("line", line_number)}: '
-                f'Ignoring duplicate sequence: "{cyan(context)}"'
+                f'Duplicate sequence: "{cyan(context)}"'
             )
-            continue
 
         # Check that `context` is valid.
         if not all([(c in char_map) for c in context[:-1]]):
@@ -183,6 +183,9 @@ def parse_file(
 
         rules.append((context, completion))
         context_set.add(context)
+
+    if duplicated_rules:
+        raise SystemExit("\n".join(duplicated_rules))
 
     return rules
 
