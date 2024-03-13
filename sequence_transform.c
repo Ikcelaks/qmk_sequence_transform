@@ -376,8 +376,7 @@ void st_handle_backspace() {
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
         // reinitialize cursor as output cursor one keystroke before the previous action
-        st_cursor_init(&trie_cursor, 1, true);
-        if (st_cursor_push_to_stack(&trie_cursor, resend_count)) {
+        if (st_cursor_init(&trie_cursor, 1, true) && st_cursor_push_to_stack(&trie_cursor, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
@@ -403,7 +402,10 @@ void st_handle_backspace() {
  */
 uint8_t st_get_virtual_output(char *str, uint8_t count)
 {
-    st_cursor_init(&trie_cursor, 0, true);
+    if (!st_cursor_init(&trie_cursor, 0, true)) {
+        str[0] = '\0';
+        return 0;
+    }
     int i = 0;
     for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
         const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);

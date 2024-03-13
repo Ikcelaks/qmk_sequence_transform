@@ -11,9 +11,10 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-void                    st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer);
+bool                    st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer);
 uint16_t                st_cursor_get_keycode(st_cursor_t *cursor);
 st_trie_payload_t       *st_cursor_get_action(st_cursor_t *cursor);
+bool                    st_cursor_at_end(const st_cursor_t *cursor);
 bool                    st_cursor_next(st_cursor_t *cursor);
 st_cursor_pos_t         st_cursor_save(const st_cursor_t *cursor);
 void                    st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos);
