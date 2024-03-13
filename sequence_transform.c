@@ -286,17 +286,26 @@ void st_find_missed_rule(void)
 #ifdef SEQUENCE_TRANSFORM_MISSED_RULES
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
-    // find buffer index for last space
-    int last_space_index = 0;
-    while (last_space_index < key_buffer.context_len &&
-           KEY_AT(last_space_index) != KC_SPACE) {
-        ++last_space_index;
+    // find buffer index for the space before the last word,
+    // first skipping past trailing spaces
+    // (in case a rule has spaces at the end of its completion)
+    int start_index = 0;
+    while (start_index < key_buffer.context_len &&
+           KEY_AT(start_index) == KC_SPACE) {
+        ++start_index;
     }
-    if (last_space_index == 0) {
+    // if we reached the end of the buffer here,
+    // it means it's filled wish spaces, so bail.
+    if (start_index == key_buffer.context_len) {        
         return;
     }
-    //uprintf("last_space_index: %d\n", last_space_index);
-    const int len_to_last_space = key_buffer.context_len - last_space_index;
+    // we've skipped trailing spaces, so now find the next space
+    while (start_index < key_buffer.context_len &&
+           KEY_AT(start_index) != KC_SPACE) {
+        ++start_index;
+    }
+    //uprintf("start_index: %d\n", start_index);
+    const int len_to_last_space = key_buffer.context_len - start_index;
     const int search_len_start = st_clamp(len_to_last_space,
                                           1,
                                           key_buffer.context_len - 1);
