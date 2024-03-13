@@ -15,10 +15,6 @@ void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
 {
     static char message[512];
     res->message = message;
-    // sim_st_perform was run in a previous test
-    char *sim_output = sim_output_get(false);
-    const int sim_len = sim_output_get_size();
-    char virtual_output[256];
     st_cursor_t *cursor = st_get_cursor();
     st_cursor_init(cursor, 0, false);
     for (int i = 0; i < 200; ++i) {
