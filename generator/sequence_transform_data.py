@@ -158,15 +158,15 @@ def parse_file(
 
     file_lines = parse_file_lines(file_name, separator, comment)
     context_set = set()
+    duplicated_rules = []
     rules = []
 
     for line_number, context, completion in file_lines:
         if context in context_set:
-            print(
+            duplicated_rules.append(
                 f'{err("line", line_number)}: '
-                f'Ignoring duplicate sequence: "{cyan(context)}"'
+                f'Duplicate sequence: "{cyan(context)}"'
             )
-            continue
 
         # Check that `context` is valid.
         if not all([(c in char_map) for c in context[:-1]]):
@@ -183,6 +183,9 @@ def parse_file(
 
         rules.append((context, completion))
         context_set.add(context)
+
+    if duplicated_rules:
+        raise SystemExit("\n".join(duplicated_rules))
 
     return rules
 
@@ -303,7 +306,9 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
-    square_brackets_group = re.findall(r"\[(\w+)]", pattern)
+    valid_tokens = f"[\w{MAGIC_CHARS}{WORDBREAK_CHAR}]"
+
+    square_brackets_group = re.findall(fr"\[({valid_tokens}+)]", pattern)
     if square_brackets_group:
         match = square_brackets_group[0]
 
@@ -313,13 +318,13 @@ def generate_matches(pattern) -> list[tuple[str, str]]:
         ))
 
     patterns = []
-    groups = re.findall(r"\((?:\w\|?)+\)\??", pattern)
+    groups = re.findall(fr"\((?:{valid_tokens}\|?)+\)\??", pattern)
 
     if not groups:
         return [("", pattern)]
 
     match = groups[0]
-    elements = re.findall("\w+", match)
+    elements = re.findall(f"{valid_tokens}+", match)
 
     patterns.extend([
         (element, pattern.replace(match, element))
