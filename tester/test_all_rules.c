@@ -9,16 +9,20 @@
 #include "sim_output_buffer.h"
 
 //////////////////////////////////////////////////////////////////
-static const char *test_pass_str = "[\033[0;32mpass\033[0m]";
-static const char *test_fail_str = "[\033[0;31mfail\033[0m]";
+static const char *test_result_str[] = {
+    "[\033[0;31mfail\033[0m]",
+    "[\033[0;33mwarn\033[0m]",
+    "[\033[0;32mpass\033[0m]",
+    0
+};
 
 //////////////////////////////////////////////////////////////////
 static st_test_info_t rule_tests[] = {
-    { test_perform,         "st_perform",           { false, 0 } },
-    { test_virtual_output,  "st_virtual_output",    { false, 0 } },
-    { test_backspace,       "st_handle_backspace",  { false, 0 } },
-    { test_find_rule,       "st_find_missed_rule",  { false, 0 } },
-    { 0,                    0,                      { false, 0 } }
+    { test_perform,         "st_perform",           { false, {0} } },
+    { test_virtual_output,  "st_virtual_output",    { false, {0} } },
+    { test_backspace,       "st_handle_backspace",  { false, {0} } },
+    { test_find_rule,       "st_find_missed_rule",  { false, {0} } },
+    { 0,                    0,                      { false, {0} } }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -26,26 +30,34 @@ int test_rule(const st_test_rule_t *rule, bool print_all)
 {
     // Call all the tests and gather results
     bool all_pass = true;
+    bool print = print_all;
     for (int i = 0; rule_tests[i].func; ++i) {
         st_test_result_t *res = &rule_tests[i].res;
+        res->code = TEST_OK;
+        res->message[0] = 0;
         rule_tests[i].func(rule, res);
-        all_pass = all_pass && res->pass;
-    }
-    if (all_pass && !print_all) {
+        if (res->code == TEST_FAIL) {
+            all_pass = false;
+        }
+        if (res->code != TEST_OK) {
+            print = true;
+        }
+    }    
+    if (!print) {
         return all_pass;
     }
     // Print test results
-    char seq_str[256];
+    char seq_str[256] = {0};
     keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
     printf("[rule] %s ⇒ %s\n", seq_str, rule->transform_str);
     for (int i = 0; rule_tests[i].func; ++i) {
         const st_test_info_t *test = &rule_tests[i];
-        const bool pass = test->res.pass;
+        const bool pass = test->res.code == TEST_OK;
         if (print_all || !pass) {
             printf("%s %s() %s\n",
-                   pass ? test_pass_str : test_fail_str,
+                   test_result_str[test->res.code],
                    test->name,
-                   test->res.message);
+                   pass ? "OK!" : test->res.message);
         }
     }
     puts("");

@@ -28,16 +28,11 @@ void sim_st_perform(const uint16_t *keycodes)
 //////////////////////////////////////////////////////////////////////
 void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    static char message[256];
-    res->message = message;
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
     char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
-    res->pass = !strcmp(output, rule->transform_str);
-    if (res->pass) {
-        snprintf(message, sizeof(message), "OK!");
-    } else {
-        snprintf(message, sizeof(message), "output: %s", output);
+    if (strcmp(output, rule->transform_str)) {
+        RES_FAIL("output: %s", output);
     }
 }
