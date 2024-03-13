@@ -5,7 +5,7 @@ QMKPATH		?= /home/qmk/qmk_firmware
 ST_GEN_PY	?= ../generator/sequence_transform_data.py
 ST_DICT 	?= ../../sequence_transform_dict.txt
 ST_CONFIG	?= ../../sequence_transform_config.json
-ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT)
+ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT) $(ST_GEN_PY)
 
 LIB_DIR			:= ../
 TESTER_DIR		:= ./
