@@ -286,7 +286,6 @@ void st_find_missed_rule(void)
 #ifdef SEQUENCE_TRANSFORM_MISSED_RULES
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
-    static int search_len_from_space = 0;
     // find buffer index for last space
     int last_space_index = 0;
     while (last_space_index < key_buffer.context_len &&
@@ -294,24 +293,18 @@ void st_find_missed_rule(void)
         ++last_space_index;
     }
     if (last_space_index == 0) {
-        //uprintf("space at top, resetting search_len_from_space\n");
-        search_len_from_space = 0;
         return;
     }
-    //uprintf("last_space_index: %d, search_len_from_space: %d\n",
-    //        last_space_index, search_len_from_space);
+    //uprintf("last_space_index: %d\n", last_space_index);
     const int len_to_last_space = key_buffer.context_len - last_space_index;
-    const int search_len_start = st_clamp(len_to_last_space + search_len_from_space,
+    const int search_len_start = st_clamp(len_to_last_space,
                                           1,
                                           key_buffer.context_len - 1);
     st_trie_rule_t result;
     result.sequence = sequence_str;
     result.transform = transform_str;
-    const int new_len = st_trie_get_rule(&trie, &key_buffer, search_len_start, &result);
-    if (new_len != search_len_start) {
+    if (st_trie_get_rule(&trie, &key_buffer, search_len_start, &result)) {
         sequence_transform_on_missed_rule_user(&result);
-        // Next time, start searching from after completion
-        search_len_from_space = new_len - len_to_last_space;
     }
 #endif
 }
