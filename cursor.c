@@ -21,6 +21,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
 {
     st_trie_payload_t *action = st_cursor_get_action(cursor);
     if (cursor->cursor_pos.sub_index < action->completion_len) {
+        // current sub-index is valid; no need to advance
         return true;
     }
     // we have exceeded the length of the completion string
@@ -58,8 +59,6 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         }
         backspaces -= action->completion_len - action->num_backspaces;
     }
-    // current sub_index is valid, no need to advance
-    return true;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
