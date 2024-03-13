@@ -40,7 +40,7 @@ typedef struct
 
 typedef struct
 {
-    st_key_buffer_t const * const buffer;           // input buffer this cursor traverses
+    st_key_buffer_t * const       buffer;           // input buffer this cursor traverses
     st_trie_t const * const       trie;             // trie used for traversing virtual output buffer
     st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
