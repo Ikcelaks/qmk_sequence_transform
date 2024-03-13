@@ -16,6 +16,50 @@
 
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
+bool cursor_advance_if_completion_exhausted(st_cursor_t *cursor)
+{
+    st_trie_payload_t *action = st_cursor_get_action(cursor);
+    if (cursor->cursor_pos.sub_index < action->completion_len) {
+        return true;
+    }
+    // we have exceeded the length of the completion string
+    // advance to the next key that contains output
+    int backspaces = action->num_backspaces;
+    while (true) {
+        // move to next key in buffer
+        if (++cursor->cursor_pos.index >= cursor->buffer->context_len) {
+            return false;
+        }
+        cursor->cache_valid = false;
+        st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
+        // Below is an assert that should be made
+        // if (!keyaction) {
+        //     // We reached the end without finding the next output key
+        //     return false;
+        // }
+        if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+            if (backspaces == 0) {
+                // This is a real keypress and no more backspaces to consume
+                cursor->cursor_pos.sub_index = 0;
+                return true;
+            }
+            // consume one backspace
+            --backspaces;
+            continue;
+        }
+        // Load payload of key that performed action
+        action = st_cursor_get_action(cursor);
+        if (backspaces < action->completion_len) {
+            // This action contains the next output key. Find it's sub_pos and return true
+            cursor->cursor_pos.sub_index = backspaces;
+            return true;
+        }
+        backspaces -= action->completion_len - action->num_backspaces;
+    }
+    // current sub_index is valid, no need to advance
+    return true;
+}
+
 //////////////////////////////////////////////////////////////////
 void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
 {
@@ -24,53 +68,15 @@ void st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
     cursor->cursor_pos.sub_index = as_output_buffer ? 0 : 255;
     cursor->cursor_pos.segment_len = 1;
     cursor->cache_valid = false;
-    if (as_output_buffer) {
-        st_trie_payload_t *action = st_cursor_get_action(cursor);
-        if (cursor->cursor_pos.sub_index < action->completion_len) {
-            return;
-        }
-        // we have exceeded the length of the completion string
-        // advance to the next key that contains output
-        int backspaces = action->num_backspaces;
-        while (true) {
-            // move to next key in buffer
-            if (++cursor->cursor_pos.index >= cursor->buffer->context_len) {
-                // This is crazy, but it is theoretically possible that the
-                // entire buffer is full of backspaces such that no valid
-                // output key exists in the buffer!
-                // so we reset the buffer and set position to index 0; sub_index 0
-                st_key_buffer_reset(cursor->buffer);
-                cursor->cursor_pos.index = 0;
-                cursor->cursor_pos.sub_index = 0;
-                return;
-            }
-            cursor->cache_valid = false;
-            st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
-            // Below is an assert that should be made
-            // if (!keyaction) {
-            //     // We reached the end without finding the next output key
-            //     return false;
-            // }
-            if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
-                if (backspaces == 0) {
-                    // This is a real keypress and no more backspaces to consume
-                    cursor->cursor_pos.sub_index = 0;
-                    return;
-                }
-                // consume one backspace
-                --backspaces;
-                continue;
-            }
-            // Load payload of key that performed action
-            action = st_cursor_get_action(cursor);
-            if (backspaces < action->completion_len) {
-                // This action contains the next output key. Find it's sub_pos and return true
-                cursor->cursor_pos.sub_index = backspaces;
-                return;
-            }
-            backspaces -= action->completion_len - action->num_backspaces;
-        }
-        // current sub_index is valid, no need to advance
+    if (as_output_buffer && !cursor_advance_if_completion_exhausted(cursor)) {
+        // This is crazy, but it is theoretically possible that the
+        // entire buffer is full of backspaces such that no valid
+        // output key exists in the buffer!
+        // so we reset the buffer and set position to index 0; sub_index 0
+        st_key_buffer_reset(cursor->buffer);
+        cursor->cache_valid = false;
+        cursor->cursor_pos.index = 0;
+        cursor->cursor_pos.sub_index = 0;
     }
 }
 //////////////////////////////////////////////////////////////////
