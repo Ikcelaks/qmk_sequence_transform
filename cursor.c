@@ -89,15 +89,17 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
     if (!keyaction) {
         return KC_NO;
     }
-    if (cursor->cursor_pos.as_output &&
-        keyaction->action_taken != ST_DEFAULT_KEY_ACTION) {
-        const st_trie_payload_t *action = st_cursor_get_action(cursor);
-        int index = action->completion_index;
-        index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
-        return st_char_to_keycode(CDATA(index));
-    } else {
+    if (!cursor->cursor_pos.as_output
+            || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+        // we need the actual key that was pressed
         return keyaction->keypressed;
     }
+    // This is an output cursor focused on rule matching keypress
+    // get the character at the sub_indax of the transform completion
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    int completion_char_index = action->completion_index;
+    completion_char_index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
+    return st_char_to_keycode(CDATA(completion_char_index));
 }
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act
