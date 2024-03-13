@@ -248,7 +248,8 @@ void log_rule(st_trie_search_result_t *res, char *completion_str) {
     const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
     const bool is_repeat = rule_action->func_code == 1;
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
-    st_cursor_move_to_history(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
+    // The cursor can't be empty here even if it is as output, because we know it matched a rule
+    st_cursor_init(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output);
     st_cursor_push_to_stack(&trie_cursor, prev_seq_len);
     char seq_str[SEQUENCE_MAX_LENGTH + 1];
     st_key_stack_to_str(trie.key_stack, seq_str);

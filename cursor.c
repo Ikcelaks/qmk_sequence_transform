@@ -62,14 +62,14 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
     return true;
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output_buffer)
+bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
 {
     cursor->cursor_pos.index = history;
-    cursor->cursor_pos.as_output_buffer = as_output_buffer;
-    cursor->cursor_pos.sub_index = as_output_buffer ? 0 : 255;
+    cursor->cursor_pos.as_output = as_output;
+    cursor->cursor_pos.sub_index = as_output ? 0 : 255;
     cursor->cursor_pos.segment_len = 1;
     cursor->cache_valid = false;
-    if (as_output_buffer && !cursor_advance_to_valid_output(cursor)) {
+    if (as_output && !cursor_advance_to_valid_output(cursor)) {
         // This is crazy, but it is theoretically possible that the
         // entire buffer is full of backspaces such that no valid
         // output key exists in the buffer!
@@ -90,7 +90,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
     if (!keyaction) {
         return KC_NO;
     }
-    if (cursor->cursor_pos.as_output_buffer &&
+    if (cursor->cursor_pos.as_output &&
         keyaction->action_taken != ST_DEFAULT_KEY_ACTION) {
         const st_trie_payload_t *action = st_cursor_get_action(cursor);
         int index = action->completion_index;
@@ -133,7 +133,7 @@ bool st_cursor_at_end(const st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
 {
-    if (!cursor->cursor_pos.as_output_buffer) {
+    if (!cursor->cursor_pos.as_output) {
         ++cursor->cursor_pos.index;
         cursor->cache_valid = false;
         if (st_cursor_at_end(cursor)) {

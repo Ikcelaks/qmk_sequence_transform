@@ -24,7 +24,7 @@ typedef struct
     int     index;                // buffer index of cursor position
     int     sub_index;            // Sub-position within the current buffer position
     int     segment_len;        // Number of elements traversed
-    uint8_t as_output_buffer;   // True if buffer traversing the simulated output
+    uint8_t as_output;   // True if buffer traversing the simulated output
 } st_cursor_pos_t;
 
 typedef struct
@@ -40,7 +40,7 @@ typedef struct
 
 typedef struct
 {
-    st_key_buffer_t * const       buffer;           // input buffer this cursor traverses
+    st_key_buffer_t const * const buffer;           // input buffer this cursor traverses
     st_trie_t const * const       trie;             // trie used for traversing virtual output buffer
     st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
