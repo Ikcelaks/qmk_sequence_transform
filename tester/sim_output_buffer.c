@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "sim_output_buffer.h"
 #include "utils.h"
+#include "tester_utils.h"
 
 //////////////////////////////////////////////////////////////////
 #define SIM_OUTPUT_BUFFER_CAPACITY 256
@@ -35,9 +36,7 @@ char *sim_output_get(bool trim_spaces)
     if (!trim_spaces) {
         return sim_output_buffer;
     }
-    char *output = sim_output_buffer;
-    while (*output++ == ' ');
-    return --output;
+    return ltrim_str(sim_output_buffer);
 }
 //////////////////////////////////////////////////////////////////
 int sim_output_get_size()

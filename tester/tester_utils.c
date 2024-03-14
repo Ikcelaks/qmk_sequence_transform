@@ -51,3 +51,10 @@ uint16_t ascii_to_keycode(char c)
     }
     return st_char_to_keycode(c);
 }
+//////////////////////////////////////////////////////////////////
+// returns a pointer to the first non-space char in string
+char *ltrim_str(char *str)
+{
+    while (*str++ == ' ');
+    return --str;
+}
