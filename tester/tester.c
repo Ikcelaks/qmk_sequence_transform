@@ -17,7 +17,7 @@
 #include <windows.h>
 #endif
 
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 

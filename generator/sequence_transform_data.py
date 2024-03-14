@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -148,7 +148,7 @@ def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
 def parse_file(
     file_name: str, char_map: Dict[str, int],
     separator: str, comment: str
-) -> List[Tuple[str, str]]:
+) -> List[Tuple[str, str, int]]:
     """Parses sequence dictionary file.
     Each line of the file defines one "sequence -> transformation" pair.
     Blank lines or lines starting with the comment string are ignored.
@@ -160,6 +160,7 @@ def parse_file(
     context_set = set()
     duplicated_rules = []
     rules = []
+    rule_number = 0
 
     for line_number, context, completion in file_lines:
         if context in context_set:
@@ -181,7 +182,8 @@ def parse_file(
                 f'Sequence exceeds 127 chars: "{cyan(context)}"'
             )
 
-        rules.append((context, completion))
+        rule_number += 1
+        rules.append((context, completion, rule_number))
         context_set.add(context)
 
     if duplicated_rules:
@@ -191,14 +193,47 @@ def parse_file(
 
 
 ###############################################################################
+def make_transform_trie(
+    seq_dict: List[Tuple[str, str, int]],
+    non_printable: set[str],
+    wordbreak_char
+) -> Tuple[Dict[str, tuple[str, dict]], int]:
+    """Makes a trie from the sequences, writing in reverse."""
+    trie = {}
+    max_transform_len = 0
+
+    for sequence, transform, rule_number in seq_dict:
+        node = trie
+
+        transform.replace(wordbreak_char, " ")
+
+        if any([c in non_printable for c in transform]):
+            # skip rule with transform that contains characters
+            # that can't be matched in the trie, such as output funcs
+            continue
+
+        if sequence[0] == wordbreak_char:
+            # add omited leading wordbreak_char to transform
+            transform = " " + transform
+
+        for letter in transform[::-1]:
+            node = node.setdefault(letter, {})
+
+        node['MATCH'] = (len(sequence), rule_number)
+        max_transform_len = max(max_transform_len, len(transform))
+
+    return trie, max_transform_len
+
+
+###############################################################################
 def make_trie(
-    seq_dict: List[Tuple[str, str]],
+    seq_dict: List[Tuple[str, str, int]],
     output_func_char_map: Dict[str, int]
 ) -> Dict[str, tuple[str, dict]]:
     """Makes a trie from the sequences, writing in reverse."""
     trie = {}
 
-    for context, correction in seq_dict:
+    for context, correction, _ in seq_dict:
         node = trie
 
         if correction[-1] in output_func_char_map:
@@ -251,7 +286,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
                 # quiet_print(c, expanded_context)
 
         if expanded_context and expanded_context[0] == wordbreak_char:
-            del expanded_context[0]
+            completion['TARGET'] = wordbreak_char + completion['TARGET']
 
         target = completion['TARGET']
 
@@ -422,6 +457,108 @@ def serialize_outputs(
 
 
 ###############################################################################
+def serialize_transform_trie(
+    trie: Dict[str, Any]
+) -> List[int]:
+    """Serializes trie in a form readable by the C code.
+
+    Returns:
+    List of 16bit ints in the range 0-64k.
+    """
+    table = []
+
+    # Traverse trie in depth first order.
+    def traverse(trie_node):
+        if 'MATCH' in trie_node:  # Handle a MATCH trie node.
+            expected_match_len, rule_number = trie_node['MATCH']
+
+            # 2 bits (7, 6) are used for node type
+            code = 0x80 + 0x40 * (len(trie_node) > 1)
+
+            # 3 bits (5..0} are used for expected_match_len
+            assert 0x00 <= expected_match_len < 0x3f
+            code += expected_match_len
+
+            rule_number_byte1, rule_number_byte2 = divmod(rule_number, 0x100)
+
+            # First output word stores coded info
+            # Second stores completion data offset index
+            data = [code, rule_number_byte1, rule_number_byte2]
+            # quiet_print(f'{err(0)} Data "{cyan(data)}"')
+            del trie_node['MATCH']
+
+        else:
+            data = []
+
+        if len(trie_node) == 0:
+            entry = {'data': data, 'links': [], 'uint16_offset': 0}
+            table.append(entry)
+
+        elif len(trie_node) == 1:  # Handle trie node with a single child.
+            c, trie_node = next(iter(trie_node.items()))
+            entry = {'data': data, 'chars': c, 'uint16_offset': 0}
+
+            # It's common for a trie to have long chains of single-child nodes.
+
+            # We find the whole chain so that
+            # we can serialize it more efficiently.
+            while len(trie_node) == 1 and 'MATCH' not in trie_node:
+                c, trie_node = next(iter(trie_node.items()))
+                entry['chars'] += c
+
+            table.append(entry)
+            entry['links'] = [traverse(trie_node)]
+
+        else:  # Handle trie node with multiple children.
+            entry = {
+                'data': data,
+                'chars': ''.join(sorted(trie_node.keys())),
+                'uint16_offset': 0
+            }
+
+            table.append(entry)
+            entry['links'] = [traverse(trie_node[c]) for c in entry['chars']]
+
+        # quiet_print(f'{err(0)} Data "{cyan(entry["data"])}"')
+        return entry
+
+    traverse(trie)
+    # quiet_print(f'{err(0)} Data "{cyan(table)}"')
+
+    def serialize(node: Dict[str, Any]) -> List[int]:
+        data = node['data']
+        # quiet_print(f'{err(0)} Serialize Data "{cyan(data)}"')
+
+        if not node['links']:  # Handle a leaf table entry.
+            return data
+
+        elif len(node['links']) == 1:  # Handle a chain table entry.
+            return data + [ord(c) for c in node['chars']] + [0]
+
+        else:  # Handle a branch table entry.
+            links = []
+
+            for c, link in zip(node['chars'], node['links']):
+                links += [
+                    ord(c) | (0 if links else 0x40)
+                ] + encode_link(link, as_bytes=True)
+
+            return data + links + [0]
+
+    uint16_offset = 0
+
+    # To encode links, first compute byte offset of each entry.
+    for table_entry in table:
+        table_entry['uint16_offset'] = uint16_offset
+        uint16_offset += len(serialize(table_entry))
+
+        assert 0 <= uint16_offset <= 0xffff
+
+    # Serialize final table.
+    return [b for node in table for b in serialize(node)]
+
+
+###############################################################################
 def serialize_trie(
     char_map: Dict[str, int], trie: Dict[str, Any],
     completions_map: Dict[str, int]
@@ -538,7 +675,7 @@ def serialize_trie(
 
 
 ###############################################################################
-def encode_link(link: Dict[str, Any]) -> List[int]:
+def encode_link(link: Dict[str, Any], as_bytes = False) -> List[int]:
     """Encodes a node link as two bytes."""
     uint16_offset = link['uint16_offset']
 
@@ -548,6 +685,10 @@ def encode_link(link: Dict[str, Any]) -> List[int]:
             f'a node link exceeds 64KB limit. '
             f'Try reducing the transforming dict to fewer entries.'
         )
+
+    if as_bytes:
+        offset_byte1, offset_byte2 = divmod(uint16_offset, 0x100)
+        return [offset_byte1, offset_byte2]
 
     return [uint16_offset]
 
@@ -617,11 +758,22 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     max_sequence = max(seq_dict, key=sequence_len)[0]
     max_transform = max(seq_dict, key=transform_len)[1]
 
+    # Build transform_trie
+    nonprintable = set()
+    nonprintable.update(OUTPUT_FUNC_CHARS)
+    nonprintable.update(MAGIC_CHARS)
+    nonprintable.update(WORDBREAK_CHAR)
+
+    print(nonprintable)
+    transform_trie, max_transform_trie_len = make_transform_trie(seq_dict, nonprintable, WORDBREAK_CHAR)
+    quiet_print(json.dumps(transform_trie, indent=4))
+    transform_trie_data = serialize_transform_trie(transform_trie)
+
     # Build the sequence_transform_data.h file.
     transformations = []
     test_rules_c_strings = []
 
-    for sequence, transformation in seq_dict:
+    for sequence, transformation, _ in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
             test_rule = create_test_rule_c_string(char_map, sequence, transformation)
@@ -663,6 +815,8 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define DICTIONARY_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TRANSFORM_COUNT {len(MAGIC_CHARS)}',
+        f'#define TRANSFORM_TRIE_SIZE {len(transform_trie_data)}',
+        f'#define TRANSFORM_TRIE_MAX_LEN {max_transform_trie_len}',
         '',
         st_seq_tokens_ascii,
         st_wordbreak_ascii
@@ -683,6 +837,15 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
         textwrap.fill(
             '    %s' % (', '.join(map(byte_to_hex, completions_data))),
+            width=100, subsequent_indent='    '
+        ),
+        '};\n',
+
+        'static const uint8_t '
+        'sequence_transform_miss_data[TRANSFORM_TRIE_SIZE] PROGMEM = {',
+
+        textwrap.fill(
+            '    %s' % (', '.join(map(byte_to_hex, transform_trie_data))),
             width=100, subsequent_indent='    '
         ),
         '};\n',
