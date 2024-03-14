@@ -30,12 +30,9 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
     st_cursor_init(cursor, 0, false);
     st_find_longest_chain(cursor, &res->trie_match, 0);
 #ifdef SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER
-    st_cursor_init(cursor, 0, true);
-
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-    st_cursor_print(cursor);
-#endif
-    st_find_longest_chain(cursor, &res->trie_match, 0);
+    if (st_cursor_init(cursor, 0, true)) {
+        st_find_longest_chain(cursor, &res->trie_match, 0);
+    }
 #endif
     if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(cursor->trie, &res->trie_payload, res->trie_match.trie_match_index);

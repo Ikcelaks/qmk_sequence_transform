@@ -31,16 +31,20 @@ uint16_t st_key_buffer_get_keycode(const st_key_buffer_t *buf, int index)
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
     return (keyaction ? keyaction->keypressed : KC_NO);
 }
-//////////////////////////////////////////////////////////////////
+/**
+ * @brief Gets an st_key_action_t from the `index` position in the key_buffer
+ * @param buf st_key_buffer* receives the st_key_action
+ * @param index int index starting with 0 as the most recent keypress and increasing for older keypresses
+ *
+ * @return true if the index points to a valid key_action in the buffer
+ * @return false if index is out-of-bounds
+ */
 st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
 {
     if (index < 0) {
         index += buf->context_len;
     }
     if (index >= buf->context_len || index < 0) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("Accessing index (%d) outside valid range (-%d, %d)!\n", index, buf->context_len, buf->context_len);
-#endif
         return NULL;
     }
     int buf_index = buf->cur_pos - index;

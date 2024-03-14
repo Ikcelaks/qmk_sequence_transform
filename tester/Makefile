@@ -45,6 +45,7 @@ _OBJ = tester.o \
 	test_ascii_string.o \
 	test_perform.o \
 	test_virtual_output.o \
+	test_cursor.o \
 	test_backspace.o \
 	test_find_rule.o \
 	qmk_wrapper.o \
