@@ -44,4 +44,5 @@ uint8_t st_get_virtual_output(char *buf, uint8_t count);
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
+st_cursor_t *st_get_cursor(void);
 #endif

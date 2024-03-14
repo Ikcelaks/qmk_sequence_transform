@@ -41,6 +41,7 @@ void    sim_st_perform(const uint16_t *keycodes);
 //      Rule tests
 void    test_perform(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res);
+void    test_cursor(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_backspace(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_find_rule(const st_test_rule_t *rule, st_test_result_t *res);
 int     test_rule(const st_test_rule_t *rule, bool print_all);

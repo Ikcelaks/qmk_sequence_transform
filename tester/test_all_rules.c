@@ -20,6 +20,7 @@ static const char *test_result_str[] = {
 static st_test_info_t rule_tests[] = {
     { test_perform,         "st_perform",           { false, {0} } },
     { test_virtual_output,  "st_virtual_output",    { false, {0} } },
+	{ test_cursor,          "st_cursor",            { false, {0} } },
     { test_backspace,       "st_handle_backspace",  { false, {0} } },
     { test_find_rule,       "st_find_missed_rule",  { false, {0} } },
     { 0,                    0,                      { false, {0} } }
