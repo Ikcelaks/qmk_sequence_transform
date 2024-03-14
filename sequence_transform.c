@@ -100,6 +100,7 @@ static st_cursor_t trie_cursor = {
 #ifdef ST_TESTER
 st_trie_t       *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
+st_cursor_t *st_get_cursor(void) { return &trie_cursor; }
 #endif
 
 /**
@@ -247,7 +248,8 @@ void log_rule(st_trie_search_result_t *res, char *completion_str) {
     const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
     const bool is_repeat = rule_action->func_code == 1;
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
-    st_cursor_move_to_history(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output_buffer);
+    // The cursor can't be empty here even if it is as output, because we know it matched a rule
+    st_cursor_init(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output);
     st_cursor_push_to_stack(&trie_cursor, prev_seq_len);
     char seq_str[SEQUENCE_MAX_LENGTH + 1];
     st_key_stack_to_str(trie.key_stack, seq_str);
@@ -348,16 +350,11 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
 //////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
 void st_handle_backspace() {
-    st_cursor_init(&trie_cursor, 0, true);
+    // initialize cursor as input cursor, so that `st_cursor_get_action` is stable
+    st_cursor_init(&trie_cursor, 0, false);
     const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
-        if (action->completion_len == 0) {
-            // This is a hacky fake key-press. Pop it off the buffer and go again
-            st_key_buffer_pop(&key_buffer, 1);
-            st_handle_backspace();
-            return;
-        }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
         uprintf("Undoing backspace after non-matching keypress\n");
         st_key_buffer_print(&key_buffer);
@@ -367,8 +364,13 @@ void st_handle_backspace() {
         return;
     }
     // Undo a rule action
-    const int backspaces_needed_count = action->completion_len - 1;
+    int backspaces_needed_count = action->completion_len - 1;
     int resend_count = action->num_backspaces;
+    if (backspaces_needed_count < 0) {
+        // The natural backspace is unwanted. We need to resend that extra keypress
+        resend_count -= backspaces_needed_count;
+        backspaces_needed_count = 0;
+    }
 #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     uprintf("Undoing previous key action: bs: %d, restore: %d\n",
             backspaces_needed_count, resend_count);
@@ -376,8 +378,8 @@ void st_handle_backspace() {
 #endif
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
-        st_cursor_move_to_history(&trie_cursor, 1, true);
-        if (st_cursor_push_to_stack(&trie_cursor, resend_count)) {
+        // reinitialize cursor as output cursor one keystroke before the previous action
+        if (st_cursor_init(&trie_cursor, 1, true) && st_cursor_push_to_stack(&trie_cursor, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
@@ -396,19 +398,27 @@ void st_handle_backspace() {
 /**
  * @brief Fills the provided buffer with up to `count` characters from the virtual output
  *
- * @return the number of characters written to the buffer
+ * @param str char* to write the virtual output to. Will be null terminated.
+ * @param history int 0 for the current output. N for the output N keypresses ago.
+ * @param count int representing the number of characters requested. str must be hold `count + 1` chars
+ * @return the number of characters written to the str not including the null terminator
  */
-uint8_t st_get_virtual_output(char *buf, uint8_t count)
+uint8_t st_get_virtual_output(char *str, uint8_t count)
 {
-    st_cursor_init(&trie_cursor, 0, true);
-    for (int i = 0; i < count; ++i, st_cursor_next(&trie_cursor)) {
+    if (!st_cursor_init(&trie_cursor, 0, true)) {
+        str[0] = '\0';
+        return 0;
+    }
+    int i = 0;
+    for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
         const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);
         if (!keycode) {
-            return i;
+            break;
         }
-        buf[i] = st_keycode_to_char(keycode);
+        str[i] = st_keycode_to_char(keycode);
     }
-    return count;
+    str[i] = '\0';
+    return i;
 }
 
 /**
