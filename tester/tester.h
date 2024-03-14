@@ -30,10 +30,13 @@ typedef struct {
 typedef struct {
     int     action;
     char    *user_str;
+    char    *tests;
     bool    print_all;
 } st_test_options_t;
 
 typedef int (*st_test_action_t)(const st_test_options_t *);
+
+void    print_available_tests(void);
 
 //      Internal
 void    sim_st_perform(const uint16_t *keycodes);
@@ -44,7 +47,7 @@ void    test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_cursor(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_backspace(const st_test_rule_t *rule, st_test_result_t *res);
 void    test_find_rule(const st_test_rule_t *rule, st_test_result_t *res);
-int     test_rule(const st_test_rule_t *rule, bool print_all);
+int     test_rule(const st_test_rule_t *rule, bool *tests, bool print_all, int *warns);
 
 //      Test Actions
 int     test_all_rules(const st_test_options_t *options);
