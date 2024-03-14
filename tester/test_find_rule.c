@@ -13,7 +13,7 @@
 #define KEY_AT(i) st_key_buffer_get_keycode(buf, (i))
 
 // fixme: TEMP! will be in utils
-bool st_is_seq_token_keycode(uint16_t key)
+bool is_seq_token_keycode(uint16_t key)
 {
     return (key >= SPECIAL_KEY_TRIECODE_0 &&
             key < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT);
@@ -23,7 +23,7 @@ bool buf_needs_expanding(st_key_buffer_t *buf)
 {
     for (int i = 1; i < buf->context_len; ++i) {
         const uint16_t key = KEY_AT(i);
-        if (st_is_seq_token_keycode(key)) {
+        if (is_seq_token_keycode(key)) {
             return true;
         }
     }
@@ -46,7 +46,7 @@ bool sim_st_find_missed_rule(const st_test_rule_t *rule, char *chained_transform
             tap_code16(KC_BSPC);
             st_handle_backspace();
             key = KEY_AT(0);
-        } while (key && !st_is_seq_token_keycode(key));
+        } while (key && !is_seq_token_keycode(key));
         if (!key) {
             //printf("empty seq_prefix!\n");
             return false;
@@ -134,7 +134,9 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
         return;
     }
     if (seq_dif || trans_dif) {
-        RES_FAIL("found: %s ⇒ %s", missed_rule_seq, missed_rule_transform);
+        //printf("(%s -> %s)\n", seq_ascii, chained_transform);
+        RES_FAIL("found: %s ⇒ %s",
+                 missed_rule_seq, missed_rule_transform);
         return;
     }
 }
