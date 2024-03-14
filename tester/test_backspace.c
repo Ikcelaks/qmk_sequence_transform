@@ -18,7 +18,7 @@ void sim_st_enhanced_backspace(const uint16_t *keycodes)
 //////////////////////////////////////////////////////////////////////
 void test_backspace(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    // This expects input and output buffers to have been set by a previous test!
+    sim_st_perform(rule->seq_keycodes);
     // Make sure enhanced backspace handling leaves us with an empty
     // output buffer if we send one backspace for every key sent
     sim_st_enhanced_backspace(rule->seq_keycodes);
