@@ -3,9 +3,11 @@
 extern char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1];
 extern char missed_rule_transform[TRANSFORM_MAX_LEN + 1];
 
-#define TEST_FAIL   0
-#define TEST_WARN   1
-#define TEST_OK     2
+typedef enum {
+    TEST_FAIL,
+    TEST_WARN,
+    TEST_OK,
+} st_result_code_t;
 
 // Utility macros to set result code/message
 #define RES_WARN(...) { res->code = TEST_WARN; \
@@ -15,8 +17,8 @@ extern char missed_rule_transform[TRANSFORM_MAX_LEN + 1];
     snprintf(res->message, sizeof(res->message), __VA_ARGS__); }
 
 typedef struct {
-    int     code;
-    char    message[512];
+    st_result_code_t    code;
+    char                message[512];
 } st_test_result_t;
 
 typedef void (*st_test_func_t)(const st_test_rule_t *, st_test_result_t *);
