@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "key_stack.h"
 #include "utils.h"
 

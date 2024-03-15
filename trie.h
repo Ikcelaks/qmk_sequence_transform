@@ -67,7 +67,7 @@ typedef struct
 } st_trie_search_result_t;
 
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
-int st_trie_get_rule(st_trie_t *trie, const st_key_buffer_t *key_buffer, int search_len_start, st_trie_rule_t *res);
+bool st_trie_do_rule_searches(st_trie_t *trie, const st_key_buffer_t *key_buffer, int word_start_idx, st_trie_rule_t *rule);
 
 //////////////////////////////////////////////////////////////////
 // Internal
@@ -76,15 +76,14 @@ typedef struct
 {
     st_trie_t               *trie;                  // trie to search
     const st_key_buffer_t   *key_buffer;            // search buffer
-    int                     search_len;             // amount of buffer (from oldest key) to use when searching
+    int                     search_end_ridx;        // reverse index to end of search window
     int                     skip_levels;	        // number of trie levels to 'skip' when searching
-    int                     max_transform_len;      // keeps track of best result
     st_trie_rule_t          *result;                // pointer to result to be filled with best match
 } st_trie_search_t;
 
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
-bool st_find_rule(st_trie_search_t *search, uint16_t offset);
-void st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
+bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
 bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
-void st_completion_to_str(const st_trie_t *trie, st_trie_payload_t *payload, char *buf);
+void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
+bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
