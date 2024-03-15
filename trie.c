@@ -257,25 +257,25 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
             return false;
         }
         code &= TRIE_CODE_MASK;
+        bool res = false;
         const bool check = key_stack->size >= search->skip_levels;
         const uint16_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
         // find child that matches our current buffer location
-        // (if this is a skip level, we visit all children until we find a match)
+        // (if this is a skip level, we go down all children)
         for (; code; offset += 2, code = TDATA(offset)) {
             if (!check || cur_key == code) {
                 // Get 16bit offset to child node
                 const uint16_t child_offset = TDATA(offset + 1);
                 // Traverse down child node
                 st_key_stack_push(key_stack, code);
-                const bool res = st_trie_rule_search(search, child_offset);
+                res = st_trie_rule_search(search, child_offset) || res;
                 st_key_stack_pop(key_stack);
-                if (check || res) {
+                if (check) {
                     return res;
                 }
             }
         }
-        // No match found lower, so return false
-        return false;
+        return res;
     }
     // No high bits set, so this is a chain node
     // Travel down chain until we reach a zero code, or we no longer match our buffer
