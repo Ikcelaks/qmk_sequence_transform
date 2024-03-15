@@ -3,6 +3,7 @@
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
+#include <stdlib.h>
 #include "qmk_wrapper.h"
 #include "utils.h"
 #include "keybuffer.h"
@@ -62,17 +63,47 @@ void tap_code16(uint16_t keycode)
     }
 }
 //////////////////////////////////////////////////////////////////////
+void print_help(void)
+{
+    printf("Sequence Transform Tester usage:\n");
+    printf("tester [-p] [-t <tests>] [-s <test_bit_string>]\n");
+    puts("");
+    printf("By default, all tests will be performed on all compiled rules.\n");
+    printf("Only test failures and warnings will be shown.\n");
+    puts("");
+    printf("  -p print all tested rules\n");
+    puts("");
+    printf("  -s run simulation of sequence transform of passed <test_string>,\n");
+    printf("     one char at a time. Ascii sequence tokens and wordbreak symbol\n");
+    printf("     can be used, as defined in your sequence_transform_config.json file.\n");
+    puts("");
+    printf("  -t each bit in <test_bit_string> turns a test on or off.\n");
+    printf("     ex: -t \"101\" would only run tests #1 and #3.\n");
+    puts("");
+    printf("Available tests:\n");
+    print_available_tests();
+}
+//////////////////////////////////////////////////////////////////////
 void init_options(int argc, char **argv, st_test_options_t *options)
 {
+    // default action is to test all rules
     options->action = ACTION_TEST_ALL_RULES;
+    options->tests = 0;
     options->user_str = 0;
+    // default is to only print errors/warnings
     options->print_all = false;
+    // get options from command line args
     for (int i = 1; i < argc; ++i) {
         if (!strcmp(argv[i], "-p")) {
             options->print_all = true;
         } else if (!strcmp(argv[i], "-s") && i+1 < argc) {
             options->user_str = argv[i+1];
             options->action = ACTION_TEST_ASCII_STRING;
+        } else if (!strcmp(argv[i], "-t") && i+1 < argc) {
+            options->tests = argv[i+1];
+        } else if (!strcmp(argv[i], "-h")) {
+            print_help();
+            exit(0);
         }
     }
 }

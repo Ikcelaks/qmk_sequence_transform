@@ -1,19 +1,29 @@
-ifeq ($(QMKPATH),)
-  $(error Please set the QMKPATH env var to your qmk_firmware directory)
-endif
+CC			:= gcc
+PYTHON		:= python3
+ODIR		:= build
+QMKPATH		?= /home/qmk/qmk_firmware
+ST_GEN_PY	?= ../generator/sequence_transform_data.py
+ST_DICT 	?= ../../sequence_transform_dict.txt
+ST_CONFIG	?= ../../sequence_transform_config.json
+ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT) $(ST_GEN_PY)
 
-CC = gcc
+LIB_DIR			:= ../
+TESTER_DIR		:= ./
+LIB_SOURCES		:= $(wildcard $(LIB_DIR)/*.c)
+LIB_OBJECTS		:= $(LIB_SOURCES:$(LIB_DIR)/%.c=$(ODIR)/%.o)
+TESTER_SOURCES	:= $(wildcard $(TESTER_DIR)/*.c) 
+TESTER_OBJECTS	:= $(TESTER_SOURCES:$(TESTER_DIR)/%.c=$(ODIR)/%.o) $(LIB_OBJECTS)
+DEPENDS			:= $(TESTER_OBJECTS:%.o=%.d)
 
-ODIR = build
-
-vpath %.c  ./ ../
+vpath %.c  $(LIB_DIR) $(TESTER_DIR)
 
 OSFLAG :=
 ifeq ($(OS),Windows_NT)
 	OSFLAG += -D WIN32
 endif
 
-CFLAGS = -I. \
+CFLAGS := -Werror \
+	-I. \
 	-I$(QMKPATH)/platforms \
 	-I$(QMKPATH)/quantum \
 	-I$(QMKPATH)/quantum/sequencer \
@@ -27,49 +37,31 @@ CFLAGS = -I. \
 	-D_CONSOLE \
 	$(OSFLAG)
 
-DEPS = tester.h \
-	tester_utils.h \
-	sim_output_buffer.h \
-	../qmk_wrapper.h \
-	../keybuffer.h \
-	../key_stack.h \
-	../trie.h \
-	../cursor.h \
-	../utils.h \
-	../sequence_transform.h \
-	../sequence_transform_data.h \
+ST_GEN_OUT := ../sequence_transform_data.h \
 	../sequence_transform_test.h
 
-_OBJ = tester.o \
-	test_all_rules.o \
-	test_ascii_string.o \
-	test_perform.o \
-	test_virtual_output.o \
-	test_cursor.o \
-	test_backspace.o \
-	test_find_rule.o \
-	qmk_wrapper.o \
-	tester_utils.o \
-	sim_output_buffer.o \
-	keybuffer.o \
-	key_stack.o \
-	trie.o \
-	cursor.o \
-	utils.o \
-	sequence_transform.o
+all: gen tester
 
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+$(ST_GEN_OUT): $(ST_GEN_IN)
+	@echo Running generator
+	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
 
-$(ODIR)/%.o: %.c $(DEPS)
-	@echo Compiling $<
-	@mkdir -p $(ODIR)
-	@$(CC) -c -o $@ $< $(CFLAGS)
+gen: $(ST_GEN_OUT) 
 
-tester: $(OBJ)
+tester: $(TESTER_OBJECTS)
 	@$(CC) -o $@ $^ $(CFLAGS)
 	@echo "Build successful!"
+
+-include $(DEPENDS)
+
+$(ODIR)/%.o: %.c | $(ODIR)
+	@echo Compiling $<
+	@$(CC) -MMD -c -o $@ $< $(CFLAGS)
+
+$(ODIR): 
+	@mkdir -p $@
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o
+	rm -f $(ODIR)/*.o $(ODIR)/*.d

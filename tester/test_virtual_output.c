@@ -22,21 +22,16 @@ bool compare_output(char *virtual_output, char *sim_output, int count)
 //////////////////////////////////////////////////////////////////////
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    static char message[512];
-    res->message = message;
-    // sim_st_perform was run in a previous test
+    sim_st_perform(rule->seq_keycodes);
     char *sim_output = sim_output_get(false);
     const int sim_len = sim_output_get_size();
-    char virtual_output[256];
+    char virtual_output[256] = {0};
     const int virt_len = st_get_virtual_output(virtual_output, 255);
     if (virt_len != sim_len) {
-        res->pass = false;
-        snprintf(message, sizeof(message), "virt len (%d) != sim len (%d)", virt_len, sim_len);
+        RES_FAIL("virt len (%d) != sim len (%d)", virt_len, sim_len);
+        return;
     }
-    res->pass = compare_output(virtual_output, sim_output, virt_len);
-    if (res->pass) {
-        snprintf(message, sizeof(message), "OK!");
-    } else {
-        snprintf(message, sizeof(message), "mismatch! virt: |%s| sim: |%s|", virtual_output, sim_output);
+    if (!compare_output(virtual_output, sim_output, virt_len)) {
+        RES_FAIL("mismatch! virt: |%s| sim: |%s|", virtual_output, sim_output);
     }
 }
