@@ -314,7 +314,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     st_trie_t *trie = search->trie;
     const st_key_stack_t *key_stack = trie->key_stack;
     const st_key_buffer_t *key_buffer = search->key_buffer;
-    st_trie_rule_t *res = search->result;    
+    st_trie_rule_t *res = search->result;
     // Early return if potential transform doesn't reach end of search buffer
     const int search_base_ridx = search->search_end_ridx - search->skip_levels;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
@@ -345,7 +345,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     const int completion_end = payload->completion_index + payload->completion_len;
     for (int i = payload->completion_index, j = search_base_ridx; i < completion_end; ++i, ++j) {
         const char ascii_code = CDATA(i);
-        const uint16_t comp_key = st_char_to_keycode(tolower(ascii_code));
+        const uint16_t comp_key = st_char_to_keycode(ascii_code);
         const uint16_t buf_key = st_key_buffer_get_keycode(key_buffer, -(j+1));
         //printf("[%02X(%c), %02X(%c)] ", comp_key, ascii_code,
         //        buf_key, st_keycode_to_char(buf_key));
