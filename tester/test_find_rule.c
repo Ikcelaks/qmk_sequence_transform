@@ -12,12 +12,6 @@
 
 #define KEY_AT(i) st_key_buffer_get_keycode(buf, (i))
 
-// fixme: TEMP! will be in utils
-bool is_seq_token_keycode(uint16_t key)
-{
-    return (key >= SPECIAL_KEY_TRIECODE_0 &&
-            key < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT);
-}
 //////////////////////////////////////////////////////////////////
 // Converts keys from buffer to null terminated ascii string
 // KC_SPACE -> ' ' (instead of st_wordbreak_ascii)
@@ -35,7 +29,7 @@ bool buf_needs_expanding(st_key_buffer_t *buf)
 {
     for (int i = 1; i < buf->context_len; ++i) {
         const uint16_t key = KEY_AT(i);
-        if (is_seq_token_keycode(key)) {
+        if (st_is_seq_token_keycode(key)) {
             return true;
         }
     }
@@ -83,7 +77,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
         tap_code16(KC_BSPC);
         st_handle_backspace();
         key = KEY_AT(0);
-    } while (key && !is_seq_token_keycode(key));
+    } while (key && !st_is_seq_token_keycode(key));
     if (!key) {
         //printf("empty seq_prefix!\n");
         return false;
