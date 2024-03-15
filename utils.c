@@ -51,10 +51,16 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
     '?'
 };
 
+//////////////////////////////////////////////////////////////////////
+bool st_is_seq_token_keycode(uint16_t key)
+{
+    return (key >= SPECIAL_KEY_TRIECODE_0 &&
+            key < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT);
+}
 ////////////////////////////////////////////////////////////////////////////////
 char st_keycode_to_char(uint16_t keycode)
 {
-    if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+    if (st_is_seq_token_keycode(keycode)) {
 		return st_seq_tokens_ascii[keycode - SPECIAL_KEY_TRIECODE_0];
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_ascii;

@@ -13,6 +13,7 @@
 
 #define IS_ALPHA_KEYCODE(code) ((code) >= KC_A && (code) <= KC_Z)
 
+bool        st_is_seq_token_keycode(uint16_t key);
 uint16_t    st_char_to_keycode(char c);
 char        st_keycode_to_char(uint16_t keycode);
 void        st_multi_tap(uint16_t keycode, int count);
