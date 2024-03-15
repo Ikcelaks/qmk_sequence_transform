@@ -184,7 +184,6 @@ bool st_trie_do_rule_searches(st_trie_t              *trie,
     search.trie = trie;
     search.key_buffer = key_buffer;
     search.result = rule;
-    search.max_transform_end_ridx = 0;
     const int max_skip_levels = st_min(1 + trie->max_backspaces,
                                        SEQUENCE_TRANSFORM_RULE_SEARCH_MAX_SKIP);
     for (int i = search_base_ridx; i < key_buffer->context_len; ++i) {
@@ -258,25 +257,25 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
             return false;
         }
         code &= TRIE_CODE_MASK;
-        bool res = false;
         const bool check = key_stack->size >= search->skip_levels;
         const uint16_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
         // find child that matches our current buffer location
-        // (if this is a skip level, we go down all children)
+        // (if this is a skip level, we visit all children until we find a match)
         for (; code; offset += 2, code = TDATA(offset)) {
             if (!check || cur_key == code) {
                 // Get 16bit offset to child node
                 const uint16_t child_offset = TDATA(offset + 1);
                 // Traverse down child node
                 st_key_stack_push(key_stack, code);
-                res = st_trie_rule_search(search, child_offset) || res;
+                const bool res = st_trie_rule_search(search, child_offset);
                 st_key_stack_pop(key_stack);
-                if (check) {
+                if (check || res) {
                     return res;
                 }
             }
         }
-        return res;
+        // No match found lower, so return false
+        return false;
     }
     // No high bits set, so this is a chain node
     // Travel down chain until we reach a zero code, or we no longer match our buffer
@@ -316,13 +315,10 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     const st_key_stack_t *key_stack = trie->key_stack;
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_trie_rule_t *res = search->result;    
-    // Early return if:
-    // 1. potential transform doesn't reach end of search buffer
-    // 2. potential transform is smaller than our current best
+    // Early return if potential transform doesn't reach end of search buffer
     const int search_base_ridx = search->search_end_ridx - search->skip_levels;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
-    if (transform_end_ridx != key_buffer->context_len ||
-        transform_end_ridx < search->max_transform_end_ridx) {
+    if (transform_end_ridx != key_buffer->context_len) {
         return false;
     }
     // If stack contains an un-expanded sequence, and this rule
@@ -359,8 +355,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         }
     }
     //printf("  match!\n");
-    // Save payload data and max_transform_end_ridx in result
-    search->max_transform_end_ridx = transform_end_ridx;
+    // Save payload data
     res->payload = *payload;
     // Fill the result sequence and start of transform
     char *seq = res->sequence;

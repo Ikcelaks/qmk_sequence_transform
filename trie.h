@@ -78,7 +78,6 @@ typedef struct
     const st_key_buffer_t   *key_buffer;            // search buffer
     int                     search_end_ridx;        // reverse index to end of search window
     int                     skip_levels;	        // number of trie levels to 'skip' when searching
-    int                     max_transform_end_ridx; // reverse index to end of best completed word
     st_trie_rule_t          *result;                // pointer to result to be filled with best match
 } st_trie_search_t;
 
