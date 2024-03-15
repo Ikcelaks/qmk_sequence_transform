@@ -16,6 +16,7 @@
 bool        st_is_seq_token_keycode(uint16_t key);
 uint16_t    st_char_to_keycode(char c);
 char        st_keycode_to_char(uint16_t keycode);
+char        st_keycode_to_char_real(uint16_t keycode);
 void        st_multi_tap(uint16_t keycode, int count);
 void        st_send_key(uint16_t keycode);
 int         st_max(int a, int b);

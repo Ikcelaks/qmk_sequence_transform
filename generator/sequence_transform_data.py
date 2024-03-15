@@ -533,15 +533,13 @@ def serialize_transform_trie(
             return data
 
         elif len(node['links']) == 1:  # Handle a chain table entry.
-            return data + [ord(c) for c in node['chars']] + [0]
+            return data + [1] + [ord(c) for c in node['chars']] + [0]
 
         else:  # Handle a branch table entry.
-            links = []
+            links = [0x40]
 
             for c, link in zip(node['chars'], node['links']):
-                links += [
-                    ord(c) | (0 if links else 0x40)
-                ] + encode_link(link, as_bytes=True)
+                links += [ord(c)] + encode_link(link, as_bytes=True)
 
             return data + links + [0]
 
@@ -773,14 +771,15 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     transformations = []
     test_rules_c_strings = []
 
-    for sequence, transformation, _ in seq_dict:
+    for sequence, transformation, rule_number in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
             test_rule = create_test_rule_c_string(char_map, sequence, transformation)
             test_rules_c_strings.append(test_rule)
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
-        transformations.append(f'//    {sequence} -> {transformation}')
+        rule_number = f"{rule_number:<8}"
+        transformations.append(f'// {rule_number} {sequence} -> {transformation}')
 
     header_lines = [
         GPL2_HEADER_C_LIKE,

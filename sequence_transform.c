@@ -31,13 +31,13 @@ static bool post_process_do_rule_search = false;
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #ifdef SEQUENCE_TRANSFORM_EXTRA_BUFFER
-#   if SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER < 256
+#   if TRANSFORM_TRIE_MAX_LEN + SEQUENCE_TRANSFORM_EXTRA_BUFFER < 256
 #       define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER
 #   else
 #       define KEY_BUFFER_CAPACITY 255
 #   endif
 #else
-#   define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH
+#   define KEY_BUFFER_CAPACITY TRANSFORM_TRIE_MAX_LEN
 #endif
 static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
@@ -84,6 +84,13 @@ static st_trie_t trie = {
     COMPLETION_MAX_LENGTH,
     MAX_BACKSPACES,
     &trie_stack
+};
+
+//////////////////////////////////////////////////////////////////
+// Transform trie node
+static st_transform_trie_t transform_trie = {
+    TRANSFORM_TRIE_SIZE,
+    sequence_transform_miss_data
 };
 
 //////////////////////////////////////////////////////////////////
@@ -425,10 +432,12 @@ uint8_t st_get_virtual_output(char *str, uint8_t count)
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
     st_trie_search_result_t res = {{0, {0,0,0}}, {0, 0, 0, 0}};
-    if (st_trie_get_completion(&trie_cursor, &res)) {
+    if (st_trie_get_completion(&transform_trie, &trie_cursor, &res)) {
         st_handle_result(&trie, &res);
+        st_trie_check_for_unused_rule(&transform_trie, &trie_cursor);
         return true;
     }
+    st_trie_check_for_unused_rule(&transform_trie, &trie_cursor);
     return false;
 }
 

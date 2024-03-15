@@ -58,6 +58,24 @@ bool st_is_seq_token_keycode(uint16_t key)
             key < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT);
 }
 ////////////////////////////////////////////////////////////////////////////////
+char st_keycode_to_char_real(uint16_t keycode)
+{
+    // if (keycode >= SPECIAL_KEY_TRIECODE_0 && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+	// 	return st_seq_tokens_ascii[keycode - SPECIAL_KEY_TRIECODE_0];
+    // } else if (keycode == KC_SPACE) {
+    //     return st_wordbreak_ascii;
+    // }
+    const bool shifted = keycode & QK_LSFT;
+    keycode &= 0xFF;
+    if (keycode >= KC_A && keycode <= KC_SLASH) {
+        keycode -= KC_A;
+        return shifted ? pgm_read_byte(&shifted_keycode_to_ascii_lut[keycode]) :
+                         pgm_read_byte(&unshifted_keycode_to_ascii_lut[keycode]);
+    }
+    return '?';
+}
+
+////////////////////////////////////////////////////////////////////////////////
 char st_keycode_to_char(uint16_t keycode)
 {
     if (st_is_seq_token_keycode(keycode)) {
