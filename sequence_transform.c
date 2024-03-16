@@ -32,12 +32,12 @@ static bool post_process_do_rule_search = false;
 // Key history buffer
 #ifdef SEQUENCE_TRANSFORM_EXTRA_BUFFER
 #   if TRANSFORM_TRIE_MAX_LEN + SEQUENCE_TRANSFORM_EXTRA_BUFFER < 256
-#       define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER
+#       define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + TRANSFORM_TRIE_MAX_LEN + SEQUENCE_TRANSFORM_EXTRA_BUFFER
 #   else
 #       define KEY_BUFFER_CAPACITY 255
 #   endif
 #else
-#   define KEY_BUFFER_CAPACITY TRANSFORM_TRIE_MAX_LEN
+#   define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + TRANSFORM_TRIE_MAX_LEN
 #endif
 static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
@@ -305,7 +305,7 @@ void st_find_missed_rule(void)
     }
     // if we reached the end of the buffer here,
     // it means it's filled wish spaces, so bail.
-    if (word_start_idx == key_buffer.context_len) {        
+    if (word_start_idx == key_buffer.context_len) {
         return;
     }
     // we've skipped trailing spaces, so now find the next space

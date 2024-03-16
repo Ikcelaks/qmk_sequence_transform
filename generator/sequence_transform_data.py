@@ -485,17 +485,19 @@ def serialize_transform_trie(
             # Second stores completion data offset index
             data = [code, rule_number_byte1, rule_number_byte2]
             # quiet_print(f'{err(0)} Data "{cyan(data)}"')
-            del trie_node['MATCH']
+            # del trie_node['MATCH']
 
         else:
             data = []
 
-        if len(trie_node) == 0:
+        branches = [(k, t) for k, t in trie_node.items() if k != 'MATCH']
+
+        if len(branches) == 0:
             entry = {'data': data, 'links': [], 'uint16_offset': 0}
             table.append(entry)
 
-        elif len(trie_node) == 1:  # Handle trie node with a single child.
-            c, trie_node = next(iter(trie_node.items()))
+        elif len(branches) == 1:  # Handle trie node with a single child.
+            c, trie_node = next(iter(branches))
             entry = {'data': data, 'chars': c, 'uint16_offset': 0}
 
             # It's common for a trie to have long chains of single-child nodes.
@@ -512,7 +514,7 @@ def serialize_transform_trie(
         else:  # Handle trie node with multiple children.
             entry = {
                 'data': data,
-                'chars': ''.join(sorted(trie_node.keys())),
+                'chars': ''.join(sorted([k for k, _ in branches])),
                 'uint16_offset': 0
             }
 
@@ -599,17 +601,19 @@ def serialize_trie(
             # Second stores completion data offset index
             data = [code, output_index]
             # quiet_print(f'{err(0)} Data "{cyan(data)}"')
-            del trie_node['MATCH']
+            # del trie_node['MATCH']
 
         else:
             data = []
 
-        if len(trie_node) == 0:
+        branches = [(k, t) for k, t in trie_node.items() if k != 'MATCH']
+
+        if len(branches) == 0:
             entry = {'data': data, 'links': [], 'uint16_offset': 0}
             table.append(entry)
 
-        elif len(trie_node) == 1:  # Handle trie node with a single child.
-            c, trie_node = next(iter(trie_node.items()))
+        elif len(branches) == 1:  # Handle trie node with a single child.
+            c, trie_node = next(iter(branches))
             entry = {'data': data, 'chars': c, 'uint16_offset': 0}
 
             # It's common for a trie to have long chains of single-child nodes.
@@ -626,7 +630,7 @@ def serialize_trie(
         else:  # Handle trie node with multiple children.
             entry = {
                 'data': data,
-                'chars': ''.join(sorted(trie_node.keys())),
+                'chars': ''.join(sorted([k for k, _ in branches])),
                 'uint16_offset': 0
             }
 
@@ -742,12 +746,14 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     seq_dict = parse_file(RULES_FILE, char_map, SEP_STR, COMMENT_STR)
     trie = make_trie(seq_dict, output_func_char_map)
     outputs = complete_trie(trie, WORDBREAK_CHAR)
-    quiet_print(json.dumps(trie, indent=4))
+    # quiet_print(json.dumps(trie, indent=4))
 
     s_outputs = serialize_outputs(outputs)
     completions_data, completions_map, max_completion_len = s_outputs
+    quiet_print(json.dumps(trie, indent = 4))
 
     trie_data = serialize_trie(char_map, trie, completions_map)
+    quiet_print(json.dumps(trie, indent = 4))
 
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
