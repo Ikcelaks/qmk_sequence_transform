@@ -22,7 +22,7 @@ ifeq ($(OS),Windows_NT)
 	OSFLAG += -D WIN32
 endif
 
-CFLAGS := -Werror \
+CFLAGS := -Werror -Wundef \
 	-I. \
 	-I$(QMKPATH)/platforms \
 	-I$(QMKPATH)/quantum \
@@ -31,6 +31,7 @@ CFLAGS := -Werror \
 	-I$(QMKPATH)/quantum/keymap_extras \
 	-I.. \
 	-DST_TESTER \
+	-DSEQUENCE_TRANSFORM_DEBUG=1 \
 	-DSEQUENCE_TRANSFORM_MISSED_RULES \
 	-DSEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER \
 	-DNO_PRINT \

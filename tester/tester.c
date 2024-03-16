@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <stdlib.h>
+#include "st_defaults.h"
 #include "qmk_wrapper.h"
+#include "st_debug.h"
 #include "utils.h"
 #include "keybuffer.h"
 #include "key_stack.h"
@@ -101,6 +103,8 @@ void init_options(int argc, char **argv, st_test_options_t *options)
             options->action = ACTION_TEST_ASCII_STRING;
         } else if (!strcmp(argv[i], "-t") && i+1 < argc) {
             options->tests = argv[i+1];
+        } else if (!strcmp(argv[i], "-d") && i+1 < argc) {
+            st_debug_set_flag_str(argv[i+1]);
         } else if (!strcmp(argv[i], "-h")) {
             print_help();
             exit(0);

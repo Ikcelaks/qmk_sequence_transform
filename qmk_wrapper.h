@@ -33,6 +33,7 @@
 #define st_log_time(F) F;
 
 #define TAPPING_TERM 200
+#define FAST_TIMER_T_SIZE 0
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 

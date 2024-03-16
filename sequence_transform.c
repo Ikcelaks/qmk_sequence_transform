@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
+#include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
@@ -317,10 +318,6 @@ void st_find_missed_rule(void)
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
-            res->trie_payload.completion_index, res->trie_payload.completion_len, res->trie_payload.num_backspaces, res->trie_payload.func_code);
-#endif
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // fill completion buffer
