@@ -206,20 +206,18 @@ def make_transform_trie(
     for sequence, transform, rule_number in seq_dict:
         node = trie
 
-        transform = transform.replace(wordbreak_char, " ")
+        if sequence[0] == wordbreak_char:
+            # add omited leading wordbreak_char to transform
+            transform = wordbreak_char + transform
 
-        if any([c in non_printable for c in transform]):
+        if any([c != wordbreak_char and c in non_printable for c in transform]):
             # skip rule with transform that contains characters
             # that can't be matched in the trie, such as output funcs
             seq_list.append((sequence, transform, rule_number, {}))
             continue
 
-        if sequence[0] == wordbreak_char:
-            # add omited leading wordbreak_char to transform
-            transform = " " + transform
-
         for letter in transform[::-1]:
-            node = node.setdefault(letter, {})
+            node = node.setdefault(letter.replace(wordbreak_char, " "), {})
 
         node['MATCH'] = {
             'seq_len': len(sequence),
@@ -292,9 +290,6 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
                 del expanded_context[-(match_backspaces + 1):]
                 expanded_context.extend(match_output)
                 # quiet_print(c, expanded_context)
-
-        if expanded_context and expanded_context[0] == wordbreak_char:
-            completion['TARGET'] = wordbreak_char + completion['TARGET']
 
         target = completion['TARGET']
 

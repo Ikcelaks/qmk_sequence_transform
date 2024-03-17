@@ -176,6 +176,7 @@ bool st_find_longest_transform(st_transform_trie_t const * const trie, st_cursor
             if (prefix_node & TRIE_BRANCH_BIT) {
                 printf("Possible prefix collision at match_node (%d): %#04X\n", prefix_check_offset, prefix_node);
                 st_cursor_pos_t cur_pos = st_cursor_save(cursor);
+                printf("cur_pos before prefix check (%d, %d)\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index);
                 st_cursor_next(cursor);
                 st_trie_match_t prefix_match = {0, {0, 0, 0, 0}};
                 bool prefix_matched = st_find_longest_chain(cursor, &prefix_match, prefix_check_offset + 2);
@@ -186,8 +187,10 @@ bool st_find_longest_transform(st_transform_trie_t const * const trie, st_cursor
                     valid_match = true;
                 }
                 st_cursor_restore(cursor, &cur_pos);
+                printf("cur_pos after prefix check (%d, %d)\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index);
             } else {
                 printf("No prefix collision at match_node (%d): %#04X\n", prefix_check_offset, prefix_node);
+                printf("cur_pos no prefix check (%d, %d)\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index);
                 valid_match = true;
             }
             uint8_t expected_key_count = code & BYTE_TRIE_CODE_MASK;
