@@ -9,6 +9,7 @@
 
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
+#include "st_debug.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
@@ -17,13 +18,13 @@
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
 static bool post_process_do_enhanced_backspace = false;
 // Track backspace hold time
 static uint32_t backspace_timer = 0;
 #endif
 
-#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+#if SEQUENCE_TRANSFORM_RULE_SEARCH
 static bool post_process_do_rule_search = false;
 #endif
 
@@ -207,9 +208,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
     }
     // Disable autocorrect while a mod other than shift is active.
     if ((*mods & ~MOD_MASK_SHIFT) != 0) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("clearing buffer (mods: 0x%04X)\n", *mods);
-#endif
+        st_debug(ST_DBG_GENERAL, "clearing buffer (mods: 0x%04X)\n", *mods);
         st_key_buffer_reset(&key_buffer);
         return false;
     }
@@ -233,9 +232,7 @@ void st_handle_repeat_key(void)
 {
     const uint16_t last_regular_keypress = search_for_regular_keypress();
     if (last_regular_keypress) {
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("repeat keycode: 0x%04X\n", last_regular_keypress);
-#endif
+        st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
         st_key_buffer_get(&key_buffer, 0)->keypressed = last_regular_keypress;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
         st_send_key(last_regular_keypress);
@@ -243,7 +240,7 @@ void st_handle_repeat_key(void)
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_search_result_t *res, char *completion_str) {
-#if defined(RECORD_RULE_USAGE) && defined(CONSOLE_ENABLE)
+#if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE && defined(CONSOLE_ENABLE)
     st_cursor_init(&trie_cursor, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
     const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
@@ -286,7 +283,7 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+#if SEQUENCE_TRANSFORM_RULE_SEARCH
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
     // find buffer index for the space before the last word,
@@ -341,7 +338,7 @@ void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
 void st_handle_backspace() {
     // initialize cursor as input cursor, so that `st_cursor_get_action` is stable
     st_cursor_init(&trie_cursor, 0, false);
@@ -446,10 +443,9 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #ifndef NO_ACTION_ONESHOT
     mods |= get_oneshot_mods();
 #endif
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
-            keycode, mods, record->event.pressed);
-#endif
+
+    st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
+        keycode, mods, record->event.pressed);
     // If this is one of the special keycodes, convert to our internal trie code
     if (keycode >= special_key_start && keycode < special_key_start + SEQUENCE_TRANSFORM_COUNT) {
         keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
@@ -459,7 +455,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
         return true;
 
     if (keycode == KC_BSPC) {
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
         if (record->event.pressed) {
             backspace_timer = timer_read32();
             // set flag so that post_process_sequence_transform will perfom an undo
@@ -493,15 +489,15 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
             // set word boundary if some other non-alpha key is pressed
             keycode = KC_SPC;
     }
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("  translated keycode: 0x%04X (%c)\n", keycode, st_keycode_to_char(keycode));
-#endif
+    st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
+        keycode, st_keycode_to_char(keycode));
+
     st_key_buffer_push(&key_buffer, keycode);
     if (st_perform()) {
         // tell QMK to not process this key
         return false;
     } else {
-#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+#if SEQUENCE_TRANSFORM_RULE_SEARCH
         post_process_do_rule_search = true;
 #endif
     }
@@ -515,7 +511,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
  */
 void post_process_sequence_transform()
 {
-#ifndef SEQUENCE_TRANSFORM_DISABLE_ENHANCED_BACKSPACE
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
     if (post_process_do_enhanced_backspace) {
         // remove last key from the buffer
         //   and undo the action of that key
@@ -523,7 +519,7 @@ void post_process_sequence_transform()
         post_process_do_enhanced_backspace = false;
     }
 #endif
-#ifdef SEQUENCE_TRANSFORM_MISSED_RULES
+#if SEQUENCE_TRANSFORM_RULE_SEARCH
     if (post_process_do_rule_search) {
         st_log_time(st_find_missed_rule());
         post_process_do_rule_search = false;

@@ -3,8 +3,10 @@
 typedef enum
 {
     ST_DBG_GENERAL = 1,
-    ST_DBG_TRIE_SEARCH,
+    ST_DBG_SEQ_MATCH,
     ST_DBG_RULE_SEARCH,
+    ST_DBG_CURSOR,
+    ST_DBG_BACKSPACE,
 } st_debug_flag_t;
 
 void        st_debug_set_all_flags(void);

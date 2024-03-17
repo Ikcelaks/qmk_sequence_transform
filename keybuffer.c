@@ -7,7 +7,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
+#include "st_defaults.h"
 #include "qmk_wrapper.h"
+#include "st_debug.h"
 #include "keybuffer.h"
 #include "utils.h"
 
@@ -75,9 +77,9 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
     }
     buf->data[buf->cur_pos].keypressed = keycode;
     buf->data[buf->cur_pos].action_taken = ST_DEFAULT_KEY_ACTION;
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    st_key_buffer_print(buf);
-#endif
+    if (st_debug_check(ST_DBG_GENERAL)) {
+        st_key_buffer_print(buf);
+    }
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)

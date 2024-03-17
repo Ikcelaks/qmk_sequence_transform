@@ -9,8 +9,10 @@ static long st_debug_bits = 0;
 //////////////////////////////////////////////////////////////////////
 static const char *st_debug_flag_names[] = {
     [ST_DBG_GENERAL]        = "general",
-    [ST_DBG_TRIE_SEARCH]    = "trie_search",
+    [ST_DBG_SEQ_MATCH]      = "sequence_match",
     [ST_DBG_RULE_SEARCH]    = "rule_search",
+    [ST_DBG_CURSOR]         = "cursor",
+    [ST_DBG_BACKSPACE]      = "backspace",
     0
 };
 

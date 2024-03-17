@@ -11,7 +11,7 @@
 #include "print.h"
 #include "send_string.h"
 
-#ifdef SEQUENCE_TRANSFORM_LOG_TIME
+#if SEQUENCE_TRANSFORM_LOG_TIME
 #   define st_log_time(F) { \
                const uint32_t t = timer_read32(); \
                F; \

@@ -31,14 +31,14 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
     st_cursor_init(cursor, 0, false);
     st_find_longest_chain(cursor, &res->trie_match, 0);
-#ifdef SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER
+#if SEQUENCE_TRANSFORM_FALLBACK_BUFFER
     if (st_cursor_init(cursor, 0, true)) {
         st_find_longest_chain(cursor, &res->trie_match, 0);
     }
 #endif
     if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(cursor->trie, &res->trie_payload, res->trie_match.trie_match_index);
-        st_debug(ST_DBG_TRIE_SEARCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
+        st_debug(ST_DBG_SEQ_MATCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
             res->trie_payload.completion_index,
             res->trie_payload.completion_len,
             res->trie_payload.num_backspaces,
@@ -110,7 +110,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
 #endif
         // Branch Node (with multiple children) if bit 14 is set
         if (code & TRIE_BRANCH_BIT) {
-            st_debug(ST_DBG_TRIE_SEARCH, "Branching Offset: %d; Code: %#04X\n", offset, code);
+            st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X\n", offset, code);
             code &= TRIE_CODE_MASK;
             // Find child key that matches the search buffer at the current depth
             const uint16_t cur_key = st_cursor_get_keycode(cursor);
@@ -122,7 +122,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
             // No high bits set, so this is a chain node
             // Travel down chain until we reach a zero byte, or we no longer match our buffer
             do {
-                st_debug(ST_DBG_TRIE_SEARCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
+                st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
                 if (code != st_cursor_get_keycode(cursor))
                     return longer_match_found;
             } while ((code = TDATA(++offset)) && st_cursor_next(cursor));
@@ -133,9 +133,9 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         code = TDATA(offset);
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
-            st_debug(ST_DBG_TRIE_SEARCH, "New Match found: (%d, %d) %d\n",
+            st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d) %d\n",
                 cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
-            st_debug(ST_DBG_TRIE_SEARCH, "Previous Match: (%d, %d) %d\n",
+            st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d) %d\n",
                 longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
             // record this if it is the longest match
             if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
