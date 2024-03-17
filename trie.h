@@ -11,6 +11,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
+#include <stdint.h>
 typedef struct
 {
     uint16_t    completion_index;   // index to start of completion string in trie_t.completions
@@ -51,6 +52,7 @@ typedef struct
     st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
+    uint8_t                       nondefault_action_count;
 } st_cursor_t;
 
 typedef struct

@@ -174,20 +174,40 @@ bool st_find_longest_transform(st_transform_trie_t const * const trie, st_cursor
             printf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
             printf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
 #endif
+            uint16_t prefix_check_offset = get_uint16_from_uint8s(trie, offset + 3);
+            uint16_t prefix_node = cursor->trie->data[prefix_check_offset];
+            bool valid_match = false;
+            if (prefix_node & TRIE_BRANCH_BIT) {
+                printf("Possible prefix collision at match_node (%d): %#04X\n", prefix_check_offset, prefix_node);
+                st_cursor_pos_t cur_pos = st_cursor_save(cursor);
+                st_cursor_next(cursor);
+                st_trie_match_t prefix_match = {0, {0, 0, 0, 0}};
+                bool prefix_matched = st_find_longest_chain(cursor, &prefix_match, prefix_check_offset + 2);
+                if (prefix_matched) {
+                    printf("Conflicting prefix matched; false rule match\n");
+                } else {
+                    printf("No prefix matched; true rule match\n");
+                    valid_match = true;
+                }
+                st_cursor_restore(cursor, &cur_pos);
+            } else {
+                printf("No prefix collision at match_node (%d): %#04X\n", prefix_check_offset, prefix_node);
+                valid_match = true;
+            }
             uint8_t expected_key_count = code & BYTE_TRIE_CODE_MASK;
             // record this if it is the longest match
-            if (expected_key_count < cursor->cursor_pos.index + 1) {
+            if (valid_match && (expected_key_count < cursor->cursor_pos.index + 1 || cursor->nondefault_action_count == 0)) {
                 printf("Found rule (%d): expected keys %d; actual keys %d\n", get_uint16_from_uint8s(trie, offset + 1), expected_key_count, cursor->cursor_pos.index + 1);
                 longer_match_found = true;
                 longest_match->trie_match_index = offset;
                 longest_match->seq_match_pos = st_cursor_save(cursor);
-            } else {
-                printf("Good job! You used rule (%d)\n", get_uint16_from_uint8s(trie, offset + 1));
+            } else if (valid_match) {
+                printf("Good job! You used rule (%d) (%d;%d)\n", get_uint16_from_uint8s(trie, offset + 1), expected_key_count, cursor->cursor_pos.index + 1);
             }
             // If bit 14 is also set, there is a child node after the completion string
             if (code & BYTE_TRIE_BRANCH_BIT) {
                 // move offset to next child node and continue walking the trie
-                offset += 3;
+                offset += 5;
                 code = TBYTEDATA(offset);
             } else {
                 // No more matches; return

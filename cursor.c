@@ -33,7 +33,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         if (st_cursor_at_end(cursor)) {
             return false;
         }
-        cursor->cache_valid = false;
+        // cursor->cache_valid = false;
         st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
         // Below is an assert that should be made
         // if (!keyaction) {
@@ -67,7 +67,8 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     cursor->cursor_pos.as_output = as_output;
     cursor->cursor_pos.sub_index = as_output ? 0 : 255;
     cursor->cursor_pos.segment_len = 1;
-    cursor->cache_valid = false;
+    cursor->nondefault_action_count = 0;
+    cursor->cache_valid = 255;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
         // This is crazy, but it is theoretically possible that the
         // entire buffer is full of backspaces such that no valid
@@ -108,7 +109,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
 st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 {
     st_trie_payload_t *action = &cursor->cached_action;
-    if (cursor->cache_valid) {
+    if (cursor->cache_valid == cursor->cursor_pos.index) {
         return action;
     }
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
@@ -121,9 +122,10 @@ st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
         action->num_backspaces = 0;
         action->func_code = 0;
     } else {
+        ++cursor->nondefault_action_count;
         st_get_payload_from_match_index(cursor->trie, action, keyaction->action_taken);
     }
-    cursor->cache_valid = true;
+    cursor->cache_valid = cursor->cursor_pos.index;
     return action;
 }
 //////////////////////////////////////////////////////////////////
@@ -136,7 +138,7 @@ bool st_cursor_next(st_cursor_t *cursor)
 {
     if (!cursor->cursor_pos.as_output) {
         ++cursor->cursor_pos.index;
-        cursor->cache_valid = false;
+        // cursor->cache_valid = false;
         if (st_cursor_at_end(cursor)) {
             // leave `index` at the End position
             cursor->cursor_pos.index = cursor->buffer->context_len;
@@ -156,7 +158,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         if (st_cursor_at_end(cursor)) {
             return false;
         }
-        cursor->cache_valid = false;
+        // cursor->cache_valid = false;
         cursor->cursor_pos.sub_index = 0;
         ++cursor->cursor_pos.segment_len;
         return true;
@@ -179,7 +181,7 @@ st_cursor_pos_t st_cursor_save(const st_cursor_t *cursor)
 void st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos)
 {
     cursor->cursor_pos = *cursor_pos;
-    cursor->cache_valid = false;
+    cursor->cache_valid = 255;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *past_pos)

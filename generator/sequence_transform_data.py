@@ -197,10 +197,11 @@ def make_transform_trie(
     seq_dict: List[Tuple[str, str, int]],
     non_printable: set[str],
     wordbreak_char
-) -> Tuple[Dict[str, tuple[str, dict]], int]:
+) -> Tuple[Dict[str, tuple[str, dict]], int, List[Tuple[str, str, int, Dict[str, Tuple[str, dict]]]]]:
     """Makes a trie from the sequences, writing in reverse."""
     trie = {}
     max_transform_len = 0
+    seq_list = []
 
     for sequence, transform, rule_number in seq_dict:
         node = trie
@@ -219,21 +220,26 @@ def make_transform_trie(
         for letter in transform[::-1]:
             node = node.setdefault(letter, {})
 
-        node['MATCH'] = (len(sequence), rule_number)
+        node['MATCH'] = {
+            'seq_len': len(sequence),
+            'rule_number': rule_number,
+            'trie_match_offset': {}
+        }
+        seq_list.append((sequence, transform, rule_number, node['MATCH']))
         max_transform_len = max(max_transform_len, len(transform))
 
-    return trie, max_transform_len
+    return trie, max_transform_len, seq_list
 
 
 ###############################################################################
 def make_trie(
-    seq_dict: List[Tuple[str, str, int]],
+    seq_dict: List[Tuple[str, str, int, dict]],
     output_func_char_map: Dict[str, int]
 ) -> Dict[str, tuple[str, dict]]:
     """Makes a trie from the sequences, writing in reverse."""
     trie = {}
 
-    for context, correction, _ in seq_dict:
+    for context, correction, _, transform_node in seq_dict:
         node = trie
 
         if correction[-1] in output_func_char_map:
@@ -253,7 +259,8 @@ def make_trie(
                 'BACKSPACES': -1,
                 'FUNC': output_func,
                 'OUTPUT': ""
-            }
+            },
+            'TRANSFORM_NODE': transform_node
         })
 
     return trie
@@ -470,7 +477,10 @@ def serialize_transform_trie(
     # Traverse trie in depth first order.
     def traverse(trie_node):
         if 'MATCH' in trie_node:  # Handle a MATCH trie node.
-            expected_match_len, rule_number = trie_node['MATCH']
+            match = trie_node['MATCH']
+            expected_match_len = match['seq_len']
+            rule_number = match['rule_number']
+            original_trie_match_offset = match['trie_match_offset']
 
             # 2 bits (7, 6) are used for node type
             code = 0x80 + 0x40 * (len(trie_node) > 1)
@@ -481,9 +491,11 @@ def serialize_transform_trie(
 
             rule_number_byte1, rule_number_byte2 = divmod(rule_number, 0x100)
 
+            match_offset_byte1, match_offset_byte2 = divmod(original_trie_match_offset, 0x100)
+
             # First output word stores coded info
             # Second stores completion data offset index
-            data = [code, rule_number_byte1, rule_number_byte2]
+            data = [code, rule_number_byte1, rule_number_byte2, match_offset_byte1, match_offset_byte2]
             # quiet_print(f'{err(0)} Data "{cyan(data)}"')
             # del trie_node['MATCH']
 
@@ -574,6 +586,7 @@ def serialize_trie(
     def traverse(trie_node):
         global max_backspaces
         if 'MATCH' in trie_node:  # Handle a MATCH trie node.
+            quiet_print(json.dumps(trie_node['MATCH'], indent=4))
             sequence, completion = trie_node['MATCH']
             backspaces = completion['RESULT']['BACKSPACES']
             max_backspaces = max(max_backspaces, backspaces)
@@ -599,12 +612,15 @@ def serialize_trie(
 
             # First output word stores coded info
             # Second stores completion data offset index
-            data = [code, output_index]
+            data = {
+                'DATA': [code, output_index],
+                'TRANSFORM_NODE': completion['TRANSFORM_NODE']
+            }
             # quiet_print(f'{err(0)} Data "{cyan(data)}"')
             # del trie_node['MATCH']
 
         else:
-            data = []
+            data = {}
 
         branches = [(k, t) for k, t in trie_node.items() if k != 'MATCH']
 
@@ -644,7 +660,12 @@ def serialize_trie(
     # quiet_print(f'{err(0)} Data "{cyan(table)}"')
 
     def serialize(node: Dict[str, Any]) -> List[int]:
-        data = node['data']
+        if node['data']:
+            data = node['data']['DATA']
+            node['data']['TRANSFORM_NODE']['trie_match_offset'] = node['uint16_offset']
+        else:
+            data = []
+
         # quiet_print(f'{err(0)} Serialize Data "{cyan(data)}"')
 
         if not node['links']:  # Handle a leaf table entry.
@@ -744,7 +765,18 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     output_func_char_map = generate_output_func_char_map(OUTPUT_FUNC_CHARS)
 
     seq_dict = parse_file(RULES_FILE, char_map, SEP_STR, COMMENT_STR)
-    trie = make_trie(seq_dict, output_func_char_map)
+
+    nonprintable = set()
+    nonprintable.update(OUTPUT_FUNC_CHARS)
+    nonprintable.update(MAGIC_CHARS)
+    nonprintable.update(WORDBREAK_CHAR)
+    print(nonprintable)
+
+    # Build tries
+    transform_trie, max_transform_trie_len, seq_transform_dict = make_transform_trie(seq_dict, nonprintable, WORDBREAK_CHAR)
+    quiet_print(json.dumps(transform_trie, indent=4))
+
+    trie = make_trie(seq_transform_dict, output_func_char_map)
     outputs = complete_trie(trie, WORDBREAK_CHAR)
     # quiet_print(json.dumps(trie, indent=4))
 
@@ -755,23 +787,14 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     trie_data = serialize_trie(char_map, trie, completions_map)
     quiet_print(json.dumps(trie, indent = 4))
 
+    transform_trie_data = serialize_transform_trie(transform_trie)
+
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
 
     min_sequence = min(seq_dict, key=sequence_len)[0]
     max_sequence = max(seq_dict, key=sequence_len)[0]
     max_transform = max(seq_dict, key=transform_len)[1]
-
-    # Build transform_trie
-    nonprintable = set()
-    nonprintable.update(OUTPUT_FUNC_CHARS)
-    nonprintable.update(MAGIC_CHARS)
-    nonprintable.update(WORDBREAK_CHAR)
-
-    print(nonprintable)
-    transform_trie, max_transform_trie_len = make_transform_trie(seq_dict, nonprintable, WORDBREAK_CHAR)
-    quiet_print(json.dumps(transform_trie, indent=4))
-    transform_trie_data = serialize_transform_trie(transform_trie)
 
     # Build the sequence_transform_data.h file.
     transformations = []
