@@ -10,6 +10,7 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "st_assert.h"
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
@@ -91,23 +92,11 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
     const st_trie_t *trie = cursor->trie;
     bool longer_match_found = false;
     do {
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-        if (offset >= trie->data_size) {
-            uprintf("find_longest_chain() ERROR: tried reading outside trie data! Offset: %d\n", offset);
-            return false;
-        }
-#endif
+        st_assert(offset < trie->data_size, "Tried reading outside trie data! Offset: %d\n", offset);
         uint16_t code = TDATA(offset);
-#ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS
-        if (!code) {
-            uprintf("find_longest_chain() ERROR: unexpected null code! Offset: %d\n", offset);
-            return false;
-        }
-        if (code & TRIE_MATCH_BIT) {
-            uprintf("find_longest_chain() ERROR: match found at top of loop! Offset: %d\n", offset);
-            return false;
-        }
-#endif
+        st_assert(code, "Unexpected null code! Offset: %d\n", offset);
+        st_assert(!(code & TRIE_MATCH_BIT), "Match found at top of loop! Offset: %d\n", offset);
+
         // Branch Node (with multiple children) if bit 14 is set
         if (code & TRIE_BRANCH_BIT) {
             st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X\n", offset, code);

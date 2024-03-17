@@ -181,6 +181,7 @@
     <ClInclude Include="..\sequence_transform.h" />
     <ClInclude Include="..\sequence_transform_data.h" />
     <ClInclude Include="..\sequence_transform_test.h" />
+    <ClInclude Include="..\st_assert.h" />
     <ClInclude Include="..\st_debug.h" />
     <ClInclude Include="..\st_defaults.h" />
     <ClInclude Include="..\trie.h" />
