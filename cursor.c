@@ -14,8 +14,6 @@
 #include "utils.h"
 #include "cursor.h"
 
-#define CDATA(L) pgm_read_byte(&trie->completions[L])
-
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
 {
@@ -84,7 +82,6 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
 //////////////////////////////////////////////////////////////////
 uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
 {
-    const st_trie_t *trie = cursor->trie;
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
     if (!keyaction) {
         return KC_NO;
@@ -99,7 +96,7 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     int completion_char_index = action->completion_index;
     completion_char_index += action->completion_len - 1 - cursor->cursor_pos.sub_index;
-    return st_char_to_keycode(CDATA(completion_char_index));
+    return st_char_to_keycode(CDATA(cursor->trie, completion_char_index));
 }
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act

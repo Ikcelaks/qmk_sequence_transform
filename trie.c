@@ -20,13 +20,22 @@
 #include "cursor.h"
 #include "utils.h"
 
-#define TRIE_MATCH_BIT      0x8000
-#define TRIE_BRANCH_BIT     0x4000
-#define TRIE_CODE_MASK      0x3FFF
-
-#define TDATA(L) pgm_read_word(&trie->data[L])
-#define CDATA(L) pgm_read_byte(&trie->completions[L])
-
+//////////////////////////////////////////////////////////////////////
+uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
+{
+    st_assert(0 <= index && index < trie->data_size,
+        "Tried reading outside trie data! index: %d, size: %d\n",
+        index, trie->data_size);
+    return pgm_read_word(&trie->data[index]);
+}
+//////////////////////////////////////////////////////////////////////
+uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
+{
+    st_assert(0 <= index && index < trie->completions_size,
+        "Tried reading outside completion data! index: %d, size: %d\n",
+        index, trie->completions_size);
+    return pgm_read_byte(&trie->completions[index]);
+}
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
@@ -51,7 +60,7 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
 {
-    st_get_payload_from_code(payload, TDATA(match_index), TDATA(match_index+1));
+    st_get_payload_from_code(payload, TDATA(trie, match_index), TDATA(trie, match_index+1));
 }
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index)
@@ -68,10 +77,10 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_
 //////////////////////////////////////////////////////////////////////
 bool find_branch_offset(const st_trie_t *trie, uint16_t *offset, uint16_t code, uint16_t cur_key)
 {
-    for (; code; *offset += 2, code = TDATA(*offset)) {
+    for (; code; *offset += 2, code = TDATA(trie, *offset)) {
         if (code == cur_key) {
             // 16bit offset to child node is built from next uint16_t
-            *offset = TDATA(*offset+1);
+            *offset = TDATA(trie, *offset+1);
             return true;
         }
     }
@@ -92,8 +101,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
     const st_trie_t *trie = cursor->trie;
     bool longer_match_found = false;
     do {
-        st_assert(offset < trie->data_size, "Tried reading outside trie data! Offset: %d\n", offset);
-        uint16_t code = TDATA(offset);
+        uint16_t code = TDATA(trie, offset);
         st_assert(code, "Unexpected null code! Offset: %d\n", offset);
         st_assert(!(code & TRIE_MATCH_BIT), "Match found at top of loop! Offset: %d\n", offset);
 
@@ -114,12 +122,12 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                 st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
                 if (code != st_cursor_get_keycode(cursor))
                     return longer_match_found;
-            } while ((code = TDATA(++offset)) && st_cursor_next(cursor));
+            } while ((code = TDATA(trie, ++offset)) && st_cursor_next(cursor));
             // After a chain, there should be a match or branch
             ++offset;
         }
         // Traversed one (or more) buffer keys, check if we are at a match
-        code = TDATA(offset);
+        code = TDATA(trie, offset);
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
             st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d) %d\n",
@@ -214,7 +222,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
     st_trie_t *trie = search->trie;
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_key_stack_t *key_stack = trie->key_stack;
-    uint16_t code = TDATA(offset);
+    uint16_t code = TDATA(trie, offset);
     // Match Node if bit 15 is set
     if (code & TRIE_MATCH_BIT) {
         // If bit 14 is also set, there's a child node after the completion string
@@ -224,7 +232,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         // If no better match found deeper,
         // inspect this payload to see if the rule would match
         st_trie_payload_t payload;
-        st_get_payload_from_code(&payload, code, TDATA(offset + 1));
+        st_get_payload_from_code(&payload, code, TDATA(trie, offset + 1));
         // Make sure skip_levels matches 1 magic key + backspaces,
         // and that removing those wouldn't leave us with an empty context
         const int skips = 1 + payload.num_backspaces;
@@ -247,10 +255,10 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         const uint16_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
         // find child that matches our current buffer location
         // (if this is a skip level, we go down all children)
-        for (; code; offset += 2, code = TDATA(offset)) {
+        for (; code; offset += 2, code = TDATA(trie, offset)) {
             if (!check || cur_key == code) {
                 // Get 16bit offset to child node
-                const uint16_t child_offset = TDATA(offset + 1);
+                const uint16_t child_offset = TDATA(trie, offset + 1);
                 // Traverse down child node
                 st_key_stack_push(key_stack, code);
                 res = st_trie_rule_search(search, child_offset) || res;
@@ -265,7 +273,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
     // No high bits set, so this is a chain node
     // Travel down chain until we reach a zero code, or we no longer match our buffer
     const int prev_stack_size = key_stack->size;
-    for (; code; code = TDATA(++offset)) {
+    for (; code; code = TDATA(trie, ++offset)) {
         if (key_stack->size >= search->search_end_ridx) {
             key_stack->size = prev_stack_size;
             return false;
@@ -329,7 +337,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     st_debug(ST_DBG_RULE_SEARCH, "  testing completion: ");
     const int completion_end = payload->completion_index + payload->completion_len;
     for (int i = payload->completion_index, j = search_base_ridx; i < completion_end; ++i, ++j) {
-        const char ascii_code = CDATA(i);
+        const char ascii_code = CDATA(trie, i);
         const uint16_t comp_key = st_char_to_keycode(ascii_code);
         const uint16_t buf_key = st_key_buffer_get_keycode(key_buffer, -(j+1));
         st_debug(ST_DBG_RULE_SEARCH, "[%02X(%c), %02X(%c)] ",
@@ -366,7 +374,7 @@ void st_completion_to_str(const st_trie_t *trie,
 {
     const uint16_t completion_end = payload->completion_index + payload->completion_len;
     for (uint16_t i = payload->completion_index; i < completion_end; ++i) {
-        *str++ = CDATA(i);
+        *str++ = CDATA(trie, i);
     }
     *str = '\0';
 }
