@@ -7,12 +7,12 @@ typedef enum
     ST_DBG_RULE_SEARCH,
 } st_debug_flag_t;
 
-void    st_debug_set_all_flags(void);
-void    st_debug_clear_all_flags(void);
-void    st_debug_set_flag(st_debug_flag_t flag);
-void    st_debug_set_flag_str(const char *flag);
-bool    st_debug_test_flag(st_debug_flag_t flag);
-
+void        st_debug_set_all_flags(void);
+void        st_debug_clear_all_flags(void);
+void        st_debug_set_flag(st_debug_flag_t flag);
+void        st_debug_set_flag_str(const char *flag);
+bool        st_debug_test_flag(st_debug_flag_t flag);
+const char  **st_debug_get_flag_names(void);
 
 // The do { ... } while (0) idiom ensures that the code acts like a statement (function call).
 // The unconditional use of the code ensures that the compiler always checks that your

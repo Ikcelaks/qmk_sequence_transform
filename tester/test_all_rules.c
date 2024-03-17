@@ -31,7 +31,7 @@ static st_test_info_t rule_tests[] = {
 void print_available_tests(void)
 {
     for (int i = 0; rule_tests[i].func; ++i) {
-        printf("  #%d %s\n", i+1, rule_tests[i].name);
+        printf("       #%d %s\n", i+1, rule_tests[i].name);
     }
 }
 //////////////////////////////////////////////////////////////////////

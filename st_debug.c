@@ -15,6 +15,11 @@ static const char *st_debug_flag_names[] = {
 };
 
 //////////////////////////////////////////////////////////////////////
+const char **st_debug_get_flag_names(void)
+{
+    return st_debug_flag_names;
+}
+//////////////////////////////////////////////////////////////////////
 void st_debug_set_flag_str(const char *flag)
 {
     if (!strcmp(flag, "all")) {
