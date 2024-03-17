@@ -11,7 +11,7 @@
 #include "print.h"
 #include "send_string.h"
 
-#ifdef SEQUENCE_TRANSFORM_LOG_TIME
+#if SEQUENCE_TRANSFORM_LOG_TIME
 #   define st_log_time(F) { \
                const uint32_t t = timer_read32(); \
                F; \
@@ -33,8 +33,12 @@
 #define st_log_time(F) F;
 
 #define TAPPING_TERM 200
+#define FAST_TIMER_T_SIZE 0
 
+// WARNING: these do not prevent double eval of args!
+// Only use these in preproc statements!
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 extern const uint8_t ascii_to_shift_lut[16];
 extern const uint8_t ascii_to_keycode_lut[128];

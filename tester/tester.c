@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <stdlib.h>
+#include "st_defaults.h"
 #include "qmk_wrapper.h"
+#include "st_debug.h"
 #include "utils.h"
 #include "keybuffer.h"
 #include "key_stack.h"
@@ -66,7 +68,7 @@ void tap_code16(uint16_t keycode)
 void print_help(void)
 {
     printf("Sequence Transform Tester usage:\n");
-    printf("tester [-p] [-t <tests>] [-s <test_bit_string>]\n");
+    printf("tester [-p] [-t <tests>] [-s <test_bit_string>] [-d <feature>]\n");
     puts("");
     printf("By default, all tests will be performed on all compiled rules.\n");
     printf("Only test failures and warnings will be shown.\n");
@@ -79,9 +81,15 @@ void print_help(void)
     puts("");
     printf("  -t each bit in <test_bit_string> turns a test on or off.\n");
     printf("     ex: -t \"101\" would only run tests #1 and #3.\n");
-    puts("");
-    printf("Available tests:\n");
+    printf("     Available tests:\n");
     print_available_tests();
+    puts("");    
+    printf("  -d enable debug prints for <feature>.\n");
+    printf("     Available features:\n");
+    const char **dflags = st_debug_get_flag_names();
+    for (int i = 1; dflags[i]; ++i) {
+        printf("       %s\n", dflags[i]);
+    }
 }
 //////////////////////////////////////////////////////////////////////
 void init_options(int argc, char **argv, st_test_options_t *options)
@@ -101,6 +109,8 @@ void init_options(int argc, char **argv, st_test_options_t *options)
             options->action = ACTION_TEST_ASCII_STRING;
         } else if (!strcmp(argv[i], "-t") && i+1 < argc) {
             options->tests = argv[i+1];
+        } else if (!strcmp(argv[i], "-d") && i+1 < argc) {
+            st_debug_set_flag_str(argv[i+1]);
         } else if (!strcmp(argv[i], "-h")) {
             print_help();
             exit(0);

@@ -11,9 +11,21 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
+#ifdef ST_TESTER
+#   define TDATA(trie, L) st_get_trie_data_word(trie, L)
+#   define CDATA(trie, L) st_get_trie_completion_byte(trie, L)
+#else
+#   define TDATA(trie, L) pgm_read_word(&trie->data[L])
+#   define CDATA(trie, L) pgm_read_byte(&trie->completions[L])
+#endif
+
+#define TRIE_MATCH_BIT      0x8000
+#define TRIE_BRANCH_BIT     0x4000
+#define TRIE_CODE_MASK      0x3FFF
+
 typedef struct
 {
-    uint16_t    completion_index;   // index to start of completion string in trie_t.completions
+    int     completion_index;   // index to start of completion string in trie_t.completions
     int     completion_len;     // length of completion string
     int     num_backspaces;     // number of backspaces to send before the completion string
     int     func_code;          // special function code
@@ -21,20 +33,20 @@ typedef struct
 
 typedef struct
 {
-    int     index;                // buffer index of cursor position
-    int     sub_index;            // Sub-position within the current buffer position
-    int     segment_len;        // Number of elements traversed
-    uint8_t as_output;   // True if buffer traversing the simulated output
+    int     index;          // buffer index of cursor position
+    int     sub_index;      // Sub-position within the current buffer position
+    int     segment_len;    // Number of elements traversed
+    uint8_t as_output;      // True if buffer traversing the simulated output
 } st_cursor_pos_t;
 
 typedef struct
 {
-    size_t          data_size;          // size in words of data buffer
+    int             data_size;          // size in words of data buffer
     const uint16_t  *data;              // serialized trie node data
-    size_t          completions_size;   // size in bytes of completions data buffer
+    int             completions_size;   // size in bytes of completions data buffer
     const uint8_t   *completions;       // packed completions strings buffer
-    uint8_t         completion_max_len; // max len of all completion strings
-    uint8_t         max_backspaces;     // max backspaces for all completions
+    int             completion_max_len; // max len of all completion strings
+    int             max_backspaces;     // max backspaces for all completions
     st_key_stack_t * const  key_stack;  // key stack used for searches
 } st_trie_t;
 
@@ -68,6 +80,8 @@ typedef struct
 
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
 bool st_trie_do_rule_searches(st_trie_t *trie, const st_key_buffer_t *key_buffer, int word_start_idx, st_trie_rule_t *rule);
+uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
+uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
 //////////////////////////////////////////////////////////////////
 // Internal
