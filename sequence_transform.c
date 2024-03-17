@@ -32,15 +32,7 @@ static bool post_process_do_rule_search = false;
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
-#ifdef SEQUENCE_TRANSFORM_EXTRA_BUFFER
-#   if SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER < 256
-#       define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER
-#   else
-#       define KEY_BUFFER_CAPACITY 255
-#   endif
-#else
-#   define KEY_BUFFER_CAPACITY SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH
-#endif
+#define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
 static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
@@ -240,7 +232,7 @@ void st_handle_repeat_key(void)
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(st_trie_search_result_t *res, char *completion_str) {
-#if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE && defined(CONSOLE_ENABLE)
+#if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE
     st_cursor_init(&trie_cursor, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
     const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
@@ -276,7 +268,7 @@ void log_rule(st_trie_search_result_t *res, char *completion_str) {
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
-#ifdef CONSOLE_ENABLE
+#ifndef NO_PRINT
     uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
 #endif
 }

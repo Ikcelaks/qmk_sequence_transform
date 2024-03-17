@@ -200,6 +200,7 @@ void debug_rule_match(const st_trie_payload_t *payload,
                       const st_trie_search_t *search,
                       uint16_t offset)
 {
+#if SEQUENCE_TRANSFORM_DEBUG
     st_trie_t *trie = search->trie;
     const st_key_stack_t *key_stack = trie->key_stack;
     char stackstr[key_stack->size + 1];
@@ -212,6 +213,7 @@ void debug_rule_match(const st_trie_payload_t *payload,
     st_debug(ST_DBG_RULE_SEARCH,
         "  checking match @%d, transform_end_ridx: %d, stack: |%s|, comp: |%s|(%d bs)\n",
         offset, transform_end_ridx, stackstr, compstr, backspaces);
+#endif
 }
 //////////////////////////////////////////////////////////////////////
 // Recursive trie search function used by st_trie_do_rule_searches

@@ -35,7 +35,10 @@
 #define TAPPING_TERM 200
 #define FAST_TIMER_T_SIZE 0
 
+// WARNING: these do not prevent double eval of args!
+// Only use these in preproc statements!
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 extern const uint8_t ascii_to_shift_lut[16];
 extern const uint8_t ascii_to_keycode_lut[128];
