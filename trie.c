@@ -34,17 +34,13 @@
 #define TBYTEDATA(L) pgm_read_byte(&trie->data[L])
 #define CDATA(L) pgm_read_byte(&trie->completions[L])
 
-#define SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS_2
+// #define SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS_2
 
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_transform_trie_t const * const transform_trie, st_cursor_t *cursor, st_trie_search_result_t *res)
 {
     st_cursor_init(cursor, 0, false);
     st_find_longest_chain(cursor, &res->trie_match, 0);
-    st_cursor_print(cursor);
-    st_trie_match_t longest_match = {0, {0,0, 0, 0}};
-    st_cursor_init(cursor, 0, true);
-    st_find_longest_transform(transform_trie, cursor, &longest_match, 0);
 #ifdef SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER
     if (st_cursor_init(cursor, 0, true)) {
         st_find_longest_chain(cursor, &res->trie_match, 0);
@@ -61,7 +57,7 @@ bool st_trie_check_for_unused_rule(st_transform_trie_t const * const transform_t
 {
     st_trie_match_t longest_match = {0, {0,0, 0, 0}};
     st_cursor_init(cursor, 0, true);
-    st_cursor_print(cursor);
+    // st_cursor_print(cursor);
     return st_find_longest_transform(transform_trie, cursor, &longest_match, 0);
 }
 //////////////////////////////////////////////////////////////////
@@ -91,11 +87,11 @@ uint16_t get_uint16_from_uint8s(st_transform_trie_t const * const trie, uint16_t
 bool find_transform_branch_offset(st_transform_trie_t const * const trie, uint16_t *offset, uint8_t cur_key)
 {
     for (uint8_t code = TBYTEDATA(++*offset); code; *offset += 3, code = TBYTEDATA(*offset)) {
-        printf(" B Offset: %d; Code: %#04X; Cur_key: %#04X\n", *offset, code, cur_key);
+        // printf(" B Offset: %d; Code: %#04X; Cur_key: %#04X\n", *offset, code, cur_key);
         if (code == cur_key) {
             // 16bit offset to child node is built from next two uint8_t
             *offset = get_uint16_from_uint8s(trie, *offset+1);
-            printf(" Found B Child Offset: %d; Code: %#04X; Cur_key: %#04X\n", *offset, code, cur_key);
+            // printf(" Found B Child Offset: %d; Code: %#04X; Cur_key: %#04X\n", *offset, code, cur_key);
             return true;
         }
     }
@@ -156,23 +152,23 @@ bool st_find_longest_transform(st_transform_trie_t const * const trie, st_cursor
                 printf("Chaining Offset: %d; Code: %#04X; Cur_key: %#04X\n", offset, code, cur_key);
 #endif
                 if (code != cur_key) {
-                    printf("Chaining Miss Offset: %d; Code: %#04X; Cur_key: %#04X\n", offset, code, cur_key);
+                    // printf("Chaining Miss Offset: %d; Code: %#04X; Cur_key: %#04X\n", offset, code, cur_key);
                     return longer_match_found;
                 }
             } while ((code = TBYTEDATA(++offset)) && st_cursor_next(cursor));
-            printf("Chaining End: %d; Code: %#04X; Cur_keycode: %#04X: cursor_pos: (%d, %d)\n", offset, code, st_cursor_get_keycode(cursor), cursor->cursor_pos.index, cursor->cursor_pos.sub_index);
+            // printf("Chaining End: %d; Code: %#04X; Cur_keycode: %#04X: cursor_pos: (%d, %d)\n", offset, code, st_cursor_get_keycode(cursor), cursor->cursor_pos.index, cursor->cursor_pos.sub_index);
             // After a chain, there should be a match or branch
             ++offset;
         }
         // Traversed one (or more) buffer keys, check if we are at a match
         code = TBYTEDATA(offset);
-        printf("Checking for match Offset: %d; Code: %#04X\n", offset, code);
+        // printf("Checking for match Offset: %d; Code: %#04X\n", offset, code);
         // Match Node if bit 15 is set
         if (code & BYTE_TRIE_MATCH_BIT) {
 #ifdef SEQUENCE_TRANSFORM_TRIE_SANITY_CHECKS_2
             // TODO: st_debug(ST_LOG_TRIE_SEARCH_BIT,...
-            printf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
-            printf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
+            // printf("New Match found: (%d, %d) %d\n", cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
+            // printf("Previous Match: (%d, %d) %d\n", longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
 #endif
             uint16_t prefix_check_offset = get_uint16_from_uint8s(trie, offset + 3);
             uint16_t prefix_node = cursor->trie->data[prefix_check_offset];

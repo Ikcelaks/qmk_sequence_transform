@@ -206,11 +206,12 @@ def make_transform_trie(
     for sequence, transform, rule_number in seq_dict:
         node = trie
 
-        transform.replace(wordbreak_char, " ")
+        transform = transform.replace(wordbreak_char, " ")
 
         if any([c in non_printable for c in transform]):
             # skip rule with transform that contains characters
             # that can't be matched in the trie, such as output funcs
+            seq_list.append((sequence, transform, rule_number, {}))
             continue
 
         if sequence[0] == wordbreak_char:
