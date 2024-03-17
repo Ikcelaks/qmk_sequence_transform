@@ -210,7 +210,7 @@ def make_transform_trie(
             # add omited leading wordbreak_char to transform
             transform = wordbreak_char + transform
 
-        if any([c != wordbreak_char and c in non_printable for c in transform]):
+        if any([c in non_printable for c in transform]):
             # skip rule with transform that contains characters
             # that can't be matched in the trie, such as output funcs
             seq_list.append((sequence, transform, rule_number, {}))
@@ -765,8 +765,6 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     nonprintable = set()
     nonprintable.update(OUTPUT_FUNC_CHARS)
     nonprintable.update(MAGIC_CHARS)
-    nonprintable.update(WORDBREAK_CHAR)
-    print(nonprintable)
 
     # Build tries
     transform_trie, max_transform_trie_len, seq_transform_dict = make_transform_trie(seq_dict, nonprintable, WORDBREAK_CHAR)
