@@ -337,10 +337,7 @@ void st_handle_backspace() {
     const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-        uprintf("Undoing backspace after non-matching keypress\n");
-        st_key_buffer_print(&key_buffer);
-#endif
+        st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
         st_key_buffer_pop(&key_buffer, 1);
         return;
@@ -353,11 +350,8 @@ void st_handle_backspace() {
         resend_count -= backspaces_needed_count;
         backspaces_needed_count = 0;
     }
-#ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
-    uprintf("Undoing previous key action: bs: %d, restore: %d\n",
-            backspaces_needed_count, resend_count);
-    st_key_buffer_print(&key_buffer);
-#endif
+    st_debug(ST_DBG_BACKSPACE, "Undoing previous key action: bs: %d, restore: %d\n",
+        backspaces_needed_count, resend_count);
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
         // reinitialize cursor as output cursor one keystroke before the previous action

@@ -190,7 +190,6 @@ bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *pas
 //////////////////////////////////////////////////////////////////
 void st_cursor_print(st_cursor_t *cursor)
 {
-// #ifdef SEQUENCE_TRANSFORM_LOG_GENERAL
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
     while (!st_cursor_at_end(cursor)) {
@@ -199,7 +198,6 @@ void st_cursor_print(st_cursor_t *cursor)
     }
     uprintf("| (%d:%d)\n", cursor->buffer->context_len, cursor->cursor_pos.segment_len);
     st_cursor_restore(cursor, &cursor_pos);
-// #endif
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_push_to_stack(st_cursor_t *cursor, int count)
