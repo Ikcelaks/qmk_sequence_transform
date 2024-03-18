@@ -49,7 +49,7 @@ st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
     if (index >= buf->size || index < 0) {
         return NULL;
     }
-    int buf_index = buf->current_head - index;
+    int buf_index = buf->head - index;
     if (buf_index < 0) {
         buf_index += buf->capacity;
     }
@@ -72,11 +72,11 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
     if (buf->size < buf->capacity) {
         buf->size++;
     }
-    if (++buf->current_head >= buf->capacity) {  // increment cur_pos
-        buf->current_head = 0;               // wrap to 0
+    if (++buf->head >= buf->capacity) {  // increment cur_pos
+        buf->head = 0;               // wrap to 0
     }
-    buf->data[buf->current_head].keypressed = keycode;
-    buf->data[buf->current_head].action_taken = ST_DEFAULT_KEY_ACTION;
+    buf->data[buf->head].keypressed = keycode;
+    buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(buf);
     }
@@ -89,9 +89,9 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
     } else {
         buf->size -= num;
     }
-    buf->current_head -= num;
-    if (buf->current_head < 0) {
-        buf->current_head += buf->capacity;
+    buf->head -= num;
+    if (buf->head < 0) {
+        buf->head += buf->capacity;
     }
 }
 //////////////////////////////////////////////////////////////////

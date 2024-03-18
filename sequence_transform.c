@@ -277,7 +277,7 @@ void st_find_missed_rule(void)
 {
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
-    char transform_str[TRANSFORM_MAX_LEN + 1] = {0};
+    char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
     // first skipping past trailing spaces
     // (in case a rule has spaces at the end of its completion)
@@ -436,7 +436,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
     // If this is one of the sequence token keycodes, convert to our internal trie code
-    if (keycode >= sequence_token_start && keycode < sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0) {
+    if (keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT) {
         keycode = keycode - sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0;
     }
     // keycode verification and extraction

@@ -5,7 +5,7 @@
     "output_func_symbols": "↻⇑",
     "comment_str": "#",
     "separator_str": "⇒",
-    "sequence_tokens_ascii": "*@$#",
+    "sequence_token_ascii_chars": "*@$#",
     "wordbreak_ascii": "^",
-    "quiet": false
+    "quiet": true
 }

@@ -44,8 +44,8 @@ void keycodes_to_ascii_str(const uint16_t *keycodes, char *str)
 //////////////////////////////////////////////////////////////////
 uint16_t ascii_to_keycode(char c)
 {
-    for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
-        if (c == st_seq_tokens_ascii[i]) {
+    for (int i = 0; i < sizeof(st_seq_token_ascii_chars); ++i) {
+        if (c == st_seq_token_ascii_chars[i]) {
             return TRIECODE_SEQUENCE_TOKEN_0 + i;
         }
     }

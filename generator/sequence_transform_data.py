@@ -57,7 +57,7 @@ KC_MINUS = 0x2D
 KC_SEMICOLON = 0x33
 KC_1 = 0x1E
 MOD_LSFT = 0x0200
-KC_SEQ_TOKEN_0 = 0x0100
+TRIECODE_SEQUENCE_TOKEN_0 = 0x0100
 TRIE_MATCH_BIT = 0x8000
 TRIE_BRANCH_BIT = 0x4000
 qmk_digits = digits[1:] + digits[0]
@@ -113,7 +113,7 @@ def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]
         **map_range(S(KC_MINUS), "_+\{\}|"),
         **map_range(KC_1, qmk_digits),
         **map_range(S(KC_1), "!@#$%^&*()"),
-        **map_range(KC_SEQ_TOKEN_0, seq_tokens),
+        **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
 
         wordbreak_symbol: KC_SPC,  # "Word break" symbol.
         **{chr(c): c + KC_A - ord('a') for c in range(ord('a'), ord('z') + 1)}
@@ -587,7 +587,7 @@ def create_test_rule_c_string(
     transform_dict = {
         "\\": "\\\\",
         WORDBREAK_SYMBOL: " ",
-        **{sym: char for sym, char in zip(SEQ_TOKEN_SYMBOLS, SEQ_TOKENS_ASCII)}
+        **{sym: char for sym, char in zip(SEQ_TOKEN_SYMBOLS, SEQ_TOKEN_ASCII_CHARS)}
     }
     for (i, j) in transform_dict.items():
         transform = transform.replace(i, j)
@@ -652,24 +652,24 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
     st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_SYMBOL}";'
     # ascii versions
-    char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
-    st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
+    char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
+    st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
 
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         '',
-        f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(KC_SEQ_TOKEN_0)}',
+        f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(TRIECODE_SEQUENCE_TOKEN_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
-        f'#define TRANSFORM_MAX_LEN {len(max_transform)} // "{max_transform}"',
+        f'#define TRANSFORM_MAX_LENGTH {len(max_transform)} // "{max_transform}"',
         f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
         f'#define MAX_BACKSPACES {max_backspaces}',
         f'#define SEQUENCE_TRIE_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
         '',
-        st_seq_tokens_ascii,
+        st_seq_token_ascii_chars,
         st_wordbreak_ascii
     ]
 
@@ -747,7 +747,7 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        SEQ_TOKENS_ASCII = config['sequence_tokens_ascii']
+        SEQ_TOKEN_ASCII_CHARS = config['sequence_token_ascii_chars']
         WORDBREAK_ASCII = config['wordbreak_ascii']
         SEQ_TOKEN_SYMBOLS = config['sequence_token_symbols']
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']

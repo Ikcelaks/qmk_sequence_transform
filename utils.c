@@ -61,7 +61,7 @@ bool st_is_seq_token_keycode(uint16_t key)
 char st_keycode_to_char(uint16_t keycode)
 {
     if (st_is_seq_token_keycode(keycode)) {
-		return st_seq_tokens_ascii[keycode - TRIECODE_SEQUENCE_TOKEN_0];
+		return st_seq_token_ascii_chars[keycode - TRIECODE_SEQUENCE_TOKEN_0];
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_ascii;
     }
