@@ -12,7 +12,7 @@ void sim_st_perform(const uint16_t *keycodes)
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
     st_key_buffer_t *buf = st_get_key_buffer();
-    buf->context_len = 0;
+    buf->size = 0;
     sim_output_reset();
     for (uint16_t key = *keycodes; key; key = *++keycodes) {
         st_key_buffer_push(buf, key);

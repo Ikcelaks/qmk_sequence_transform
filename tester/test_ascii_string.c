@@ -16,7 +16,7 @@ int test_ascii_string(const st_test_options_t *options)
     st_key_buffer_t *buf = st_get_key_buffer();
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
-    buf->context_len = 0;
+    buf->size = 0;
     for (int i = 0; i < len; ++i) {
         const char c = options->user_str[i];
         printf("--- str[%d]: %c ---\n", i, c);
@@ -29,15 +29,15 @@ int test_ascii_string(const st_test_options_t *options)
             sim_output_print();
             continue;
         }
-        // send they key to the input buffer        
+        // send they key to the input buffer
         st_key_buffer_push(buf, key);
-        st_key_buffer_print(buf);       
+        st_key_buffer_print(buf);
         // let sequence transform do its thing!
         if (st_perform()) {
             // st_perform sent a transform to the output buffer
             sim_output_print();
             continue;
-        }        
+        }
         // st_perform didn't do anything special with this key,
         // so we must add it to the output buffer
         tap_code16(key);

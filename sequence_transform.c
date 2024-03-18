@@ -50,7 +50,7 @@ uint16_t sequence_transform_past_keycode(int index) {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
 void sequence_transform_task(void) {
-    if (key_buffer.context_len > 1 &&
+    if (key_buffer.size > 1 &&
         timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         st_key_buffer_reset(&key_buffer);
         sequence_timer = timer_read32();
@@ -211,7 +211,7 @@ bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
 uint16_t search_for_regular_keypress(void)
 {
     uint16_t keycode = KC_NO;
-    for (int i = 1; i < key_buffer.context_len; ++i) {
+    for (int i = 1; i < key_buffer.size; ++i) {
         keycode = st_key_buffer_get_keycode(&key_buffer, i);
         if (!keycode || !(keycode & SPECIAL_KEY_TRIECODE_0)) {
             break;
@@ -282,17 +282,17 @@ void st_find_missed_rule(void)
     // first skipping past trailing spaces
     // (in case a rule has spaces at the end of its completion)
     int word_start_idx = 0;
-    while (word_start_idx < key_buffer.context_len &&
+    while (word_start_idx < key_buffer.size &&
            KEY_AT(word_start_idx) == KC_SPACE) {
         ++word_start_idx;
     }
     // if we reached the end of the buffer here,
     // it means it's filled wish spaces, so bail.
-    if (word_start_idx == key_buffer.context_len) {        
+    if (word_start_idx == key_buffer.size) {
         return;
     }
     // we've skipped trailing spaces, so now find the next space
-    while (word_start_idx < key_buffer.context_len &&
+    while (word_start_idx < key_buffer.size &&
            KEY_AT(word_start_idx) != KC_SPACE) {
         ++word_start_idx;
     }

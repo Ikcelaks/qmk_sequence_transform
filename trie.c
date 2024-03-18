@@ -170,15 +170,15 @@ bool st_trie_do_rule_searches(st_trie_t              *trie,
                               st_trie_rule_t         *rule)
 {
     // Convert word_start_index to reverse index
-    const int search_base_ridx = st_clamp(key_buffer->context_len - word_start_idx,
-                                          1, key_buffer->context_len - 1);
+    const int search_base_ridx = st_clamp(key_buffer->size - word_start_idx,
+                                          1, key_buffer->size - 1);
     st_trie_search_t search;
     search.trie = trie;
     search.key_buffer = key_buffer;
     search.result = rule;
     const int max_skip_levels = st_min(1 + trie->max_backspaces,
                                        SEQUENCE_TRANSFORM_RULE_SEARCH_MAX_SKIP);
-    for (int i = search_base_ridx; i < key_buffer->context_len; ++i) {
+    for (int i = search_base_ridx; i < key_buffer->size; ++i) {
         // For every base search_base_ridx, increase skip_levels until we find a match.
         // Each skip level allows for a rule trigger key or deleted char.
         for (search.skip_levels = 1; search.skip_levels <= max_skip_levels; ++search.skip_levels) {
@@ -313,7 +313,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     // Early return if potential transform doesn't reach end of search buffer
     const int search_base_ridx = search->search_end_ridx - search->skip_levels;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
-    if (transform_end_ridx != key_buffer->context_len) {
+    if (transform_end_ridx != key_buffer->size) {
         return false;
     }
     // If stack contains an un-expanded sequence, and this rule
