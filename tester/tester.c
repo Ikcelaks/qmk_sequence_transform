@@ -8,19 +8,15 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "utils.h"
+// fixme: rule search callback should just pass 2 strings,
+// instead of st_trie_rule_t, which creates unnecessary header depends
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
-#include "sequence_transform_data.h"
-#include "sequence_transform_test.h"
 #include "tester.h"
 #include "sim_output_buffer.h"
 #ifdef WIN32
 #include <windows.h>
-#endif
-
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
-#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
 //////////////////////////////////////////////////////////////////
@@ -35,16 +31,16 @@ static st_test_action_t actions[] = {
 };
 
 //////////////////////////////////////////////////////////////////////
-char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1] = {0};
-char missed_rule_transform[TRANSFORM_MAX_LEN + 1] = {0};
+char missed_rule_seq[128] = {0};
+char missed_rule_transform[128] = {0};
 // rule search callback
 // (overriden function)
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
 {
     missed_rule_seq[0] = 0;
     missed_rule_transform[0] = 0;
-    strncat(missed_rule_seq, rule->sequence, SEQUENCE_MAX_LENGTH);
-    strncat(missed_rule_transform, rule->transform, TRANSFORM_MAX_LEN);
+    strncat(missed_rule_seq, rule->sequence, sizeof(missed_rule_seq) - 1);
+    strncat(missed_rule_transform, rule->transform, sizeof(missed_rule_transform) - 1);
 }
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer

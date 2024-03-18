@@ -1,18 +1,16 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
-#include "keybuffer.h"
 #include "sequence_transform.h"
-#include "sequence_transform_data.h"
-#include "sequence_transform_test.h"
 #include "sim_output_buffer.h"
 #include "tester.h"
 
 //////////////////////////////////////////////////////////////////
 // compare the virtual output buffer state to the sim output buffer
+// FIXME: we should really be comparing keycodes instead of chars!
 bool compare_output(char *virtual_output, char *sim_output, int count)
 {
     for (int i = 0; i < count; i++) {
-        const char simc = sim_output[i] == ' ' ? st_wordbreak_ascii : sim_output[i];
+        const char simc = sim_output[i];
         const char virc = virtual_output[count - 1 - i];
         if (simc != virc) {
             return false;

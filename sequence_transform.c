@@ -391,7 +391,10 @@ uint8_t st_get_virtual_output(char *str, uint8_t count)
         if (!keycode) {
             break;
         }
-        str[i] = st_keycode_to_char(keycode);
+        // We don't want st_wordbreak_ascii here
+        // (doing the change here removes unnecessary depends in the tester)
+        // FIXME: we should really be comparing keycodes instead of chars!
+        str[i] = keycode == KC_SPACE ? ' ' : st_keycode_to_char(keycode);
     }
     str[i] = '\0';
     return i;
