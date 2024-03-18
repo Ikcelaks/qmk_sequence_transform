@@ -659,7 +659,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         '',
-        f'#define SEQUENCE_TOKEN_TRIECODE_0 {uint16_to_hex(KC_SEQ_TOKEN_0)}',
+        f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(KC_SEQ_TOKEN_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define TRANSFORM_MAX_LEN {len(max_transform)} // "{max_transform}"',
