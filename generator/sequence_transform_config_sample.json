@@ -7,5 +7,6 @@
     "separator_str": "⇒",
     "sequence_token_ascii_chars": "*@$#",
     "wordbreak_ascii": "^",
-    "quiet": true
+    "quiet": true,
+    "implicit_transform_leading_wordbreak": true
 }

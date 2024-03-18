@@ -161,7 +161,7 @@ def parse_file(
     duplicated_rules = []
     rules = []
 
-    for line_number, sequence, completion in file_lines:
+    for line_number, sequence, transform in file_lines:
         if sequence in sequence_set:
             duplicated_rules.append(
                 f'{err("line", line_number)}: '
@@ -181,7 +181,10 @@ def parse_file(
                 f'Sequence exceeds 127 chars: "{cyan(sequence)}"'
             )
 
-        rules.append((sequence, completion))
+        if (IMPLICIT_TRANSFORM_LEADING_WORDBREAK and sequence[0] == WORDBREAK_SYMBOL):
+            transform = WORDBREAK_SYMBOL + transform
+
+        rules.append((sequence, transform))
         sequence_set.add(sequence)
 
     if duplicated_rules:
@@ -249,9 +252,6 @@ def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[s
                 del expanded_sequence[-(match_backspaces + 1):]
                 expanded_sequence.extend(match_output)
                 # quiet_print(c, expanded_sequence)
-
-        if expanded_sequence and expanded_sequence[0] == wordbreak_symbol:
-            del expanded_sequence[0]
 
         target = action['TARGET']
 
@@ -603,8 +603,8 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
-    seq_dict = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
-    trie = make_sequence_trie(seq_dict, output_func_symbol_map)
+    seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
+    trie = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
     outputs = complete_sequence_trie(trie, WORDBREAK_SYMBOL)
     quiet_print(json.dumps(trie, indent=4))
 
@@ -616,24 +616,25 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
 
-    min_sequence = min(seq_dict, key=sequence_len)[0]
-    max_sequence = max(seq_dict, key=sequence_len)[0]
-    max_transform = max(seq_dict, key=transform_len)[1]
+    min_sequence = min(seq_tranform_list, key=sequence_len)[0]
+    max_sequence = max(seq_tranform_list, key=sequence_len)[0]
+    max_transform = max(seq_tranform_list, key=transform_len)[1]
 
     # Build the sequence_transform_data.h file.
-    transformations = []
+    transforms = []
     test_rule_c_sequences = []
     test_rule_c_transforms = []
 
-    for sequence, transformation in seq_dict:
+    for sequence, transform in seq_tranform_list:
         # Don't add rules with transformation functions to test header for now
-        if transformation[-1] not in output_func_symbol_map:
-            test_rule = create_test_rule_c_string(symbol_map, sequence, transformation)
+        if transform[-1] not in output_func_symbol_map:
+            transform_without_leading_wordbreak = transform[1:] if sequence[0] == WORDBREAK_SYMBOL else transform
+            test_rule = create_test_rule_c_string(symbol_map, sequence, transform_without_leading_wordbreak)
             test_rule_c_sequences.append(test_rule[0])
             test_rule_c_transforms.append(test_rule[1])
-        transformation = transformation.replace("\\", "\\ [escape]")
+        transform = transform.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
-        transformations.append(f'//    {sequence} -> {transformation}')
+        transforms.append(f'//    {sequence} -> {transform}')
 
     header_lines = [
         GPL2_HEADER_C_LIKE,
@@ -641,10 +642,10 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         '#pragma once',
     ]
 
-    tranformations_lines = [
+    tranforms_lines = [
         f'// Sequence Transformation dictionary with longest match semantics',
-        f'// Dictionary ({len(seq_dict)} entries):',
-        *transformations,
+        f'// Dictionary ({len(seq_tranform_list)} entries):',
+        *transforms,
     ]
 
     # token symbols stored as utf8 strings
@@ -699,7 +700,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         '',
         *trie_stats_lines,
         '',
-        *tranformations_lines,
+        *tranforms_lines,
         '',
         *trie_data_lines,
     ]
@@ -756,9 +757,10 @@ if __name__ == '__main__':
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
     except KeyError as e:
-        raise KeyError(f"Incorrect config! {e} key is missing.")
+        raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
     IS_QUIET = config.get("quiet", True)
+    IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
 
     if cli_args.quiet:
         IS_QUIET = True
