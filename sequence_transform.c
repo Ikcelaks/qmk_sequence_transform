@@ -71,7 +71,7 @@ static st_key_stack_t trie_stack = {
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
 static st_trie_t trie = {
-    DICTIONARY_SIZE,
+    SEQUENCE_TRIE_SIZE,
     sequence_transform_data,
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
@@ -98,14 +98,14 @@ st_cursor_t *st_get_cursor(void) { return &trie_cursor; }
 #endif
 
 /**
- * @brief determine if context_magic should process this keypress,
+ * @brief determine if sequence_transform should process this keypress,
  *        and remove any mods from keycode.
  *
  * @param keycode Keycode registered by matrix press, per keymap
  * @param record keyrecord_t structure
  * @param mods allow processing of mod status
- * @return true Allow context_magic
- * @return false Stop processing and escape from context_magic.
+ * @return true Allow sequence_transform
+ * @return false Stop processing and escape from sequence_transform
  */
 bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
     if (!record->event.pressed && QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
@@ -213,7 +213,7 @@ uint16_t search_for_regular_keypress(void)
     uint16_t keycode = KC_NO;
     for (int i = 1; i < key_buffer.size; ++i) {
         keycode = st_key_buffer_get_keycode(&key_buffer, i);
-        if (!keycode || !(keycode & SPECIAL_KEY_TRIECODE_0)) {
+        if (!keycode || !(keycode & SEQUENCE_TOKEN_TRIECODE_0)) {
             break;
         }
     }
@@ -424,7 +424,7 @@ bool st_perform() {
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start) {
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start) {
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
@@ -436,8 +436,8 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
     // If this is one of the special keycodes, convert to our internal trie code
-    if (keycode >= special_key_start && keycode < special_key_start + SEQUENCE_TRANSFORM_COUNT) {
-        keycode = keycode - special_key_start + SPECIAL_KEY_TRIECODE_0;
+    if (keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_TRIECODE_0) {
+        keycode = keycode - sequence_token_start + SEQUENCE_TOKEN_TRIECODE_0;
     }
     // keycode verification and extraction
     if (!st_process_check(&keycode, record, &mods))
@@ -464,7 +464,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     }
     // keycode buffer check
     switch (keycode) {
-        case SPECIAL_KEY_TRIECODE_0 ... SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT:
+        case SEQUENCE_TOKEN_TRIECODE_0 ... SEQUENCE_TOKEN_TRIECODE_0 + SEQUENCE_TOKEN_COUNT:
         case KC_A ... KC_0:
         case S(KC_1)... S(KC_0):
         case KC_MINUS ... KC_SLASH:

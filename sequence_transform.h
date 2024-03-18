@@ -19,7 +19,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start);
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule);
 void post_process_sequence_transform(void);
 uint16_t sequence_transform_past_keycode(int index);

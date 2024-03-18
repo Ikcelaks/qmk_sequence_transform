@@ -91,7 +91,7 @@ bool find_branch_offset(const st_trie_t *trie, uint16_t *offset, uint16_t code, 
  * @brief Find longest chain in trie matching the key_buffer. (recursive)
  *
  * @param trie   trie_t struct containing trie data/size
- * @param res    result containing payload for longest context match
+ * @param res    result containing payload for longest sequence match
  * @param offset current offset in trie data
  * @param depth  current depth in trie
  * @return       true if match found
@@ -235,8 +235,8 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         // inspect this payload to see if the rule would match
         st_trie_payload_t payload;
         st_get_payload_from_code(&payload, code, TDATA(trie, offset + 1));
-        // Make sure skip_levels matches 1 magic key + backspaces,
-        // and that removing those wouldn't leave us with an empty context
+        // Make sure skip_levels matches 1 sequence token key + backspaces,
+        // and that removing those wouldn't leave us with an empty buffer
         const int skips = 1 + payload.num_backspaces;
         if (search->skip_levels != skips || key_stack->size <= skips) {
             return false;

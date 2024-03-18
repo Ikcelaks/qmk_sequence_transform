@@ -57,7 +57,7 @@ KC_MINUS = 0x2D
 KC_SEMICOLON = 0x33
 KC_1 = 0x1E
 MOD_LSFT = 0x0200
-KC_MAGIC_0 = 0x0100
+KC_SEQ_TOKEN_0 = 0x0100
 TRIE_MATCH_BIT = 0x8000
 TRIE_BRANCH_BIT = 0x4000
 qmk_digits = digits[1:] + digits[0]
@@ -100,12 +100,12 @@ def err(*text: Any) -> str:
 
 
 ###############################################################################
-def map_range(start: int, chars: str) -> dict[str, int]:
-    return {char: start + i for i, char in enumerate(chars)}
+def map_range(start: int, symbols: str) -> dict[str, int]:
+    return {symbol: start + i for i, symbol in enumerate(symbols)}
 
 
 ###############################################################################
-def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
+def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]:
     return {
         **map_range(KC_SEMICOLON, ";'`,./"),
         **map_range(S(KC_SEMICOLON), ":\"~<>?"),
@@ -113,9 +113,9 @@ def generate_context_char_map(magic_chars, wordbreak_char) -> Dict[str, int]:
         **map_range(S(KC_MINUS), "_+\{\}|"),
         **map_range(KC_1, qmk_digits),
         **map_range(S(KC_1), "!@#$%^&*()"),
-        **map_range(KC_MAGIC_0, magic_chars),
+        **map_range(KC_SEQ_TOKEN_0, seq_tokens),
 
-        wordbreak_char: KC_SPC,  # "Word break" character.
+        wordbreak_symbol: KC_SPC,  # "Word break" symbol.
         **{chr(c): c + KC_A - ord('a') for c in range(ord('a'), ord('z') + 1)}
     }
 
@@ -129,24 +129,24 @@ def quiet_print(*args, **kwargs):
 
 
 ###############################################################################
-def generate_output_func_char_map(output_func_chars) -> Dict[str, int]:
-    if len(output_func_chars) > OUTPUT_FUNC_COUNT_MAX:
-        output_chars = str(len(output_func_chars))
+def generate_output_func_symbol_map(output_func_symbols) -> Dict[str, int]:
+    if len(output_func_symbols) > OUTPUT_FUNC_COUNT_MAX:
+        output_symbols_count_str = str(len(output_func_symbols))
 
         raise SystemExit(
-            f'{err()} More than {OUTPUT_FUNC_COUNT_MAX} ({cyan(output_chars)})'
-            f' output_func_chars were listed {output_func_chars}'
+            f'{err()} More than {OUTPUT_FUNC_COUNT_MAX} ({cyan(output_symbols_count_str)})'
+            f' output_func_symbols were listed {output_func_symbols}'
         )
 
     return dict([
-        (char, OUTPUT_FUNC_1 + i)
-        for i, char in enumerate(output_func_chars)
+        (symbol, OUTPUT_FUNC_1 + i)
+        for i, symbol in enumerate(output_func_symbols)
     ])
 
 
 ###############################################################################
 def parse_file(
-    file_name: str, char_map: Dict[str, int],
+    file_name: str, symbol_map: Dict[str, int],
     separator: str, comment: str
 ) -> List[Tuple[str, str]]:
     """Parses sequence dictionary file.
@@ -157,32 +157,32 @@ def parse_file(
     """
 
     file_lines = parse_file_lines(file_name, separator, comment)
-    context_set = set()
+    sequence_set = set()
     duplicated_rules = []
     rules = []
 
-    for line_number, context, completion in file_lines:
-        if context in context_set:
+    for line_number, sequence, completion in file_lines:
+        if sequence in sequence_set:
             duplicated_rules.append(
                 f'{err("line", line_number)}: '
-                f'Duplicate sequence: "{cyan(context)}"'
+                f'Duplicate sequence: "{cyan(sequence)}"'
             )
 
-        # Check that `context` is valid.
-        if not all([(c in char_map) for c in context[:-1]]):
+        # Check that `sequence` is valid.
+        if not all([(c in symbol_map) for c in sequence[:-1]]):
             raise SystemExit(
                 f'{err("line", line_number)}: '
-                f'sequence "{cyan(context)}" has invalid characters'
+                f'sequence "{cyan(sequence)}" has invalid characters'
             )
 
-        if len(context) > 127:
+        if len(sequence) > 127:
             raise SystemExit(
                 f'{err("line", line_number)}:'
-                f'Sequence exceeds 127 chars: "{cyan(context)}"'
+                f'Sequence exceeds 127 chars: "{cyan(sequence)}"'
             )
 
-        rules.append((context, completion))
-        context_set.add(context)
+        rules.append((sequence, completion))
+        sequence_set.add(sequence)
 
     if duplicated_rules:
         raise SystemExit("\n".join(duplicated_rules))
@@ -191,28 +191,28 @@ def parse_file(
 
 
 ###############################################################################
-def make_trie(
-    seq_dict: List[Tuple[str, str]],
-    output_func_char_map: Dict[str, int]
+def make_sequence_trie(
+    seq_list: List[Tuple[str, str]],
+    output_func_symbol_map: Dict[str, int]
 ) -> Dict[str, tuple[str, dict]]:
     """Makes a trie from the sequences, writing in reverse."""
     trie = {}
 
-    for context, correction in seq_dict:
+    for sequence, transform in seq_list:
         node = trie
 
-        if correction[-1] in output_func_char_map:
-            output_func = output_func_char_map[correction[-1]]
-            target = correction[:len(correction)-1]
+        if transform[-1] in output_func_symbol_map:
+            output_func = output_func_symbol_map[transform[-1]]
+            target = transform[:len(transform)-1]
 
         else:
             output_func = 0
-            target = correction
+            target = transform
 
-        for letter in context[::-1]:
+        for letter in sequence[::-1]:
             node = node.setdefault(letter, {})
 
-        node['MATCH'] = (context, {
+        node['MATCH'] = (sequence, {
             'TARGET': target,
             'RESULT': {
                 'BACKSPACES': -1,
@@ -225,49 +225,49 @@ def make_trie(
 
 
 ###############################################################################
-def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
+def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[str]:
     outputs = set()
 
-    def complete_node(context, completion):
+    def complete_node(sequence, action):
         nonlocal outputs
 
-        back_context = []
-        expanded_context = []
+        back_sequence = []
+        expanded_sequence = []
 
-        for c in context[:-1]:
-            back_context.append(c)
-            expanded_context.append(c)
-            match = get_trie_result(back_context)
+        for c in sequence[:-1]:
+            back_sequence.append(c)
+            expanded_sequence.append(c)
+            match = get_trie_result(back_sequence)
 
             if not match:
-                match = get_trie_result(expanded_context)
+                match = get_trie_result(expanded_sequence)
 
             if match:
                 match_backspaces = match['RESULT']['BACKSPACES']
                 match_output = match['RESULT']['OUTPUT']
 
-                del expanded_context[-(match_backspaces + 1):]
-                expanded_context.extend(match_output)
-                # quiet_print(c, expanded_context)
+                del expanded_sequence[-(match_backspaces + 1):]
+                expanded_sequence.extend(match_output)
+                # quiet_print(c, expanded_sequence)
 
-        if expanded_context and expanded_context[0] == wordbreak_char:
-            del expanded_context[0]
+        if expanded_sequence and expanded_sequence[0] == wordbreak_symbol:
+            del expanded_sequence[0]
 
-        target = completion['TARGET']
+        target = action['TARGET']
 
         i = 0  # Make the autocorrection data for this entry and serialize it.
         while (
-            i < min(len(expanded_context), len(target)) and
-            expanded_context[i] == target[i]
+            i < min(len(expanded_sequence), len(target)) and
+            expanded_sequence[i] == target[i]
         ):
             i += 1
 
-        backspaces = len(expanded_context) - i
-        output = target[i:].replace(wordbreak_char, " ")
+        backspaces = len(expanded_sequence) - i
+        output = target[i:].replace(wordbreak_symbol, " ")
 
         outputs.add(output)
-        completion['RESULT']['BACKSPACES'] = backspaces
-        completion['RESULT']['OUTPUT'] = output
+        action['RESULT']['BACKSPACES'] = backspaces
+        action['RESULT']['OUTPUT'] = output
 
     def get_trie_result(buffer: List[str]) -> dict[str, dict[str]]:
         longest_match = {}
@@ -281,22 +281,22 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
             trienode = trienode[c]
 
             if 'MATCH' in trienode:
-                context, completion = trienode['MATCH']
+                sequence, action = trienode['MATCH']
 
-                if completion['RESULT']['BACKSPACES'] == -1:
-                    complete_node(context, completion)
+                if action['RESULT']['BACKSPACES'] == -1:
+                    complete_node(sequence, action)
 
-                longest_match = completion
+                longest_match = action
 
         return longest_match
 
     def traverse_trienode(trinode: Dict[str, Any]):
         for key, value in trinode.items():
             if key == 'MATCH':
-                context, completion = value
+                sequence, action = value
 
-                if completion['RESULT']['BACKSPACES'] == -1:
-                    complete_node(context, completion)
+                if action['RESULT']['BACKSPACES'] == -1:
+                    complete_node(sequence, action)
             else:
                 traverse_trienode(value)
 
@@ -306,7 +306,7 @@ def complete_trie(trie: Dict[str, Any], wordbreak_char: str) -> set[str]:
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
-    valid_tokens = f"[\w{MAGIC_CHARS}{WORDBREAK_CHAR}]"
+    valid_tokens = f"[\w{SEQ_TOKEN_SYMBOLS}{WORDBREAK_SYMBOL}]"
 
     square_brackets_group = re.findall(fr"\[({valid_tokens}+)]", pattern)
     if square_brackets_group:
@@ -352,7 +352,7 @@ def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, st
 def parse_file_lines(
     file_name: str, separator: str, comment: str
 ) -> Iterator[Tuple[int, str, str]]:
-    """Parses lines read from `file_name` into context-correction pairs."""
+    """Parses lines read from `file_name` into sequence-transform pairs."""
     with open(file_name, 'rt', encoding="utf-8") as file:
         lines = file.readlines()
 
@@ -384,8 +384,8 @@ def parse_file_lines(
                     f'{err(line_number)}: Invalid syntax: "{red(line)}"'
                 )
 
-            for context, correction in parse_tokens(tokens, in_regex_zone):
-                yield line_number, context, correction
+            for sequence, transform in parse_tokens(tokens, in_regex_zone):
+                yield line_number, sequence, transform
 
 
 ###############################################################################
@@ -422,8 +422,8 @@ def serialize_outputs(
 
 
 ###############################################################################
-def serialize_trie(
-    char_map: Dict[str, int], trie: Dict[str, Any],
+def serialize_sequence_trie(
+    symbol_map: Dict[str, int], trie: Dict[str, Any],
     completions_map: Dict[str, int]
 ) -> List[int]:
     """Serializes trie in a form readable by the C code.
@@ -437,11 +437,11 @@ def serialize_trie(
     def traverse(trie_node):
         global max_backspaces
         if 'MATCH' in trie_node:  # Handle a MATCH trie node.
-            sequence, completion = trie_node['MATCH']
-            backspaces = completion['RESULT']['BACKSPACES']
+            sequence, action = trie_node['MATCH']
+            backspaces = action['RESULT']['BACKSPACES']
             max_backspaces = max(max_backspaces, backspaces)
-            func = completion['RESULT']['FUNC']
-            output = completion['RESULT']['OUTPUT']
+            func = action['RESULT']['FUNC']
+            output = action['RESULT']['OUTPUT']
             output_index = completions_map[output]
 
             # 2 bits (16,15) are used for node type
@@ -512,14 +512,14 @@ def serialize_trie(
             return data
 
         elif len(node['links']) == 1:  # Handle a chain table entry.
-            return data + [char_map[c] for c in node['chars']] + [0]
+            return data + [symbol_map[c] for c in node['chars']] + [0]
 
         else:  # Handle a branch table entry.
             links = []
 
             for c, link in zip(node['chars'], node['links']):
                 links += [
-                    char_map[c] | (0 if links else TRIE_BRANCH_BIT)
+                    symbol_map[c] | (0 if links else TRIE_BRANCH_BIT)
                 ] + encode_link(link)
 
             return data + links + [0]
@@ -574,7 +574,7 @@ def uint16_to_hex(b: int) -> str:
 
 ###############################################################################
 def create_test_rule_c_string(
-    char_map: Dict[str, int],
+    symbol_map: Dict[str, int],
     sequence: str,
     transform: str
 ) -> Tuple[str, str]:
@@ -586,13 +586,13 @@ def create_test_rule_c_string(
     # we don't want any utf8 symbols in transformation string here
     transform_dict = {
         "\\": "\\\\",
-        WORDBREAK_CHAR: " ",
-        **{sym: char for sym, char in zip(MAGIC_CHARS, SEQ_TOKENS_ASCII)}
+        WORDBREAK_SYMBOL: " ",
+        **{sym: char for sym, char in zip(SEQ_TOKEN_SYMBOLS, SEQ_TOKENS_ASCII)}
     }
     for (i, j) in transform_dict.items():
         transform = transform.replace(i, j)
     trans_c_str = f'    "{transform}",'
-    seq_ints = [char_map[c] for c in sequence] + [0]
+    seq_ints = [symbol_map[c] for c in sequence] + [0]
     seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
     seq_c_str   = f'    (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }},'
     return (seq_c_str, trans_c_str)
@@ -600,18 +600,18 @@ def create_test_rule_c_string(
 
 ###############################################################################
 def generate_sequence_transform_data(data_header_file, test_header_file):
-    char_map = generate_context_char_map(MAGIC_CHARS, WORDBREAK_CHAR)
-    output_func_char_map = generate_output_func_char_map(OUTPUT_FUNC_CHARS)
+    symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
+    output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
-    seq_dict = parse_file(RULES_FILE, char_map, SEP_STR, COMMENT_STR)
-    trie = make_trie(seq_dict, output_func_char_map)
-    outputs = complete_trie(trie, WORDBREAK_CHAR)
+    seq_dict = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
+    trie = make_sequence_trie(seq_dict, output_func_symbol_map)
+    outputs = complete_sequence_trie(trie, WORDBREAK_SYMBOL)
     quiet_print(json.dumps(trie, indent=4))
 
     s_outputs = serialize_outputs(outputs)
     completions_data, completions_map, max_completion_len = s_outputs
 
-    trie_data = serialize_trie(char_map, trie, completions_map)
+    trie_data = serialize_sequence_trie(symbol_map, trie, completions_map)
 
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
@@ -627,8 +627,8 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
-        if transformation[-1] not in output_func_char_map:
-            test_rule = create_test_rule_c_string(char_map, sequence, transformation)
+        if transformation[-1] not in output_func_symbol_map:
+            test_rule = create_test_rule_c_string(symbol_map, sequence, transformation)
             test_rule_c_sequences.append(test_rule[0])
             test_rule_c_transforms.append(test_rule[1])
         transformation = transformation.replace("\\", "\\ [escape]")
@@ -648,9 +648,9 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
 
     # token symbols stored as utf8 strings
-    sym_array_str = ", ".join(map(lambda c: f'"{c}"', MAGIC_CHARS))
+    sym_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_TOKEN_SYMBOLS))
     st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
-    st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_CHAR}";'
+    st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_SYMBOL}";'
     # ascii versions
     char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKENS_ASCII))
     st_seq_tokens_ascii = f'static const char st_seq_tokens_ascii[] = {{ {char_array_str} }};'
@@ -659,15 +659,15 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         '',
-        f'#define SPECIAL_KEY_TRIECODE_0 {uint16_to_hex(KC_MAGIC_0)}',
+        f'#define SEQUENCE_TOKEN_TRIECODE_0 {uint16_to_hex(KC_SEQ_TOKEN_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define TRANSFORM_MAX_LEN {len(max_transform)} // "{max_transform}"',
         f'#define COMPLETION_MAX_LENGTH {max_completion_len}',
         f'#define MAX_BACKSPACES {max_backspaces}',
-        f'#define DICTIONARY_SIZE {len(trie_data)}',
+        f'#define SEQUENCE_TRIE_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
-        f'#define SEQUENCE_TRANSFORM_COUNT {len(MAGIC_CHARS)}',
+        f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
         '',
         st_seq_tokens_ascii,
         st_wordbreak_ascii
@@ -675,7 +675,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     trie_data_lines = [
         'static const uint16_t '
-        'sequence_transform_data[DICTIONARY_SIZE] PROGMEM = {',
+        'sequence_transform_data[SEQUENCE_TRIE_SIZE] PROGMEM = {',
 
         textwrap.fill(
             '    %s' % (', '.join(map(uint16_to_hex, trie_data))),
@@ -747,11 +747,11 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        SEQ_TOKENS_ASCII = config['seq_tokens_ascii']
+        SEQ_TOKENS_ASCII = config['sequence_tokens_ascii']
         WORDBREAK_ASCII = config['wordbreak_ascii']
-        MAGIC_CHARS = config['magic_chars']
-        OUTPUT_FUNC_CHARS = config['output_func_chars']
-        WORDBREAK_CHAR = config['wordbreak_char']
+        SEQ_TOKEN_SYMBOLS = config['sequence_token_symbols']
+        OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
+        WORDBREAK_SYMBOL = config['wordbreak_symbol']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']

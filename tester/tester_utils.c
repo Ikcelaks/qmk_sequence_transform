@@ -13,7 +13,7 @@
 const char *st_get_seq_token_symbol(uint16_t keycode)
 {
     if (st_is_seq_token_keycode(keycode)) {
-        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
+        return st_seq_tokens[keycode - SEQUENCE_TOKEN_TRIECODE_0];
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_token;
     }
@@ -46,7 +46,7 @@ uint16_t ascii_to_keycode(char c)
 {
     for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
         if (c == st_seq_tokens_ascii[i]) {
-            return SPECIAL_KEY_TRIECODE_0 + i;
+            return SEQUENCE_TOKEN_TRIECODE_0 + i;
         }
     }
     if (c == st_wordbreak_ascii) {
