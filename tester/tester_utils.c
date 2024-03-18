@@ -1,15 +1,11 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "tester_utils.h"
+#include "utils.h"
 // FIXME: should get the token symbols/ascii directly from trie struct,
 // and not have to include the generated headers here
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
-#include "utils.h"
-
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
-#  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // if keycode is a token that can be translated back to its user symbol,
