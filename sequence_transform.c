@@ -420,7 +420,7 @@ bool st_perform() {
  *
  * @param keycode Keycode registered by matrix press, per keymap
  * @param record keyrecord_t structure
- * @param special_key_start starting keycode index for special keys used in rules
+ * @param sequence_token_start starting keycode index for sequence tokens used in rules
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
@@ -435,7 +435,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    // If this is one of the special keycodes, convert to our internal trie code
+    // If this is one of the sequence token keycodes, convert to our internal trie code
     if (keycode >= sequence_token_start && keycode < sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0) {
         keycode = keycode - sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0;
     }

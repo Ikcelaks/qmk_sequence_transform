@@ -255,7 +255,7 @@ def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[s
 
         target = action['TARGET']
 
-        i = 0  # Make the autocorrection data for this entry and serialize it.
+        i = 0
         while (
             i < min(len(expanded_sequence), len(target)) and
             expanded_sequence[i] == target[i]
