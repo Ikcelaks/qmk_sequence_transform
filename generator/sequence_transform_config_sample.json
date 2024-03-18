@@ -1,0 +1,11 @@
+{
+    "rules_file_name": "sequence_transform_dict.txt",
+    "sequence_token_symbols": "👆👍★✪",
+    "wordbreak_symbol": "⎵",
+    "output_func_symbols": "↻⇑",
+    "comment_str": "#",
+    "separator_str": "⇒",
+    "sequence_tokens_ascii": "*@$#",
+    "wordbreak_ascii": "^",
+    "quiet": false
+}
