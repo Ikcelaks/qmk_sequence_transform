@@ -1,7 +1,8 @@
 #pragma once
 
-extern char missed_rule_seq[SEQUENCE_MAX_LENGTH + 1];
-extern char missed_rule_transform[TRANSFORM_MAX_LEN + 1];
+// Strings used to store rule search result from callback
+extern char missed_rule_seq[128];
+extern char missed_rule_transform[128];
 
 typedef enum {
     TEST_FAIL,
@@ -15,6 +16,11 @@ typedef enum {
 
 #define RES_FAIL(...) { res->code = TEST_FAIL; \
     snprintf(res->message, sizeof(res->message), __VA_ARGS__); }
+
+typedef struct {
+    const uint16_t * const  seq_keycodes;
+    const char * const      transform_str;    
+} st_test_rule_t;
 
 typedef struct {
     st_result_code_t    code;

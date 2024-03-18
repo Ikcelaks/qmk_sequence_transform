@@ -1,16 +1,18 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "tester_utils.h"
+#include "utils.h"
+// FIXME: should get the token symbols/ascii directly from trie struct,
+// and not have to include the generated headers here
 #include "sequence_transform_data.h"
 #include "sequence_transform_test.h"
-#include "utils.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // if keycode is a token that can be translated back to its user symbol,
 // returns pointer to it, otherwise returns 0
 const char *st_get_seq_token_symbol(uint16_t keycode)
 {
-    if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
+    if (st_is_seq_token_keycode(keycode)) {
         return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
     } else if (keycode == KC_SPACE) {
         return st_wordbreak_token;

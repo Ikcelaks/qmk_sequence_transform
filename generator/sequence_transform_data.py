@@ -577,9 +577,11 @@ def create_test_rule_c_string(
     char_map: Dict[str, int],
     sequence: str,
     transform: str
-) -> str:
-    """ returns a string with the following format:
-        { "transform", (uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0} },
+) -> Tuple[str, str]:
+    """ returns a pair of strings filled with C definitions
+        transform gets cleaned up but stays a string (for now),
+        sequence gets converted to array of uint16_t
+        ex: "(uint16_t[4]){ 0x1234, 0x1234, 0x1234, 0},"
     """
     # we don't want any utf8 symbols in transformation string here
     transform_dict = {
@@ -589,10 +591,11 @@ def create_test_rule_c_string(
     }
     for (i, j) in transform_dict.items():
         transform = transform.replace(i, j)
+    trans_c_str = f'    "{transform}",'
     seq_ints = [char_map[c] for c in sequence] + [0]
     seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
-    res = f'    {{ "{transform}", (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }} }},'
-    return res
+    seq_c_str   = f'    (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }},'
+    return (seq_c_str, trans_c_str)
 
 
 ###############################################################################
@@ -619,13 +622,15 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     # Build the sequence_transform_data.h file.
     transformations = []
-    test_rules_c_strings = []
+    test_rule_c_sequences = []
+    test_rule_c_transforms = []
 
     for sequence, transformation in seq_dict:
         # Don't add rules with transformation functions to test header for now
         if transformation[-1] not in output_func_char_map:
             test_rule = create_test_rule_c_string(char_map, sequence, transformation)
-            test_rules_c_strings.append(test_rule)
+            test_rule_c_sequences.append(test_rule[0])
+            test_rule_c_transforms.append(test_rule[1])
         transformation = transformation.replace("\\", "\\ [escape]")
         sequence = f"{sequence:<{len(max_sequence)}}"
         transformations.append(f'//    {sequence} -> {transformation}')
@@ -708,14 +713,14 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         st_seq_tokens,
         st_wordbreak_token,
         '',
-        'typedef struct {',
-        '   const char * const      transform_str;',
-        '   const uint16_t * const  seq_keycodes;',
-        '} st_test_rule_t;',
+        'static const uint16_t *st_test_sequences[] = {',
+        *test_rule_c_sequences,
+        '    0',
+        '};',
         '',
-        'static const st_test_rule_t st_test_rules[] = {',
-        *test_rules_c_strings,
-        '    { 0, 0 }',
+        'static const char *st_test_transforms[] = {',
+        *test_rule_c_transforms,
+        '    0',
         '};'
     ]
     with open(test_header_file, "w", encoding="utf-8") as file:
