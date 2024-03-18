@@ -10,9 +10,9 @@ FILE_PATH = './rule_usage_log.csv'
 @dataclass
 class Rule:
     _: str
-    context: str
+    sequence: str
     _backspace_count: str
-    special_key: str
+    trigger_key: str
     completion: str
     entry_count: int
     collection: "RuleCollection" = None
@@ -22,17 +22,17 @@ class Rule:
         return int(self._backspace_count)
 
     def __repr__(self) -> str:
-        completion = f"{self.context[:-self.backspace_count]}{self.completion}"
-        context = f"{self.context}{self.special_key}"
+        completion = f"{self.sequence[:-self.backspace_count]}{self.completion}"
+        sequence = f"{self.sequence}{self.trigger_key}"
 
         count_offset = self.collection.max_completion_len - len(completion) + 1
         formatted_completion = f"{completion}{' ':>{count_offset}}"
 
-        context_offset = self.collection.max_context_len + 1
-        formatted_context = f"{context:<{context_offset}}"
+        sequence_offset = self.collection.max_sequence_len + 1
+        formatted_sequence = f"{sequence:<{sequence_offset}}"
 
         return (
-            f"{formatted_context} -> {formatted_completion}"
+            f"{formatted_sequence} -> {formatted_completion}"
             f"    : {self.entry_count}"
         )
 
@@ -46,13 +46,13 @@ class RuleCollection:
             rule.collection = self
 
     @property
-    def max_context_len(self) -> int:
-        return max(map(len, [rule.context for rule in self.rules]))
+    def max_sequence_len(self) -> int:
+        return max(map(len, [rule.sequence for rule in self.rules]))
 
     @property
     def max_completion_len(self) -> int:
         return max(map(len, [
-            rule.context[:-rule.backspace_count] + rule.completion
+            rule.sequence[:-rule.backspace_count] + rule.completion
             for rule in self.rules
         ]))
 

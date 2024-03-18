@@ -71,7 +71,7 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
         // entire buffer is full of backspaces such that no valid
         // output key exists in the buffer!
         // Set the cursor_pos to the `end` position and return false
-        cursor->cursor_pos.index = cursor->buffer->context_len;
+        cursor->cursor_pos.index = cursor->buffer->size;
         cursor->cursor_pos.sub_index = 0;
         return false;
     }
@@ -126,7 +126,7 @@ st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_at_end(const st_cursor_t *cursor)
 {
-    return cursor->cursor_pos.index >= cursor->buffer->context_len;
+    return cursor->cursor_pos.index >= cursor->buffer->size;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
@@ -136,7 +136,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         cursor->cache_valid = false;
         if (st_cursor_at_end(cursor)) {
             // leave `index` at the End position
-            cursor->cursor_pos.index = cursor->buffer->context_len;
+            cursor->cursor_pos.index = cursor->buffer->size;
             return false;
         }
         ++cursor->cursor_pos.segment_len;
@@ -196,7 +196,7 @@ void st_cursor_print(st_cursor_t *cursor)
         uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
         st_cursor_next(cursor);
     }
-    uprintf("| (%d:%d)\n", cursor->buffer->context_len, cursor->cursor_pos.segment_len);
+    uprintf("| (%d:%d)\n", cursor->buffer->size, cursor->cursor_pos.segment_len);
     st_cursor_restore(cursor, &cursor_pos);
 }
 //////////////////////////////////////////////////////////////////

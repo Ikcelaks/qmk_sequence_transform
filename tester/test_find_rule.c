@@ -13,7 +13,7 @@
 // KC_SPACE -> ' ' (instead of st_wordbreak_ascii)
 void key_buffer_to_space_str(const st_key_buffer_t *buf, char *str)
 {
-    const int len = buf->context_len;
+    const int len = buf->size;
     for (int i = 0; i < len; ++i) {
         const uint16_t key = KEY_AT(len - i - 1);
         *str++ = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
@@ -23,7 +23,7 @@ void key_buffer_to_space_str(const st_key_buffer_t *buf, char *str)
 //////////////////////////////////////////////////////////////////////
 bool buf_needs_expanding(st_key_buffer_t *buf)
 {
-    for (int i = 1; i < buf->context_len; ++i) {
+    for (int i = 1; i < buf->size; ++i) {
         const uint16_t key = KEY_AT(i);
         if (st_is_seq_token_keycode(key)) {
             return true;
@@ -38,7 +38,7 @@ bool buf_needs_expanding(st_key_buffer_t *buf)
 // that will be tested.
 // returns false if rule is untestable, true otherwise
 bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transform)
-{    
+{
     st_key_buffer_t *buf = st_get_key_buffer();
     // send input rule seq so we can get output transform to test
     sim_st_perform(rule->seq_keycodes);
@@ -47,15 +47,15 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     if (!buf_needs_expanding(buf)) {
         // 'normal' rule, so we can use the transform as is
         chained_transform[0] = 0;
-        strncat(chained_transform, rule->transform_str, 255);        
+        strncat(chained_transform, rule->transform_str, 255);
         // send the output into input buffer
         // to simulate user typing it directly
-        buf->context_len = 0;
+        buf->size = 0;
         char *output = sim_output_get(false);
         for (char c = *output; c; c = *++output) {
             const uint16_t key = ascii_to_keycode(c);
             st_key_buffer_push(buf, key);
-        }        
+        }
         return true;
     }
     // Rule contains a sequence token before the end so
@@ -84,7 +84,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     //printf("trans_prefix: %s\n", trans_prefix);
     if (!strstr(rule->transform_str, trans_prefix)) {
         // If trans_prefix is not in transform_str,
-        // this is an untestable rule. 
+        // this is an untestable rule.
         return false;
     }
     // output now contains trans_prefix (develop)
@@ -133,7 +133,7 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
     // from this new input buffer, find missed rule
     missed_rule_seq[0] = 0;
     missed_rule_transform[0] = 0;
-    st_find_missed_rule();    
+    st_find_missed_rule();
     // Check if found rule matches ours
     keycodes_to_ascii_str(rule->seq_keycodes, seq_ascii);
     const int missed_rule_seq_len = strlen(missed_rule_seq);

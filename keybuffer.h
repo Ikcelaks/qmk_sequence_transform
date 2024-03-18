@@ -21,10 +21,10 @@ typedef struct
 
 typedef struct
 {
-    st_key_action_t * const data;        // array of keycodes
-    const int               size;        // buffer size (TODO: rename to capacity)
-    int                     context_len; // number of current keys in buffer (TODO: rename to size)
-    int                     cur_pos;     // current head for circular access
+    st_key_action_t * const data;       // array of keycodes
+    const int               capacity;   // buffer size
+    int                     size;       // number of current keys in buffer
+    int                     head;       // current head for circular access
 } st_key_buffer_t;
 
 st_key_action_t         *st_key_buffer_get(const st_key_buffer_t *buf, int index);
