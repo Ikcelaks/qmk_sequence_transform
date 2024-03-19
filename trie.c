@@ -131,7 +131,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
             st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d) %d\n",
-                cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
+                cursor->pos.index, cursor->pos.sub_index, cursor->pos.segment_len);
             st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d) %d\n",
                 longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
             // record this if it is the longest match

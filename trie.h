@@ -53,7 +53,7 @@ typedef struct
 {
     const st_key_buffer_t * const buffer;           // input buffer this cursor traverses
     const st_trie_t * const       trie;             // trie used for traversing virtual output buffer
-    st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
+    st_cursor_pos_t               pos;              // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
 } st_cursor_t;
