@@ -51,7 +51,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
         // send the output into input buffer
         // to simulate user typing it directly
         buf->size = 0;
-        char *output = sim_output_get(false);
+        const char *output = sim_output_get(false);
         for (char c = *output; c; c = *++output) {
             const uint16_t key = ascii_to_keycode(c);
             st_key_buffer_push(buf, key);
@@ -78,7 +78,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
         //printf("empty seq_prefix!\n");
         return false;
     }
-    char *trans_prefix = sim_output_get(true);
+    const char *trans_prefix = sim_output_get(true);
     int   out_len = strlen(trans_prefix);
     int   rule_trans_len = strlen(rule->transform_str);
     //printf("trans_prefix: %s\n", trans_prefix);

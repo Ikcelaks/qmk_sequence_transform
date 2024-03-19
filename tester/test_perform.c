@@ -28,7 +28,7 @@ void test_perform(const st_test_rule_t *rule, st_test_result_t *res)
 {
     sim_st_perform(rule->seq_keycodes);
     // Ignore spaces at the start of output
-    char *output = sim_output_get(true);
+    const char *output = sim_output_get(true);
     // Check if our output buffer matches the expected transform string
     if (strcmp(output, rule->transform_str)) {
         RES_FAIL("output: %s", output);

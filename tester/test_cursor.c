@@ -12,9 +12,9 @@ void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
     for (int i = 0; i < 200; ++i) {
         st_cursor_next(cursor);
     }
-    if (cursor->cursor_pos.index != cursor->buffer->size) {
+    if (cursor->pos.index != cursor->buffer->size) {
         RES_FAIL("input cursor didn't stop at end: cursor index %d; buffer size: %d",
-                 cursor->cursor_pos.index, cursor->buffer->size);
+                 cursor->pos.index, cursor->buffer->size);
         return;
     }
     if (st_cursor_init(cursor, 0, true)) {
@@ -22,8 +22,8 @@ void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
             st_cursor_next(cursor);
         }
     }
-    if (cursor->cursor_pos.index != cursor->buffer->size) {
+    if (cursor->pos.index != cursor->buffer->size) {
         RES_FAIL("output cursor didn't stop at end: cursor index %d; buffer size: %d",
-                 cursor->cursor_pos.index, cursor->buffer->size);
+                 cursor->pos.index, cursor->buffer->size);
     }
 }
