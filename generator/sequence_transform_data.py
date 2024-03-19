@@ -744,7 +744,7 @@ if __name__ == '__main__':
         help="config file path", default="../../sequence_transform_config.json"
     )
 
-    parser.add_argument("-q", "--quiet", action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true", default=False)
     cli_args = parser.parse_args()
 
     THIS_FOLDER = Path(__file__).parent
@@ -755,21 +755,18 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        SEQ_TOKEN_ASCII_CHARS = config['sequence_token_ascii_chars']
-        WORDBREAK_ASCII = config['wordbreak_ascii']
-        SEQ_TOKEN_SYMBOLS = config['sequence_token_symbols']
+        SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
+        WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
-        WORDBREAK_SYMBOL = config['wordbreak_symbol']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
-    IS_QUIET = config.get("quiet", True)
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
+    SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
+    WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
 
-    if cli_args.quiet:
-        IS_QUIET = True
-
+    IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)

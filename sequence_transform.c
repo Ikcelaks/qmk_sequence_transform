@@ -246,9 +246,9 @@ void log_rule(const st_trie_search_result_t *res, const char *completion_str) {
     const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
     // The cursor can't be empty here even if it is as output, because we know it matched a rule
     st_cursor_init(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output);
-    st_cursor_push_to_stack(&trie_cursor, prev_seq_len);
+    st_cursor_push_to_stack(&trie_cursor, &trie_stack, prev_seq_len);
     char seq_str[SEQUENCE_MAX_LENGTH + 1];
-    st_key_stack_to_str(trie.key_stack, seq_str);
+    st_key_stack_to_str(&trie_stack, seq_str);
 
     uprintf("st_rule,%s,%d,%c,", seq_str, res->trie_payload.num_backspaces, st_keycode_to_char(rule_trigger_keycode));
 
