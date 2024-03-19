@@ -233,9 +233,7 @@ void st_handle_repeat_key(void)
         st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
         st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        // I'm sending a dummy value to st_triecode_to_keycode, because the last_regular_keypress
-        // Cannot be a sequence token. We should probably make a cleaner way to handle this
-        st_send_key(st_triecode_to_keycode(last_regular_keypress, 0x7E40));
+        st_send_key(st_char_to_keycode(last_regular_keypress));
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
