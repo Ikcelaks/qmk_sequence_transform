@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
 {
-    st_trie_payload_t *action = st_cursor_get_action(cursor);
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
     if (cursor->cursor_pos.sub_index < action->completion_len) {
         // current sub-index is valid; no need to advance
         return true;
@@ -32,7 +32,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
             return false;
         }
         cursor->cache_valid = false;
-        st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
+        const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
         // Below is an assert that should be made
         // if (!keyaction) {
         //     // We reached the end without finding the next output key
@@ -102,13 +102,13 @@ uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
 // DO NOT USE externally when cursor is initialized to act
 // as a virtual output. Behavior is not stable in the presence
 // of `st_cursor_get_keycode` in virtual output mode
-st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
+const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 {
     st_trie_payload_t *action = &cursor->cached_action;
     if (cursor->cache_valid) {
         return action;
     }
-    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
     if (!keyaction) {
         return NULL;
     }
@@ -143,7 +143,7 @@ bool st_cursor_next(st_cursor_t *cursor)
         return true;
     }
     // Continue processing if simulating output buffer
-    st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->cursor_pos.index);
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
     if (!keyaction) {
         return false;
     }
@@ -200,15 +200,17 @@ void st_cursor_print(st_cursor_t *cursor)
     st_cursor_restore(cursor, &cursor_pos);
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_push_to_stack(st_cursor_t *cursor, int count)
+bool st_cursor_push_to_stack(st_cursor_t *cursor,
+                             st_key_stack_t *key_stack,
+                             int count)
 {
-    cursor->trie->key_stack->size = 0;
+    key_stack->size = 0;
     for (; count > 0; --count, st_cursor_next(cursor)) {
         const uint16_t keycode = st_cursor_get_keycode(cursor);
         if (!keycode) {
             return false;
         }
-        st_key_stack_push(cursor->trie->key_stack, keycode);
+        st_key_stack_push(key_stack, keycode);
     }
     return true;
 }

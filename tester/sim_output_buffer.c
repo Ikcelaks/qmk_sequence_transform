@@ -31,7 +31,7 @@ void sim_output_pop(int n)
     sim_output_buffer[sim_output_buffer_size] = 0;
 }
 //////////////////////////////////////////////////////////////////
-char *sim_output_get(bool trim_spaces)
+const char *sim_output_get(bool trim_spaces)
 {
     if (!trim_spaces) {
         return sim_output_buffer;
