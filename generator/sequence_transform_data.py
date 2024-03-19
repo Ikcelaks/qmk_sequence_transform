@@ -181,7 +181,7 @@ def parse_file(
                 f'Sequence exceeds 127 chars: "{cyan(sequence)}"'
             )
 
-        if (IMPLICIT_TRANSFORM_LEADING_WORDBREAK and sequence[0] == WORDBREAK_SYMBOL):
+        if IMPLICIT_TRANSFORM_LEADING_WORDBREAK and sequence.startswith(WORDBREAK_SYMBOL):
             transform = WORDBREAK_SYMBOL + transform
 
         rules.append((sequence, transform))
@@ -595,7 +595,7 @@ def create_test_rule_c_string(
     seq_ints = [symbol_map[c] for c in sequence] + [0]
     seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
     seq_c_str   = f'    (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }},'
-    return (seq_c_str, trans_c_str)
+    return seq_c_str, trans_c_str
 
 
 ###############################################################################
@@ -628,7 +628,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     for sequence, transform in seq_tranform_list:
         # Don't add rules with transformation functions to test header for now
         if transform[-1] not in output_func_symbol_map:
-            transform_without_leading_wordbreak = transform[1:] if sequence[0] == WORDBREAK_SYMBOL else transform
+            transform_without_leading_wordbreak = transform[1:] if sequence.startswith(WORDBREAK_SYMBOL) else transform
             test_rule = create_test_rule_c_string(symbol_map, sequence, transform_without_leading_wordbreak)
             test_rule_c_sequences.append(test_rule[0])
             test_rule_c_transforms.append(test_rule[1])
