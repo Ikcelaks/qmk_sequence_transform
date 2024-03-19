@@ -57,7 +57,7 @@ void tap_code16(uint16_t keycode)
             sim_output_push(' ');
             break;
         default:
-            sim_output_push(st_keycode_to_char(keycode));
+            sim_output_push(st_triecode_to_char(st_keycode_to_triecode(keycode, TEST_KC_SEQ_TOKEN_0)));
     }
 }
 //////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ void print_help(void)
     printf("     ex: -t \"101\" would only run tests #1 and #3.\n");
     printf("     Available tests:\n");
     print_available_tests();
-    puts("");    
+    puts("");
     printf("  -d enable debug prints for <feature>.\n");
     printf("     Available features:\n");
     const char **dflags = st_debug_get_flag_names();

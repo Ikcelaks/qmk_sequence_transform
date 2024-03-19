@@ -21,7 +21,7 @@ bool compare_output(char *virtual_output, const char *sim_output, int count)
 //////////////////////////////////////////////////////////////////////
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    sim_st_perform(rule->seq_keycodes);
+    sim_st_perform(rule->seq_triecodes);
     const char *sim_output = sim_output_get(false);
     const int sim_len = sim_output_get_size();
     char virtual_output[256] = {0};

@@ -1,6 +1,8 @@
+#include "keycodes.h"
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "sequence_transform.h"
+#include "utils.h"
 #include "tester_utils.h"
 #include "tester.h"
 #include "sim_output_buffer.h"
@@ -30,7 +32,7 @@ int test_ascii_string(const st_test_options_t *options)
             continue;
         }
         // send they key to the input buffer
-        st_key_buffer_push(buf, key);
+        st_key_buffer_push(buf, st_keycode_to_triecode(key, TEST_KC_SEQ_TOKEN_0));
         st_key_buffer_print(buf);
         // let sequence transform do its thing!
         if (st_perform()) {

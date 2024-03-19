@@ -12,6 +12,7 @@
 #include "st_debug.h"
 #include "keybuffer.h"
 #include "utils.h"
+#include <ctype.h>
 
 //////////////////////////////////////////////////////////////////
 // Public
@@ -28,10 +29,10 @@
 //   st_key_buffer_get(buf, -2) -> b
 //   st_key_buffer_get(buf, -3) -> c
 // returns KC_NO if index is out of bounds
-uint16_t st_key_buffer_get_keycode(const st_key_buffer_t *buf, int index)
+uint8_t st_key_buffer_get_triecode(const st_key_buffer_t *buf, int index)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
-    return (keyaction ? keyaction->keypressed : KC_NO);
+    return (keyaction ? keyaction->triecode : '\0');
 }
 /**
  * @brief Gets an st_key_action_t from the `index` position in the key_buffer
@@ -59,23 +60,19 @@ st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
 void st_key_buffer_reset(st_key_buffer_t *buf)
 {
     buf->size = 0;
-    st_key_buffer_push(buf, KC_SPC);
+    st_key_buffer_push(buf, ' ');
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_push(st_key_buffer_t *buf, uint16_t keycode)
+void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
 {
     // Store all alpha chars as lowercase
-    const bool shifted = keycode & QK_LSFT;
-    const uint8_t lowkey = keycode & 0xFF;
-    if (shifted && IS_ALPHA_KEYCODE(lowkey))
-        keycode = lowkey;
     if (buf->size < buf->capacity) {
         buf->size++;
     }
     if (++buf->head >= buf->capacity) {  // increment cur_pos
         buf->head = 0;               // wrap to 0
     }
-    buf->data[buf->head].keypressed = keycode;
+    buf->data[buf->head].triecode = tolower(triecode);
     buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(buf);
@@ -99,7 +96,7 @@ void st_key_buffer_print(const st_key_buffer_t *buf)
 {
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->size; --i)
-        uprintf("%c", st_keycode_to_char(st_key_buffer_get(buf, i)->keypressed));
+        uprintf("%c", st_triecode_to_char(st_key_buffer_get(buf, i)->triecode));
     uprintf("| (%d)\n", buf->size);
 }
 //////////////////////////////////////////////////////////////////
@@ -108,8 +105,8 @@ void st_key_buffer_to_str(const st_key_buffer_t *buf, char* output_string, uint8
     int i = 0;
 
     for (; i < len; i += 1) {
-        uint16_t current_keycode = st_key_buffer_get_keycode(buf, len - i - 1);
-        output_string[i] = st_keycode_to_char(current_keycode);
+        uint16_t current_triecode = st_key_buffer_get_triecode(buf, len - i - 1);
+        output_string[i] = st_triecode_to_char(current_triecode);
     }
 
     output_string[i] = '\0';

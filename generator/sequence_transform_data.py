@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -600,8 +600,8 @@ def create_test_rule_c_string(
         transform = transform.replace(i, j)
     trans_c_str = f'    "{transform}",'
     seq_ints = [symbol_map[c] for c in sequence] + [0]
-    seq_int_str = ', '.join(map(uint16_to_hex, seq_ints))
-    seq_c_str = f'    (uint16_t[{len(seq_ints)}]){{ {seq_int_str} }},'
+    seq_int_str = ', '.join(map(byte_to_hex, seq_ints))
+    seq_c_str = f'    (uint8_t[{len(seq_ints)}]){{ {seq_int_str} }},'
     return seq_c_str, trans_c_str
 
 
@@ -721,7 +721,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         st_seq_tokens,
         st_wordbreak_token,
         '',
-        'static const uint16_t *st_test_sequences[] = {',
+        'static const uint8_t *st_test_sequences[] = {',
         *test_rule_c_sequences,
         '    0',
         '};',

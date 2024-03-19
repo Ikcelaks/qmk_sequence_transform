@@ -9,6 +9,8 @@
 
 #include "qmk_wrapper.h"
 #include "utils.h"
+#include "st_assert.h"
+#include <stdint.h>
 #include "sequence_transform_data.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
@@ -52,18 +54,27 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 };
 
 //////////////////////////////////////////////////////////////////////
-bool st_is_seq_token_keycode(uint16_t key)
+bool st_is_seq_token_triecode(uint8_t triecode)
 {
-    return (key >= TRIECODE_SEQUENCE_TOKEN_0 &&
-            key < TRIECODE_SEQUENCE_TOKEN_0 + SEQUENCE_TOKEN_COUNT);
+    return (triecode >= TRIECODE_SEQUENCE_TOKEN_0 &&
+            triecode < TRIECODE_SEQUENCE_TOKEN_0 + SEQUENCE_TOKEN_COUNT);
 }
 ////////////////////////////////////////////////////////////////////////////////
-char st_keycode_to_char(uint16_t keycode)
+char st_triecode_to_char(uint8_t triecode)
 {
-    if (st_is_seq_token_keycode(keycode)) {
-		return st_seq_token_ascii_chars[keycode - TRIECODE_SEQUENCE_TOKEN_0];
-    } else if (keycode == KC_SPACE) {
+    if (st_is_seq_token_triecode(triecode)) {
+		return st_seq_token_ascii_chars[triecode - TRIECODE_SEQUENCE_TOKEN_0];
+    } else if (triecode == ' ') {
         return st_wordbreak_ascii;
+    }
+
+    return triecode;
+}
+////////////////////////////////////////////////////////////////////////////////
+uint8_t st_keycode_to_triecode(uint16_t keycode, uint16_t kc_seq_token_0)
+{
+    if (keycode >= kc_seq_token_0 && keycode < kc_seq_token_0 + SEQUENCE_TOKEN_COUNT) {
+		return TRIECODE_SEQUENCE_TOKEN_0 + keycode - kc_seq_token_0;
     }
     const bool shifted = keycode & QK_LSFT;
     keycode &= 0xFF;
@@ -72,13 +83,29 @@ char st_keycode_to_char(uint16_t keycode)
         return shifted ? pgm_read_byte(&shifted_keycode_to_ascii_lut[keycode]) :
                          pgm_read_byte(&unshifted_keycode_to_ascii_lut[keycode]);
     }
-    return '?';
+    return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
-uint16_t st_char_to_keycode(char c)
+uint16_t st_triecode_to_keycode(uint8_t triecode, uint16_t kc_seq_token_0)
 {
-    uint16_t k = pgm_read_byte(&ascii_to_keycode_lut[(uint8_t)c]);
-    bool is_shifted = PGM_LOADBIT(ascii_to_shift_lut, (uint8_t)c);
+    if (st_is_seq_token_triecode(triecode)) {
+        return triecode - TRIECODE_SEQUENCE_TOKEN_0 + kc_seq_token_0;
+    }
+    uint16_t k = pgm_read_byte(&ascii_to_keycode_lut[(uint8_t)triecode]);
+    bool is_shifted = PGM_LOADBIT(ascii_to_shift_lut, (uint8_t)triecode);
+    if (is_shifted)
+        k = S(k);
+    return k;
+}
+////////////////////////////////////////////////////////////////////////////////
+uint16_t st_char_to_keycode(uint8_t triecode)
+{
+    st_assert(triecode < 128, "char (%d) not valid ascii", triecode);
+    if (triecode >= 128) {
+        return KC_NO;
+    }
+    uint16_t k = pgm_read_byte(&ascii_to_keycode_lut[(uint8_t)triecode]);
+    bool is_shifted = PGM_LOADBIT(ascii_to_shift_lut, (uint8_t)triecode);
     if (is_shifted)
         k = S(k);
     return k;

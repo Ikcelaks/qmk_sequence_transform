@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////
 void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    sim_st_perform(rule->seq_keycodes);
+    sim_st_perform(rule->seq_triecodes);
     st_cursor_t *cursor = st_get_cursor();
     st_cursor_init(cursor, 0, false);
     for (int i = 0; i < 200; ++i) {

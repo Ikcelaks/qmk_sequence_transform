@@ -18,8 +18,8 @@ typedef enum {
     snprintf(res->message, sizeof(res->message), __VA_ARGS__); }
 
 typedef struct {
-    const uint16_t * const  seq_keycodes;
-    const char * const      transform_str;    
+    const uint8_t * const   seq_triecodes;
+    const char * const      transform_str;
 } st_test_rule_t;
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef int (*st_test_action_t)(const st_test_options_t *);
 void    print_available_tests(void);
 
 //      Internal
-void    sim_st_perform(const uint16_t *keycodes);
+void    sim_st_perform(const uint8_t *triecodes);
 
 //      Rule tests
 void    test_perform(const st_test_rule_t *rule, st_test_result_t *res);

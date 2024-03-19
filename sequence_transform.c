@@ -11,10 +11,11 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "sequence_transform.h"
+#include <stdint.h>
 #include "sequence_transform_data.h"
 #include "utils.h"
 
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
@@ -28,7 +29,7 @@ static uint32_t backspace_timer = 0;
 static bool post_process_do_rule_search = false;
 #endif
 
-#define KEY_AT(i) st_key_buffer_get_keycode(&key_buffer, (i))
+#define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
@@ -42,7 +43,7 @@ static st_key_buffer_t key_buffer = {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 uint16_t sequence_transform_past_keycode(int index) {
-    return st_key_buffer_get_keycode(&key_buffer, index);
+    return st_key_buffer_get_triecode(&key_buffer, index);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +62,7 @@ void sequence_transform_task(void) {
 //////////////////////////////////////////////////////////////////
 // Trie key stack used for searches
 #define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
-static uint16_t trie_key_stack_data[ST_STACK_SIZE] = {0};
+static uint8_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
     ST_STACK_SIZE,
@@ -72,7 +73,7 @@ static st_key_stack_t trie_stack = {
 // Trie node and completion data
 static const st_trie_t trie = {
     SEQUENCE_TRIE_SIZE,
-    sequence_transform_data,
+    sequence_transform_trie,
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
@@ -210,16 +211,19 @@ bool st_process_check(uint16_t *keycode,
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-uint16_t search_for_regular_keypress(void)
+uint8_t search_for_regular_keypress(void)
 {
-    uint16_t keycode = KC_NO;
+    uint8_t triecode = '\0';
     for (int i = 1; i < key_buffer.size; ++i) {
-        keycode = st_key_buffer_get_keycode(&key_buffer, i);
-        if (!keycode || !(keycode & TRIECODE_SEQUENCE_TOKEN_0)) {
-            break;
+        triecode = st_key_buffer_get_triecode(&key_buffer, i);
+        if (!triecode) {
+            return '\0';
+        }
+        if (!(st_is_seq_token_triecode(triecode))) {
+            return triecode;
         }
     }
-    return keycode ? keycode : KC_NO;
+    return '\0';
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key(void)
@@ -227,7 +231,7 @@ void st_handle_repeat_key(void)
     const uint16_t last_regular_keypress = search_for_regular_keypress();
     if (last_regular_keypress) {
         st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
-        st_key_buffer_get(&key_buffer, 0)->keypressed = last_regular_keypress;
+        st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
         st_send_key(last_regular_keypress);
     }
@@ -285,7 +289,7 @@ void st_find_missed_rule(void)
     // (in case a rule has spaces at the end of its completion)
     int word_start_idx = 0;
     while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) == KC_SPACE) {
+           KEY_AT(word_start_idx) == ' ') {
         ++word_start_idx;
     }
     // if we reached the end of the buffer here,
@@ -295,7 +299,7 @@ void st_find_missed_rule(void)
     }
     // we've skipped trailing spaces, so now find the next space
     while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) != KC_SPACE) {
+           KEY_AT(word_start_idx) != ' ') {
         ++word_start_idx;
     }
     //uprintf("word_start_idx: %d\n", word_start_idx);
@@ -393,14 +397,14 @@ uint8_t st_get_virtual_output(char *str, uint8_t count)
     }
     int i = 0;
     for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
-        const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);
-        if (!keycode) {
+        const uint8_t triecode = st_cursor_get_triecode(&trie_cursor);
+        if (!triecode) {
             break;
         }
         // We don't want st_wordbreak_ascii here
         // (doing the change here removes unnecessary depends in the tester)
         // FIXME: we should really be comparing keycodes instead of chars!
-        str[i] = keycode == KC_SPACE ? ' ' : st_keycode_to_char(keycode);
+        str[i] = st_triecode_to_char(triecode);
     }
     str[i] = '\0';
     return i;
@@ -441,12 +445,9 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    // If this is one of the sequence token keycodes, convert to our internal trie code
-    if (keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT) {
-        keycode = keycode - sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0;
-    }
     // keycode verification and extraction
-    if (!st_process_check(&keycode, record, &mods))
+    if (!(keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT)
+            && !st_process_check(&keycode, record, &mods))
         return true;
 
     if (keycode == KC_BSPC) {
@@ -469,25 +470,27 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #endif
     }
     // keycode buffer check
-    switch (keycode) {
-        case TRIECODE_SEQUENCE_TOKEN_0 ... TRIECODE_SEQUENCE_TOKEN_0 + SEQUENCE_TOKEN_COUNT:
-        case KC_A ... KC_0:
-        case S(KC_1)... S(KC_0):
-        case KC_MINUS ... KC_SLASH:
-            // process normally
-            break;
-        case S(KC_MINUS)... S(KC_SLASH):
-            // treat " (shifted ') as a word boundary
-            if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
-            break;
-        default:
-            // set word boundary if some other non-alpha key is pressed
-            keycode = KC_SPC;
+    if (!(keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT)) {
+        switch (keycode) {
+            case KC_A ... KC_0:
+            case S(KC_1)... S(KC_0):
+            case KC_MINUS ... KC_SLASH:
+                // process normally
+                break;
+            case S(KC_MINUS)... S(KC_SLASH):
+                // treat " (shifted ') as a word boundary
+                if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
+                break;
+            default:
+                // set word boundary if some other non-alpha key is pressed
+                keycode = KC_SPC;
+        }
     }
+    const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);
     st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
-        keycode, st_keycode_to_char(keycode));
+        keycode, st_triecode_to_char(triecode));
 
-    st_key_buffer_push(&key_buffer, keycode);
+    st_key_buffer_push(&key_buffer, triecode);
     if (st_perform()) {
         // tell QMK to not process this key
         return false;

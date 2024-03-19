@@ -80,23 +80,23 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     return true;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
+uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
     if (!keyaction) {
-        return KC_NO;
+        return '\0';
     }
     if (!cursor->pos.as_output
             || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // we need the actual key that was pressed
-        return keyaction->keypressed;
+        return keyaction->triecode;
     }
     // This is an output cursor focused on rule matching keypress
     // get the character at the sub_indax of the transform completion
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     int completion_char_index = action->completion_index;
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
-    return st_char_to_keycode(CDATA(cursor->trie, completion_char_index));
+    return CDATA(cursor->trie, completion_char_index);
 }
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act
@@ -193,7 +193,7 @@ void st_cursor_print(st_cursor_t *cursor)
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
     while (!st_cursor_at_end(cursor)) {
-        uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
+        uprintf("%c", st_triecode_to_char(st_cursor_get_triecode(cursor)));
         st_cursor_next(cursor);
     }
     uprintf("| (%d:%d)\n", cursor->buffer->size, cursor->pos.segment_len);
@@ -206,7 +206,7 @@ bool st_cursor_push_to_stack(st_cursor_t *cursor,
 {
     key_stack->size = 0;
     for (; count > 0; --count, st_cursor_next(cursor)) {
-        const uint16_t keycode = st_cursor_get_keycode(cursor);
+        const uint16_t keycode = st_cursor_get_triecode(cursor);
         if (!keycode) {
             return false;
         }

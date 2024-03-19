@@ -55,13 +55,13 @@ int test_rule(const st_test_rule_t *rule,
             print = true;
             *warns = *warns + 1;
         }
-    }    
+    }
     if (!print) {
         return all_pass;
     }
     // Print test results
     char seq_str[256] = {0};
-    keycodes_to_utf8_str(rule->seq_keycodes, seq_str);
+    triecodes_to_utf8_str(rule->seq_triecodes, seq_str);
     printf("[rule] %s ⇒ %s\n", seq_str, rule->transform_str);
     for (int i = 0; rule_tests[i].func; ++i) {
         if (!tests[i]) {
@@ -104,11 +104,11 @@ int test_all_rules(const st_test_options_t *options)
                           tests,
                           options->print_all,
                           &warns);
-    }    
+    }
     // Show tests performed and stats
     printf("--- TEST SUMMARY ---\n");
     printf("Rules tested: %d\n", rules);
-    const int fail = rules - pass;    
+    const int fail = rules - pass;
     if (!fail) {
         printf("\033[0;32mAll tests passed!\033[0m\n");
     } else {

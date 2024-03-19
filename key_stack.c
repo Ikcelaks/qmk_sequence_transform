@@ -9,7 +9,7 @@
 #include "utils.h"
 
 //////////////////////////////////////////////////////////////////////
-void st_key_stack_push(st_key_stack_t *s, uint16_t key)
+void st_key_stack_push(st_key_stack_t *s, uint8_t key)
 {
     if (s->size < s->capacity) {
         s->buffer[s->size++] = key;
@@ -25,7 +25,7 @@ void st_key_stack_to_str(const st_key_stack_t *s, char *str)
 {
     char *dst = str;
     for (int i = s->size - 1; i >= 0; --i) {
-        *dst++ = st_keycode_to_char(s->buffer[i]);
+        *dst++ = st_triecode_to_char(s->buffer[i]);
     }
     str[s->size] = 0;
 }

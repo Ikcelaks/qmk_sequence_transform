@@ -6,7 +6,7 @@
 #include "tester_utils.h"
 #include "tester.h"
 
-#define KEY_AT(i) st_key_buffer_get_keycode(buf, (i))
+#define KEY_AT(i) st_key_buffer_get_triecode(buf, (i))
 
 //////////////////////////////////////////////////////////////////
 // Converts keys from buffer to null terminated ascii string
@@ -15,8 +15,8 @@ void key_buffer_to_space_str(const st_key_buffer_t *buf, char *str)
 {
     const int len = buf->size;
     for (int i = 0; i < len; ++i) {
-        const uint16_t key = KEY_AT(len - i - 1);
-        *str++ = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
+        const uint8_t key = KEY_AT(len - i - 1);
+        *str++ = st_triecode_to_char(key);
     }
     *str = 0;
 }
@@ -24,8 +24,8 @@ void key_buffer_to_space_str(const st_key_buffer_t *buf, char *str)
 bool buf_needs_expanding(st_key_buffer_t *buf)
 {
     for (int i = 1; i < buf->size; ++i) {
-        const uint16_t key = KEY_AT(i);
-        if (st_is_seq_token_keycode(key)) {
+        const uint8_t key = KEY_AT(i);
+        if (st_is_seq_token_triecode(key)) {
             return true;
         }
     }
@@ -41,7 +41,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
 {
     st_key_buffer_t *buf = st_get_key_buffer();
     // send input rule seq so we can get output transform to test
-    sim_st_perform(rule->seq_keycodes);
+    sim_st_perform(rule->seq_triecodes);
 
     // Check if sequence contains an unexpanded token
     if (!buf_needs_expanding(buf)) {
@@ -68,12 +68,12 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     // chained_transform: ^d@er
 
     // find seq_prefix/trans_prefix by backspacing non seq tokens
-    uint16_t key = 0;
+    uint8_t key = 0;
     do {
         tap_code16(KC_BSPC);
         st_handle_backspace();
         key = KEY_AT(0);
-    } while (key && !st_is_seq_token_keycode(key));
+    } while (key && !st_is_seq_token_triecode(key));
     if (!key) {
         //printf("empty seq_prefix!\n");
         return false;
@@ -135,7 +135,7 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
     missed_rule_transform[0] = 0;
     st_find_missed_rule();
     // Check if found rule matches ours
-    keycodes_to_ascii_str(rule->seq_keycodes, seq_ascii);
+    triecodes_to_ascii_str(rule->seq_triecodes, seq_ascii);
     const int missed_rule_seq_len = strlen(missed_rule_seq);
     const int seq_ascii_len = strlen(seq_ascii);
     if (!missed_rule_seq_len) {

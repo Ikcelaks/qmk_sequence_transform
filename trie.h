@@ -12,16 +12,16 @@
 // Public API
 
 #ifdef ST_TESTER
-#   define TDATA(trie, L) st_get_trie_data_word(trie, L)
+#   define TDATA(trie, L) st_get_trie_data_byte(trie, L)
 #   define CDATA(trie, L) st_get_trie_completion_byte(trie, L)
 #else
-#   define TDATA(trie, L) pgm_read_word(&trie->data[L])
+#   define TDATA(trie, L) pgm_read_byte(&trie->data[L])
 #   define CDATA(trie, L) pgm_read_byte(&trie->completions[L])
 #endif
 
-#define TRIE_MATCH_BIT      0x8000
-#define TRIE_BRANCH_BIT     0x4000
-#define TRIE_CODE_MASK      0x3FFF
+#define TRIE_MATCH_BIT      0x80
+#define TRIE_BRANCH_BIT     0x40
+#define TRIE_CODE_MASK      0x3F
 
 typedef struct
 {
@@ -42,7 +42,7 @@ typedef struct
 typedef struct
 {
     int            data_size;          // size in words of data buffer
-    const uint16_t *data;              // serialized trie node data
+    const uint8_t  *data;              // serialized trie node data
     int            completions_size;   // size in bytes of completions data buffer
     const uint8_t  *completions;       // packed completions strings buffer
     int            completion_max_len; // max len of all completion strings
@@ -100,7 +100,7 @@ typedef struct
 } st_trie_search_t;
 
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
-void st_get_payload_from_code(st_trie_payload_t *payload, uint16_t code, uint16_t completion_index);
+void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
 bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
 bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
 void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
