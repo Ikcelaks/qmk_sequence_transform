@@ -1,12 +1,17 @@
 {
     "rules_file_name": "sequence_transform_dict.txt",
-    "sequence_token_symbols": "👆👍★✪",
-    "wordbreak_symbol": "⎵",
+    "sequence_token_symbols": {
+        "👆": "*",
+        "👍": "@",
+        "★":  "$",
+        "✪":  "#"
+    },
+    "wordbreak_symbol": {
+        "⎵": "^"
+    },
     "output_func_symbols": "↻⇑",
-    "comment_str": "#",
+    "comment_str": "//",
     "separator_str": "⇒",
     "sequence_token_ascii_chars": "*@$#",
-    "wordbreak_ascii": "^",
-    "quiet": true,
     "implicit_transform_leading_wordbreak": true
 }
