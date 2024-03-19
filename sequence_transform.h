@@ -33,16 +33,16 @@ static inline void sequence_transform_task(void) {}
 //////////////////////////////////////////////////////////////////
 // Internal
 
-bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods);
+bool st_process_check(uint16_t *keycode, const keyrecord_t *record, uint8_t *mods);
 void st_handle_repeat_key(void);
-void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
+void st_handle_result(const st_trie_t *trie, const st_trie_search_result_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
 void st_handle_backspace(void);
-uint8_t st_get_virtual_output(char *buf, uint8_t count);
+uint8_t st_get_virtual_output(char *str, uint8_t count);
 
 #ifdef ST_TESTER
-st_trie_t       *st_get_trie(void);
+const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
-st_cursor_t *st_get_cursor(void);
+st_cursor_t     *st_get_cursor(void);
 #endif

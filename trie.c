@@ -131,7 +131,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         // Match Node if bit 15 is set
         if (code & TRIE_MATCH_BIT) {
             st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d) %d\n",
-                cursor->cursor_pos.index, cursor->cursor_pos.sub_index, cursor->cursor_pos.segment_len);
+                cursor->pos.index, cursor->pos.sub_index, cursor->pos.segment_len);
             st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d) %d\n",
                 longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
             // record this if it is the longest match
@@ -160,22 +160,21 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
  *
  * @param trie              trie_t struct containing trie data/size
  * @param key_buffer        current user input key buffer
+ * @param key_stack         stack used to record visited sequences
  * @param word_start_idx    index to space before last word in buffer
  * @param rule              pointer to rule result to fill if match found
  * @return                  true if match found that reaches end of key_buffer
  */
-bool st_trie_do_rule_searches(st_trie_t              *trie,
-                              const st_key_buffer_t  *key_buffer,
-                              int                    word_start_idx,
-                              st_trie_rule_t         *rule)
+bool st_trie_do_rule_searches(const st_trie_t       *trie,
+                              const st_key_buffer_t *key_buffer,
+                              st_key_stack_t        *key_stack,
+                              int                   word_start_idx,
+                              st_trie_rule_t        *rule)
 {
     // Convert word_start_index to reverse index
     const int search_base_ridx = st_clamp(key_buffer->size - word_start_idx,
                                           1, key_buffer->size - 1);
-    st_trie_search_t search;
-    search.trie = trie;
-    search.key_buffer = key_buffer;
-    search.result = rule;
+    st_trie_search_t search = {trie, key_buffer, key_stack, 0, 0, rule};
     const int max_skip_levels = st_min(1 + trie->max_backspaces,
                                        SEQUENCE_TRANSFORM_RULE_SEARCH_MAX_SKIP);
     for (int i = search_base_ridx; i < key_buffer->size; ++i) {
@@ -184,7 +183,7 @@ bool st_trie_do_rule_searches(st_trie_t              *trie,
         for (search.skip_levels = 1; search.skip_levels <= max_skip_levels; ++search.skip_levels) {
             search.search_end_ridx = i + search.skip_levels;
             st_debug(ST_DBG_RULE_SEARCH, "searching from ridx %d, skips: %d\n", i, search.skip_levels);
-            trie->key_stack->size = 0;
+            key_stack->size = 0;
             if (st_trie_rule_search(&search, 0)) {
                 return true;
             }
@@ -201,8 +200,8 @@ void debug_rule_match(const st_trie_payload_t *payload,
                       uint16_t offset)
 {
 #if SEQUENCE_TRANSFORM_DEBUG
-    st_trie_t *trie = search->trie;
-    const st_key_stack_t *key_stack = trie->key_stack;
+    const st_trie_t *trie = search->trie;
+    const st_key_stack_t *key_stack = search->key_stack;
     char stackstr[key_stack->size + 1];
     char compstr[payload->completion_len + 1];
     st_completion_to_str(trie, payload, compstr);
@@ -221,9 +220,9 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
 {
 // Simulate future buffer keys by offsetting buffer access
 #define OFFSET_BUFFER_VAL st_key_buffer_get_keycode(key_buffer, key_stack->size - search->search_end_ridx)
-    st_trie_t *trie = search->trie;
+    const st_trie_t *trie = search->trie;
     const st_key_buffer_t *key_buffer = search->key_buffer;
-    st_key_stack_t *key_stack = trie->key_stack;
+    st_key_stack_t *key_stack = search->key_stack;
     uint16_t code = TDATA(trie, offset);
     // Match Node if bit 15 is set
     if (code & TRIE_MATCH_BIT) {
@@ -306,8 +305,8 @@ bool stack_contains_unexpanded_seq(const st_key_stack_t *s)
 //////////////////////////////////////////////////////////////////////
 bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
 {
-    st_trie_t *trie = search->trie;
-    const st_key_stack_t *key_stack = trie->key_stack;
+    const st_trie_t *trie = search->trie;
+    const st_key_stack_t *key_stack = search->key_stack;
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_trie_rule_t *res = search->result;
     // Early return if potential transform doesn't reach end of search buffer

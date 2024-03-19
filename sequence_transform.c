@@ -59,7 +59,7 @@ void sequence_transform_task(void) {
 #endif
 
 //////////////////////////////////////////////////////////////////
-// Trie key stack
+// Trie key stack used for searches
 #define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
 static uint16_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
@@ -70,14 +70,13 @@ static st_key_stack_t trie_stack = {
 
 //////////////////////////////////////////////////////////////////
 // Trie node and completion data
-static st_trie_t trie = {
+static const st_trie_t trie = {
     SEQUENCE_TRIE_SIZE,
     sequence_transform_data,
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
-    MAX_BACKSPACES,
-    &trie_stack
+    MAX_BACKSPACES
 };
 
 //////////////////////////////////////////////////////////////////
@@ -92,9 +91,9 @@ static st_cursor_t trie_cursor = {
 
 //////////////////////////////////////////////////////////////////
 #ifdef ST_TESTER
-st_trie_t       *st_get_trie(void) { return &trie; }
+const st_trie_t *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
-st_cursor_t *st_get_cursor(void) { return &trie_cursor; }
+st_cursor_t     *st_get_cursor(void) { return &trie_cursor; }
 #endif
 
 /**
@@ -107,8 +106,11 @@ st_cursor_t *st_get_cursor(void) { return &trie_cursor; }
  * @return true Allow sequence_transform
  * @return false Stop processing and escape from sequence_transform
  */
-bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods) {
-    if (!record->event.pressed && QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
+bool st_process_check(uint16_t *keycode,
+                      const keyrecord_t *record,
+                      uint8_t *mods) {
+    if (!record->event.pressed &&
+        QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
         // We generally only process key presses, not releases, but we must make an
         // exception for Backspace, because enhanced backspace does its action on
         // the release of backspace.
@@ -231,7 +233,7 @@ void st_handle_repeat_key(void)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-void log_rule(st_trie_search_result_t *res, char *completion_str) {
+void log_rule(const st_trie_search_result_t *res, const char *completion_str) {
 #if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE
     st_cursor_init(&trie_cursor, 0, false);
     const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
@@ -297,16 +299,19 @@ void st_find_missed_rule(void)
         ++word_start_idx;
     }
     //uprintf("word_start_idx: %d\n", word_start_idx);
-    st_trie_rule_t result;
-    result.sequence = sequence_str;
-    result.transform = transform_str;
-    if (st_trie_do_rule_searches(&trie, &key_buffer, word_start_idx, &result)) {
+    st_trie_rule_t result = {{0}, sequence_str, transform_str};
+    if (st_trie_do_rule_searches(&trie,
+                                 &key_buffer,
+                                 &trie_stack,
+                                 word_start_idx,
+                                 &result)) {
         sequence_transform_on_missed_rule_user(&result);
     }
 #endif
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res) {
+void st_handle_result(const st_trie_t *trie,
+                      const st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
     // fill completion buffer
@@ -355,12 +360,13 @@ void st_handle_backspace() {
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
         // reinitialize cursor as output cursor one keystroke before the previous action
-        if (st_cursor_init(&trie_cursor, 1, true) && st_cursor_push_to_stack(&trie_cursor, resend_count)) {
+        if (st_cursor_init(&trie_cursor, 1, true) &&
+            st_cursor_push_to_stack(&trie_cursor, &trie_stack, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
-            for (int i = trie.key_stack->size - 1; i >= 0; --i) {
-                st_send_key(trie.key_stack->buffer[i]);
+            for (int i = trie_stack.size - 1; i >= 0; --i) {
+                st_send_key(trie_stack.buffer[i]);
             }
         }
     } else {

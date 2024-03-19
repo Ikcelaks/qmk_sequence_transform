@@ -25,10 +25,10 @@
 
 typedef struct
 {
-    int     completion_index;   // index to start of completion string in trie_t.completions
-    int     completion_len;     // length of completion string
-    int     num_backspaces;     // number of backspaces to send before the completion string
-    int     func_code;          // special function code
+    int completion_index;   // index to start of completion string in trie_t.completions
+    int completion_len;     // length of completion string
+    int num_backspaces;     // number of backspaces to send before the completion string
+    int func_code;          // special function code
 } st_trie_payload_t;
 
 typedef struct
@@ -41,29 +41,28 @@ typedef struct
 
 typedef struct
 {
-    int             data_size;          // size in words of data buffer
-    const uint16_t  *data;              // serialized trie node data
-    int             completions_size;   // size in bytes of completions data buffer
-    const uint8_t   *completions;       // packed completions strings buffer
-    int             completion_max_len; // max len of all completion strings
-    int             max_backspaces;     // max backspaces for all completions
-    st_key_stack_t * const  key_stack;  // key stack used for searches
+    int            data_size;          // size in words of data buffer
+    const uint16_t *data;              // serialized trie node data
+    int            completions_size;   // size in bytes of completions data buffer
+    const uint8_t  *completions;       // packed completions strings buffer
+    int            completion_max_len; // max len of all completion strings
+    int            max_backspaces;     // max backspaces for all completions
 } st_trie_t;
 
 typedef struct
 {
-    st_key_buffer_t const * const buffer;           // input buffer this cursor traverses
-    st_trie_t const * const       trie;             // trie used for traversing virtual output buffer
-    st_cursor_pos_t               cursor_pos;       // Contains all position info for the cursor
+    const st_key_buffer_t * const buffer;           // input buffer this cursor traverses
+    const st_trie_t * const       trie;             // trie used for traversing virtual output buffer
+    st_cursor_pos_t               pos;              // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
 } st_cursor_t;
 
 typedef struct
 {
-    st_trie_payload_t   payload;
-    char                *sequence;
-    char                *transform;
+    st_trie_payload_t payload;
+    char * const      sequence;
+    char * const      transform;
 } st_trie_rule_t;
 
 typedef struct
@@ -79,7 +78,11 @@ typedef struct
 } st_trie_search_result_t;
 
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
-bool st_trie_do_rule_searches(st_trie_t *trie, const st_key_buffer_t *key_buffer, int word_start_idx, st_trie_rule_t *rule);
+bool st_trie_do_rule_searches(const st_trie_t *trie,
+                              const st_key_buffer_t *key_buffer,
+                              st_key_stack_t *key_stack,
+                              int word_start_idx,
+                              st_trie_rule_t *rule);
 uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
 uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
@@ -88,11 +91,12 @@ uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
 typedef struct
 {
-    st_trie_t               *trie;                  // trie to search
-    const st_key_buffer_t   *key_buffer;            // search buffer
-    int                     search_end_ridx;        // reverse index to end of search window
-    int                     skip_levels;	        // number of trie levels to 'skip' when searching
-    st_trie_rule_t          *result;                // pointer to result to be filled with best match
+    const st_trie_t * const         trie;            // trie to search in
+    const st_key_buffer_t * const   key_buffer;      // key buffer to search with
+    st_key_stack_t * const          key_stack;       // stack for recording visited sequences
+    int                             search_end_ridx; // reverse index to end of search window
+    int                             skip_levels;	 // number of trie levels to 'skip' when searching
+    st_trie_rule_t * const          result;          // pointer to result to be filled with best match
 } st_trie_search_t;
 
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);

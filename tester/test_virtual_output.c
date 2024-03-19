@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////
 // compare the virtual output buffer state to the sim output buffer
 // FIXME: we should really be comparing keycodes instead of chars!
-bool compare_output(char *virtual_output, char *sim_output, int count)
+bool compare_output(char *virtual_output, const char *sim_output, int count)
 {
     for (int i = 0; i < count; i++) {
         const char simc = sim_output[i];
@@ -22,7 +22,7 @@ bool compare_output(char *virtual_output, char *sim_output, int count)
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
     sim_st_perform(rule->seq_keycodes);
-    char *sim_output = sim_output_get(false);
+    const char *sim_output = sim_output_get(false);
     const int sim_len = sim_output_get_size();
     char virtual_output[256] = {0};
     const int virt_len = st_get_virtual_output(virtual_output, 255);

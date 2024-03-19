@@ -22,7 +22,7 @@ typedef struct
 typedef struct
 {
     st_key_action_t * const data;       // array of keycodes
-    const int               capacity;   // buffer size
+    const int               capacity;   // max buffer size
     int                     size;       // number of current keys in buffer
     int                     head;       // current head for circular access
 } st_key_buffer_t;
