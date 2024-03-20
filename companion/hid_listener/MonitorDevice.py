@@ -15,7 +15,7 @@ class MonitorDevice:
 
         Console.print_connect(hid_device)
 
-    def read(self, size, encoding="ascii", timeout=1) -> str:
+    def read(self, size, encoding="utf-8", timeout=1) -> str:
         """Read size bytes from the device."""
         return self.device.read(size, timeout).decode(encoding)
 
