@@ -33,10 +33,10 @@ class DeviceListener:
                 break
 
     def remove_dead_devices(self) -> None:
-        for device in self.live_devices.values():
+        for key, device in list(self.live_devices.items()):
             if not device["thread"].is_alive():
                 Console.print_disconnect(device)
-                del device
+                del self.live_devices[key]
 
     def register_device(self, device: Device) -> None:
         if device["path"] not in self.live_devices:

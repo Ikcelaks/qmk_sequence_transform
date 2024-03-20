@@ -11,6 +11,7 @@ class Device(TypedDict):
     serial_number: str
     release_number: int
     manufacturer_string: str
+    product_string: str
     usage_page: int
     usage: int
     interface_number: int

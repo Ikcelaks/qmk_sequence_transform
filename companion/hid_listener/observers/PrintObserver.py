@@ -1,6 +1,5 @@
 
-
 class PrintObserver:
     @staticmethod
-    def notify(message) -> None:
+    def notify(message: str) -> None:
         print(message)
