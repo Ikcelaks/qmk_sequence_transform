@@ -1,7 +1,6 @@
 
-from . import Observer
 
-
-class PrintObserver(Observer):
-    def notify(self, message) -> None:
+class PrintObserver:
+    @staticmethod
+    def notify(message) -> None:
         print(message)

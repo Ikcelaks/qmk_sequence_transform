@@ -1,8 +1,7 @@
 
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 
-class Observer(ABC):
-    @abstractmethod
+class Observer(Protocol):
     def notify(self, message: str) -> None:
-        pass
+        ...
