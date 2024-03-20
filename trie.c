@@ -11,8 +11,6 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "st_assert.h"
-#include <string.h>
-#include <stdbool.h>
 #include <ctype.h>
 #include "keybuffer.h"
 #include "key_stack.h"
@@ -24,7 +22,7 @@
 uint16_t st_get_trie_data_byte(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index < trie->data_size,
-        "Tried reading outside trie data! index: %d, size: %d\n",
+        "Tried reading outside trie data! index: %d, size: %d",
         index, trie->data_size);
     return pgm_read_byte(&trie->data[index]);
 }
@@ -32,7 +30,7 @@ uint16_t st_get_trie_data_byte(const st_trie_t *trie, int index)
 uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index + 1 < trie->data_size,
-        "Tried reading outside trie data! index: %d, size: %d\n",
+        "Tried reading outside trie data! index: %d, size: %d",
         index, trie->data_size);
     return (pgm_read_byte(&trie->data[index]) << 8) + pgm_read_byte(&trie->data[index + 1]);
 }
@@ -40,7 +38,7 @@ uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
 uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index < trie->completions_size,
-        "Tried reading outside completion data! index: %d, size: %d\n",
+        "Tried reading outside completion data! index: %d, size: %d",
         index, trie->completions_size);
     return pgm_read_byte(&trie->completions[index]);
 }
@@ -111,12 +109,12 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
     bool longer_match_found = false;
     do {
         uint8_t code = TDATA(trie, offset);
-        st_assert(code, "Unexpected null code! Offset: %d\n", offset);
-        st_assert(!(code & TRIE_MATCH_BIT), "Match found at top of loop! Offset: %d\n", offset);
+        st_assert(code, "Unexpected null code! Offset: %d", offset);
+        st_assert(!(code & TRIE_MATCH_BIT), "Match found at top of loop! Offset: %d", offset);
 
         // Branch Node (with multiple children) if bit 14 is set
         if (code & TRIE_BRANCH_BIT) {
-            st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X\n", offset, code);
+            st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X", offset, code);
             code = TDATA(trie, ++offset);
             // Find child key that matches the search buffer at the current depth
             const uint8_t cur_key = st_cursor_get_triecode(cursor);
