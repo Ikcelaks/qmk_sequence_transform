@@ -281,6 +281,8 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 void st_find_missed_rule(void)
 {
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
+    st_debug(ST_DBG_RULE_SEARCH,
+        "MISSED RULE SEARCH");
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
