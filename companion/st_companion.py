@@ -1,6 +1,6 @@
 
 from hid_listener import DeviceListener
-from message_observers import PrintObserver
+from hid_listener.observers import PrintObserver
 
 
 def main():
