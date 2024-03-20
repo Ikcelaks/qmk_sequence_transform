@@ -40,7 +40,7 @@
 #endif
 
 // Disable features that do nothing without print
-#ifdef NO//NO_PRINT
+#ifdef NO_PRINT
 #undef  SEQUENCE_TRANSFORM_DEBUG
 #define SEQUENCE_TRANSFORM_DEBUG 0
 
