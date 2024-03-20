@@ -10,7 +10,6 @@
 #include "qmk_wrapper.h"
 #include "utils.h"
 #include "st_assert.h"
-#include <stdint.h>
 #include "sequence_transform_data.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading

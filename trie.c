@@ -7,12 +7,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
-#include "progmem.h"
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "st_assert.h"
-#include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>

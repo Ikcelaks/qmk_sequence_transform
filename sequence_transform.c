@@ -11,7 +11,6 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "sequence_transform.h"
-#include <stdint.h>
 #include "sequence_transform_data.h"
 #include "utils.h"
 

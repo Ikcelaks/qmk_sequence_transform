@@ -29,7 +29,7 @@
 #include "quantum_keycodes.h"
 #include "progmem.h"
 
-#define TEST_KC_SEQ_TOKEN_0 32320
+#define TEST_KC_SEQ_TOKEN_0 0x7E40
 
 #define uprintf printf
 #define st_log_time(F) F;
