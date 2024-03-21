@@ -1,3 +1,8 @@
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
 #include "qmk_wrapper.h"
 
 #define KCLUT_ENTRY(a, b, c, d, e, f, g, h) \

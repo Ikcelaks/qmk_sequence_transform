@@ -1,18 +1,16 @@
-// Copyright 2021 Google LLC
-// Copyright 2021 @filterpaper
-// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
 // Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
 // Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include "qmk_wrapper.h"
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
 #include "cursor.h"
+#include "st_assert.h"
 
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
@@ -33,11 +31,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         }
         cursor->cache_valid = false;
         const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
-        // Below is an assert that should be made
-        // if (!keyaction) {
-        //     // We reached the end without finding the next output key
-        //     return false;
-        // }
+        st_assert(keyaction, "reached the end without finding the next output key");
         if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
             if (backspaces == 0) {
                 // This is a real keypress and no more backspaces to consume
@@ -80,23 +74,23 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     return true;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t st_cursor_get_keycode(st_cursor_t *cursor)
+uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
     if (!keyaction) {
-        return KC_NO;
+        return '\0';
     }
     if (!cursor->pos.as_output
             || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // we need the actual key that was pressed
-        return keyaction->keypressed;
+        return keyaction->triecode;
     }
     // This is an output cursor focused on rule matching keypress
     // get the character at the sub_indax of the transform completion
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     int completion_char_index = action->completion_index;
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
-    return st_char_to_keycode(CDATA(cursor->trie, completion_char_index));
+    return CDATA(cursor->trie, completion_char_index);
 }
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act
@@ -190,14 +184,17 @@ bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *pas
 //////////////////////////////////////////////////////////////////
 void st_cursor_print(st_cursor_t *cursor)
 {
+#ifndef NO_PRINT
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
     while (!st_cursor_at_end(cursor)) {
-        uprintf("%c", st_keycode_to_char(st_cursor_get_keycode(cursor)));
+        const uint8_t code = st_cursor_get_triecode(cursor);
+        uprintf("%c", st_triecode_to_ascii(code));
         st_cursor_next(cursor);
     }
     uprintf("| (%d:%d)\n", cursor->buffer->size, cursor->pos.segment_len);
     st_cursor_restore(cursor, &cursor_pos);
+#endif
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_push_to_stack(st_cursor_t *cursor,
@@ -206,7 +203,7 @@ bool st_cursor_push_to_stack(st_cursor_t *cursor,
 {
     key_stack->size = 0;
     for (; count > 0; --count, st_cursor_next(cursor)) {
-        const uint16_t keycode = st_cursor_get_keycode(cursor);
+        const uint16_t keycode = st_cursor_get_triecode(cursor);
         if (!keycode) {
             return false;
         }

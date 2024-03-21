@@ -10,11 +10,12 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "triecodes.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
 
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
@@ -28,7 +29,7 @@ static uint32_t backspace_timer = 0;
 static bool post_process_do_rule_search = false;
 #endif
 
-#define KEY_AT(i) st_key_buffer_get_keycode(&key_buffer, (i))
+#define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
 
 //////////////////////////////////////////////////////////////////
 // Key history buffer
@@ -42,7 +43,7 @@ static st_key_buffer_t key_buffer = {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 uint16_t sequence_transform_past_keycode(int index) {
-    return st_key_buffer_get_keycode(&key_buffer, index);
+    return st_key_buffer_get_triecode(&key_buffer, index);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +62,7 @@ void sequence_transform_task(void) {
 //////////////////////////////////////////////////////////////////
 // Trie key stack used for searches
 #define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
-static uint16_t trie_key_stack_data[ST_STACK_SIZE] = {0};
+static uint8_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
     ST_STACK_SIZE,
@@ -72,7 +73,7 @@ static st_key_stack_t trie_stack = {
 // Trie node and completion data
 static const st_trie_t trie = {
     SEQUENCE_TRIE_SIZE,
-    sequence_transform_data,
+    sequence_transform_trie,
     COMPLETIONS_SIZE,
     sequence_transform_completions_data,
     COMPLETION_MAX_LENGTH,
@@ -109,13 +110,6 @@ st_cursor_t     *st_get_cursor(void) { return &trie_cursor; }
 bool st_process_check(uint16_t *keycode,
                       const keyrecord_t *record,
                       uint8_t *mods) {
-    if (!record->event.pressed &&
-        QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
-        // We generally only process key presses, not releases, but we must make an
-        // exception for Backspace, because enhanced backspace does its action on
-        // the release of backspace.
-        return false;
-    }
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
         // Exclude these keycodes from processing.
@@ -210,26 +204,29 @@ bool st_process_check(uint16_t *keycode,
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-uint16_t search_for_regular_keypress(void)
+uint8_t search_for_regular_keypress(void)
 {
-    uint16_t keycode = KC_NO;
+    uint8_t triecode = '\0';
     for (int i = 1; i < key_buffer.size; ++i) {
-        keycode = st_key_buffer_get_keycode(&key_buffer, i);
-        if (!keycode || !(keycode & TRIECODE_SEQUENCE_TOKEN_0)) {
-            break;
+        triecode = st_key_buffer_get_triecode(&key_buffer, i);
+        if (!triecode) {
+            return '\0';
+        }
+        if (!st_is_seq_token_triecode(triecode)) {
+            return triecode;
         }
     }
-    return keycode ? keycode : KC_NO;
+    return '\0';
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key(void)
 {
-    const uint16_t last_regular_keypress = search_for_regular_keypress();
+    const uint8_t last_regular_keypress = search_for_regular_keypress();
     if (last_regular_keypress) {
         st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
-        st_key_buffer_get(&key_buffer, 0)->keypressed = last_regular_keypress;
+        st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        st_send_key(last_regular_keypress);
+        st_send_key(st_ascii_to_keycode(last_regular_keypress));
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -278,6 +275,8 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 void st_find_missed_rule(void)
 {
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
+    st_debug(ST_DBG_RULE_SEARCH,
+        "MISSED RULE SEARCH");
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
@@ -285,7 +284,7 @@ void st_find_missed_rule(void)
     // (in case a rule has spaces at the end of its completion)
     int word_start_idx = 0;
     while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) == KC_SPACE) {
+           KEY_AT(word_start_idx) == ' ') {
         ++word_start_idx;
     }
     // if we reached the end of the buffer here,
@@ -295,7 +294,7 @@ void st_find_missed_rule(void)
     }
     // we've skipped trailing spaces, so now find the next space
     while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) != KC_SPACE) {
+           KEY_AT(word_start_idx) != ' ') {
         ++word_start_idx;
     }
     //uprintf("word_start_idx: %d\n", word_start_idx);
@@ -323,7 +322,7 @@ void st_handle_result(const st_trie_t *trie,
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
     for (char *c = completion_str; *c; ++c) {
-        st_send_key(st_char_to_keycode(*c));
+        st_send_key(st_ascii_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {
         case 1:  // repeat
@@ -378,35 +377,6 @@ void st_handle_backspace() {
 #endif
 
 /**
- * @brief Fills the provided buffer with up to `count` characters from the virtual output
- *
- * @param str char* to write the virtual output to. Will be null terminated.
- * @param history int 0 for the current output. N for the output N keypresses ago.
- * @param count int representing the number of characters requested. str must be hold `count + 1` chars
- * @return the number of characters written to the str not including the null terminator
- */
-uint8_t st_get_virtual_output(char *str, uint8_t count)
-{
-    if (!st_cursor_init(&trie_cursor, 0, true)) {
-        str[0] = '\0';
-        return 0;
-    }
-    int i = 0;
-    for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
-        const uint16_t keycode = st_cursor_get_keycode(&trie_cursor);
-        if (!keycode) {
-            break;
-        }
-        // We don't want st_wordbreak_ascii here
-        // (doing the change here removes unnecessary depends in the tester)
-        // FIXME: we should really be comparing keycodes instead of chars!
-        str[i] = keycode == KC_SPACE ? ' ' : st_keycode_to_char(keycode);
-    }
-    str[i] = '\0';
-    return i;
-}
-
-/**
  * @brief Performs sequence transform if a match is found in the trie
  *
  * @return true if sequence transform was performed
@@ -422,6 +392,53 @@ bool st_perform() {
 }
 
 /**
+ * @return true if keycode should be treated as a wordbreak
+ */
+bool st_is_wordbreak_keycode(uint16_t keycode)
+{    
+    switch (keycode) {
+        case KC_A ... KC_0:
+        case S(KC_1)... S(KC_0):
+        case KC_MINUS ... KC_SLASH:
+            // FIXME: symbols should convert to space if not used in rules!
+            return false;
+        case S(KC_MINUS)... S(KC_SLASH):
+            // treat " (shifted ') as a word boundary
+            if (keycode == S(KC_QUOTE)) {
+                return true;
+            }
+            return false;
+    }
+    // set word boundary if some other non-alpha key is pressed
+    return true;
+}
+
+/**
+ * @brief sets flag to later perform enhanced backspace
+ *        or simply clears the buffer on key hold
+ */
+void st_on_backspace(keyrecord_t *record)
+{
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
+    if (record->event.pressed) {
+        backspace_timer = timer_read32();
+        // set flag so that post_process_sequence_transform will perfom an undo
+        post_process_do_enhanced_backspace = true;
+        return;
+    }
+    // This is a release
+    if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
+        // Clear the buffer if the backspace key was held past the tapping term
+        st_key_buffer_reset(&key_buffer);
+    }
+#else
+    if (record->event.pressed) {
+        st_key_buffer_reset(&key_buffer);
+    }
+#endif
+}
+
+/**
  * @brief Process handler for sequence_transform feature.
  *
  * @param keycode Keycode registered by matrix press, per keymap
@@ -430,7 +447,10 @@ bool st_perform() {
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start) {
+bool process_sequence_transform(uint16_t keycode,
+                                keyrecord_t *record,
+                                uint16_t sequence_token_start)
+{
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
@@ -441,53 +461,34 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    // If this is one of the sequence token keycodes, convert to our internal trie code
-    if (keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT) {
-        keycode = keycode - sequence_token_start + TRIECODE_SEQUENCE_TOKEN_0;
-    }
-    // keycode verification and extraction
-    if (!st_process_check(&keycode, record, &mods))
+    
+    // Keycode verification and extraction
+    const bool is_seq_tok = st_is_seq_token_keycode(keycode, sequence_token_start);
+    if (!is_seq_tok && !st_process_check(&keycode, record, &mods)) {
         return true;
-
+    }
+    // Handle backspace
     if (keycode == KC_BSPC) {
-#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
-        if (record->event.pressed) {
-            backspace_timer = timer_read32();
-            // set flag so that post_process_sequence_transform will perfom an undo
-            post_process_do_enhanced_backspace = true;
-            return true;
-        }
-        // This is a release
-        if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
-            // Clear the buffer if the backspace key was held past the tapping term
-            st_key_buffer_reset(&key_buffer);
-        }
+        st_on_backspace(record);
         return true;
-#else
-        st_key_buffer_reset(&key_buffer);
+    }
+    // Don't process on key up
+    if (!record->event.pressed) {
         return true;
-#endif
     }
-    // keycode buffer check
-    switch (keycode) {
-        case TRIECODE_SEQUENCE_TOKEN_0 ... TRIECODE_SEQUENCE_TOKEN_0 + SEQUENCE_TOKEN_COUNT:
-        case KC_A ... KC_0:
-        case S(KC_1)... S(KC_0):
-        case KC_MINUS ... KC_SLASH:
-            // process normally
-            break;
-        case S(KC_MINUS)... S(KC_SLASH):
-            // treat " (shifted ') as a word boundary
-            if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
-            break;
-        default:
-            // set word boundary if some other non-alpha key is pressed
-            keycode = KC_SPC;
+    // Convert keycode to KC_SPC if necessary
+    if (!is_seq_tok && st_is_wordbreak_keycode(keycode)) {
+        keycode = KC_SPC;
     }
+    // Convert to triecode and add it to our buffer
+    const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);
     st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
-        keycode, st_keycode_to_char(keycode));
-
-    st_key_buffer_push(&key_buffer, keycode);
+        keycode, st_triecode_to_ascii(triecode));
+    st_key_buffer_push(&key_buffer, triecode);
+    if (st_debug_check(ST_DBG_GENERAL)) {
+        st_key_buffer_print(&key_buffer);
+    }
+    // Try to perform a sequence transform!
     if (st_perform()) {
         // tell QMK to not process this key
         return false;

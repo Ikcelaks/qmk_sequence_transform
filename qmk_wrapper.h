@@ -1,3 +1,7 @@
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
 #pragma once
 
 #include <stdint.h>
@@ -28,6 +32,8 @@
 #include <string.h>
 #include "quantum_keycodes.h"
 #include "progmem.h"
+
+#define TEST_KC_SEQ_TOKEN_0 0x7E40
 
 #define uprintf printf
 #define st_log_time(F) F;

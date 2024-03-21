@@ -8,23 +8,27 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "utils.h"
+#include "triecodes.h"
 // fixme: rule search callback should just pass 2 strings,
 // instead of st_trie_rule_t, which creates unnecessary header depends
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "tester.h"
-#include "sim_output_buffer.h"
 #ifdef WIN32
 #include <windows.h>
 #endif
 
-//////////////////////////////////////////////////////////////////
-#define ACTION_TEST_ALL_RULES       0
-#define ACTION_TEST_ASCII_STRING    1
+// Stack containing triecodes seen by tap_code16
+static uint8_t sim_output_buffer[256] = {0};
+st_key_stack_t sim_output = {
+    sim_output_buffer,
+    256,
+    0
+};
 
 //////////////////////////////////////////////////////////////////
-static st_test_action_t actions[] = {
+static st_test_action_func_t actions[] = {
     [ACTION_TEST_ALL_RULES] = test_all_rules,
     [ACTION_TEST_ASCII_STRING] = test_ascii_string,
     0
@@ -49,15 +53,13 @@ void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
         case KC_BSPC:
-            sim_output_pop(1);
-            break;
-        case KC_SPACE:
-            // we don't want st_keycode_to_char's translation
-            // of KC_SPACE to st_wordbreak_ascii here
-            sim_output_push(' ');
+            st_key_stack_pop(&sim_output);
             break;
         default:
-            sim_output_push(st_keycode_to_char(keycode));
+        {
+            uint8_t triecode = st_keycode_to_triecode(keycode, TEST_KC_SEQ_TOKEN_0);
+            st_key_stack_push(&sim_output, triecode);
+        }
     }
 }
 //////////////////////////////////////////////////////////////////////
@@ -79,7 +81,7 @@ void print_help(void)
     printf("     ex: -t \"101\" would only run tests #1 and #3.\n");
     printf("     Available tests:\n");
     print_available_tests();
-    puts("");    
+    puts("");
     printf("  -d enable debug prints for <feature>.\n");
     printf("     Available features:\n");
     const char **dflags = st_debug_get_flag_names();
