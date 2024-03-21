@@ -419,8 +419,8 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
     // keycode verification and extraction
-    if (!(keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT)
-            && !st_process_check(&keycode, record, &mods))
+    if (!st_is_seq_token_keycode(keycode, sequence_token_start)
+        && !st_process_check(&keycode, record, &mods))
         return true;
 
     if (keycode == KC_BSPC) {
@@ -443,7 +443,7 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 #endif
     }
     // keycode buffer check
-    if (!(keycode >= sequence_token_start && keycode < sequence_token_start + SEQUENCE_TOKEN_COUNT)) {
+    if (!st_is_seq_token_keycode(keycode, sequence_token_start)) {
         switch (keycode) {
             case KC_A ... KC_0:
             case S(KC_1)... S(KC_0):

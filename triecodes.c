@@ -50,6 +50,13 @@ static const char shifted_keycode_to_ascii_lut[53] PROGMEM = {
 };
 
 //////////////////////////////////////////////////////////////////////
+bool st_is_seq_token_keycode(uint16_t keycode, uint16_t kc_seq_token_0)
+{
+    const uint16_t kc_first = kc_seq_token_0;
+    const uint16_t kc_last = kc_first + SEQUENCE_TOKEN_COUNT;
+    return (kc_first <= keycode && keycode < kc_last);
+}
+//////////////////////////////////////////////////////////////////////
 bool st_is_seq_token_triecode(uint8_t triecode)
 {
     const uint8_t tok_first = TRIECODE_SEQUENCE_TOKEN_0;
@@ -82,9 +89,8 @@ char st_triecode_to_ascii(uint8_t triecode)
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t st_keycode_to_triecode(uint16_t keycode, uint16_t kc_seq_token_0)
 {
-    if (keycode >= kc_seq_token_0 &&
-        keycode < kc_seq_token_0 + SEQUENCE_TOKEN_COUNT) {
-		return TRIECODE_SEQUENCE_TOKEN_0 + keycode - kc_seq_token_0;
+    if (st_is_seq_token_keycode(keycode, kc_seq_token_0)) {
+        return TRIECODE_SEQUENCE_TOKEN_0 + keycode - kc_seq_token_0;
     }
     return st_keycode_to_ascii(keycode);
 }
