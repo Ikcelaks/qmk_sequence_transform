@@ -18,26 +18,28 @@ class Console(ABC):
         release = to_hex(device["release_number"])
 
         print(
-            f"{text}" +
-            color(f"{vendor} {product} ({v_id}:{p_id}:{release})")
+            f"{text}" + color(f"{vendor} {product} ({v_id}:{p_id}:{release})")
         )
 
     @staticmethod
     def print_connect(device: Device) -> None:
         Console.__print_connection(
-            device, cyan(f"HID console connected: "), cyan
+            device,
+            cyan(f"HID console connected: "), cyan
         )
 
     @staticmethod
     def print_disconnect(device: Device) -> None:
         Console.__print_connection(
-            device, cyan(f"HID console disconnected: "), cyan
+            device,
+            cyan(f"HID console disconnected: "), cyan
         )
 
     @staticmethod
     def print_couldnt_connect(device: Device) -> None:
         Console.__print_connection(
-            device, cyan(f"Could not connect to: "), cyan
+            device,
+            cyan(f"Could not connect to: "), cyan
         )
 
 
