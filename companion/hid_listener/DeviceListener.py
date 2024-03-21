@@ -1,5 +1,6 @@
 
 from threading import Thread
+from typing import Iterable
 from time import sleep
 
 from .observers import Observer
@@ -14,7 +15,7 @@ USAGE = 0x0074
 
 
 class DeviceListener:
-    def __init__(self, observers: tuple[Observer] = ()):
+    def __init__(self, observers: Iterable[Observer] = ()):
         self.live_devices: dict[bytes, Device] = {}
         self.observers = observers
 

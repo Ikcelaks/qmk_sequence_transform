@@ -1,6 +1,7 @@
 
 import json
 from pathlib import Path
+from typing import Iterable
 
 from .site_packages import hid
 from .observers import Observer
@@ -14,7 +15,7 @@ config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
 
 class MonitorDevice:
-    def __init__(self, hid_device: Device, observers: tuple[Observer] = ()):
+    def __init__(self, hid_device: Device, observers: Iterable[Observer] = ()):
         self.hid_device = hid_device
         self.device = hid.Device(path=hid_device["path"])
         self.observers = observers
