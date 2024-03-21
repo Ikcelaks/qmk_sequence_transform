@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "qmk_wrapper.h"
-#include "triecodes.h"
 #include "keybuffer.h"
+#include "triecodes.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "utils.h"
@@ -36,7 +36,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         cursor->cache_valid = false;
         const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
         st_assert(keyaction, "reached the end without finding the next output key");
-        if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+        if (keyaction->action == ST_DEFAULT_KEY_ACTION) {
             if (backspaces == 0) {
                 // This is a real keypress and no more backspaces to consume
                 cursor->pos.sub_index = 0;
@@ -85,7 +85,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
         return '\0';
     }
     if (!cursor->pos.as_output
-            || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+            || keyaction->action == ST_DEFAULT_KEY_ACTION) {
         // we need the actual key that was pressed
         return keyaction->key.triecode;
     }
@@ -97,18 +97,20 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     return CDATA(cursor->trie, completion_char_index);
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_get_key(st_cursor_t *cursor, st_key_info_t *key)
+bool st_cursor_get_key(st_cursor_t *cursor, st_key_t *key)
 {
-    if (st_cursor_at_end(cursor)) {
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
+    if (!keyaction) {
         return false;
     }
     if (cursor->pos.as_output) {
+        // we need the actual key that was pressed
         key->triecode = st_cursor_get_triecode(cursor);
-        // TODO: handle preds in virtual output
-        key->preds = 0;
-        return true;
+        key->pred_proxy = key->triecode;
+        return key->triecode;
     }
-    return st_key_buffer_get_key(cursor->buffer, cursor->pos.index, key);
+    *key = keyaction->key;
+    return true;
 }
 //////////////////////////////////////////////////////////////////
 const st_key_action_t * const st_cursor_get_keyaction(st_cursor_t *cursor)
@@ -134,13 +136,13 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     if (!keyaction) {
         return NULL;
     }
-    if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+    if (keyaction->action == ST_DEFAULT_KEY_ACTION) {
         action->completion_index = ST_DEFAULT_KEY_ACTION;
         action->completion_len = 1;
         action->num_backspaces = 0;
         action->func_code = 0;
     } else {
-        st_get_payload_from_match_index(cursor->trie, action, keyaction->action_taken);
+        st_get_payload_from_match_index(cursor->trie, action, keyaction->action);
     }
     cursor->cache_valid = true;
     return action;
@@ -169,7 +171,7 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (!keyaction) {
         return false;
     }
-    if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
+    if (keyaction->action == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
         ++cursor->pos.index;
         if (st_cursor_at_end(cursor)) {

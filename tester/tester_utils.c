@@ -5,6 +5,7 @@
 
 #include "qmk_wrapper.h"
 #include "tester_utils.h"
+#include "keybuffer.h"
 #include "triecodes.h"
 
 //////////////////////////////////////////////////////////////////

@@ -185,6 +185,17 @@ def parse_file(
 
 
 ###############################################################################
+def add_default_rules(
+    rules_list: List[Tuple[str, str]]
+) -> List[Tuple[str, str]]:
+    for seq_token in SEQ_TOKEN_SYMBOLS:
+        if not any([seq_token == seq for seq, _ in rules_list]):
+            quiet_print("Adding missing default rule for {seq_token}\n")
+            rules_list.append((seq_token, ""))
+    return rules_list
+
+
+###############################################################################
 def make_sequence_trie(
     seq_list: List[Tuple[str, str]],
     output_func_symbol_map: Dict[str, int]
@@ -195,7 +206,7 @@ def make_sequence_trie(
     for sequence, transform in seq_list:
         node = trie
 
-        if transform[-1] in output_func_symbol_map:
+        if len(transform) > 0 and transform[-1] in output_func_symbol_map:
             output_func = output_func_symbol_map[transform[-1]]
             target = transform[:len(transform)-1]
 
@@ -587,7 +598,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
-    seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
+    seq_tranform_list = add_default_rules(parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR))
     trie = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
     outputs = complete_sequence_trie(trie, WORDBREAK_SYMBOL)
     quiet_print(json.dumps(trie, indent=4))
@@ -611,7 +622,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     for sequence, transform in seq_tranform_list:
         # Don't add rules with transformation functions to test header for now
-        if transform[-1] not in output_func_symbol_map:
+        if len(transform) == 0 or transform[-1] not in output_func_symbol_map:
             c_sequence = create_triecode_array_c_string(symbol_map, sequence)
             c_transform = create_triecode_array_c_string(symbol_map, transform)
             test_rule_c_sequences.append(c_sequence)
@@ -645,6 +656,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define {ST_GENERATOR_VERSION}',
         '',
         f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(TRIECODE_SEQUENCE_TOKEN_0)}',
+        f'#define TRIECODE_SEQUENCE_PRED_0 {uint16_to_hex(TRIECODE_SEQUENCE_PRED_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define TRANSFORM_MAX_LENGTH {len(max_transform)} // "{max_transform}"',
@@ -738,6 +750,12 @@ if __name__ == '__main__':
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
         WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
         DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
+        ALPHA_SYMBOL = list(config['alpha_symbol'].keys())[0]
+        UPPER_ALPHA_SYMBOL = list(config['upper_alpha_symbol'].keys())[0]
+        PUNCT_SYMBOL = list(config['punct_symbol'].keys())[0]
+        NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
+        TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
+        ANY_SYMBOL = list(config['any_symbol'].keys())[0]
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
@@ -749,8 +767,14 @@ if __name__ == '__main__':
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
     WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
     DIGIT_ASCII = config['digit_symbol'][DIGIT_SYMBOL]
-    PRED_SYMBOLS = [WORDBREAK_SYMBOL, DIGIT_SYMBOL]
-    PRED_ASCII_CHARS = [WORDBREAK_ASCII, DIGIT_ASCII]
+    ALPHA_ASCII = config['alpha_symbol'][ALPHA_SYMBOL]
+    UPPER_ALPHA_ASCII = config['upper_alpha_symbol'][UPPER_ALPHA_SYMBOL]
+    PUNCT_ASCII = config['punct_symbol'][PUNCT_SYMBOL]
+    NONTERMINATING_PUNCT_ASCII = config['nonterminating_punct_symbol'][NONTERMINATING_PUNCT_SYMBOL]
+    TERMINATING_PUNCT_ASCII = config['terminating_punct_symbol'][TERMINATING_PUNCT_SYMBOL]
+    ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
+    PRED_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
+    PRED_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
 
     IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)

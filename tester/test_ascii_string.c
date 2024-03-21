@@ -5,8 +5,8 @@
 
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
-#include "triecodes.h"
 #include "sequence_transform.h"
+#include "triecodes.h"
 #include "utils.h"
 #include "tester_utils.h"
 #include "tester.h"
@@ -22,7 +22,7 @@ int test_ascii_string(const st_test_options_t *options)
     st_key_stack_reset(&sim_output);
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
-    st_key_buffer_t *buf = st_get_key_buffer();    
+    st_key_buffer_t *buf = st_get_key_buffer();
     buf->size = 0;
     for (int i = 0; i < len; ++i) {
         const char c = options->user_str[i];

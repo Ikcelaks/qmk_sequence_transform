@@ -6,8 +6,8 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
-#include "triecodes.h"
 #include "keybuffer.h"
+#include "triecodes.h"
 #include "utils.h"
 #include <ctype.h>
 
@@ -33,15 +33,11 @@ uint8_t st_key_buffer_get_triecode(const st_key_buffer_t *buf, int index)
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
     return (keyaction ? keyaction->key.triecode : '\0');
 }
-// returns false if index is out of bounds
-bool st_key_buffer_get_key(const st_key_buffer_t *buf, int index, st_key_info_t *key)
+//////////////////////////////////////////////////////////////////
+uint8_t st_key_buffer_get_pred_proxy(const st_key_buffer_t *buf, int index)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
-    if (!keyaction) {
-        return false;
-    }
-    *key = keyaction->key;
-    return true;
+    return (keyaction ? keyaction->key.pred_proxy : 0);
 }
 /**
  * @brief Gets an st_key_action_t from the `index` position in the key_buffer
@@ -82,22 +78,8 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
         buf->head = 0;               // wrap to 0
     }
     buf->data[buf->head].key.triecode = triecode;
-    buf->data[buf->head].key.preds = 0;
-    switch (triecode) {
-        case 'A'...'Z':
-            buf->data[buf->head].key.triecode = tolower(triecode);
-            buf->data[buf->head].key.preds |= ST_PBIT_ALPHA | ST_PBIT_UPPERALPHA;
-            break;
-        case 'a'...'z':
-            buf->data[buf->head].key.preds |= ST_PBIT_ALPHA;
-            break;
-        case '0'...'9':
-            buf->data[buf->head].key.preds |= ST_PBIT_DIGIT;
-            break;
-        default:
-            buf->data[buf->head].key.preds |= ST_PBIT_NONALPHA;
-    }
-    buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
+    buf->data[buf->head].key.pred_proxy = triecode;
+    buf->data[buf->head].action = ST_DEFAULT_KEY_ACTION;
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)

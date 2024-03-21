@@ -1,0 +1,242 @@
+{
+    "\ud83d\udc46": {
+        ",": {
+            "MATCH": [
+                ",\ud83d\udc46",
+                {
+                    "TARGET": ",\u23b5and",
+                    "RESULT": {
+                        "BACKSPACES": 0,
+                        "FUNC": 0,
+                        "OUTPUT": " and"
+                    }
+                }
+            ]
+        },
+        "MATCH": [
+            "\ud83d\udc46",
+            {
+                "TARGET": "n",
+                "RESULT": {
+                    "BACKSPACES": 0,
+                    "FUNC": 0,
+                    "OUTPUT": "n"
+                }
+            }
+        ],
+        "a": {
+            "q": {
+                "MATCH": [
+                    "qa\ud83d\udc46",
+                    {
+                        "TARGET": "qa",
+                        "RESULT": {
+                            "BACKSPACES": 2,
+                            "FUNC": 0,
+                            "OUTPUT": "a"
+                        }
+                    }
+                ]
+            }
+        },
+        "i": {
+            "q": {
+                "MATCH": [
+                    "qi\ud83d\udc46",
+                    {
+                        "TARGET": "qi",
+                        "RESULT": {
+                            "BACKSPACES": 2,
+                            "FUNC": 0,
+                            "OUTPUT": "i"
+                        }
+                    }
+                ]
+            }
+        },
+        "e": {
+            "q": {
+                "MATCH": [
+                    "qe\ud83d\udc46",
+                    {
+                        "TARGET": "qe",
+                        "RESULT": {
+                            "BACKSPACES": 2,
+                            "FUNC": 0,
+                            "OUTPUT": "e"
+                        }
+                    }
+                ]
+            }
+        },
+        "o": {
+            "q": {
+                "MATCH": [
+                    "qo\ud83d\udc46",
+                    {
+                        "TARGET": "qo",
+                        "RESULT": {
+                            "BACKSPACES": 2,
+                            "FUNC": 0,
+                            "OUTPUT": "o"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "a": {
+        "q": {
+            "MATCH": [
+                "qa",
+                {
+                    "TARGET": "qua",
+                    "RESULT": {
+                        "BACKSPACES": 0,
+                        "FUNC": 0,
+                        "OUTPUT": "ua"
+                    }
+                }
+            ]
+        }
+    },
+    "i": {
+        "q": {
+            "MATCH": [
+                "qi",
+                {
+                    "TARGET": "qui",
+                    "RESULT": {
+                        "BACKSPACES": 0,
+                        "FUNC": 0,
+                        "OUTPUT": "ui"
+                    }
+                }
+            ]
+        }
+    },
+    "e": {
+        "q": {
+            "MATCH": [
+                "qe",
+                {
+                    "TARGET": "que",
+                    "RESULT": {
+                        "BACKSPACES": 0,
+                        "FUNC": 0,
+                        "OUTPUT": "ue"
+                    }
+                }
+            ]
+        }
+    },
+    "o": {
+        "q": {
+            "MATCH": [
+                "qo",
+                {
+                    "TARGET": "quo",
+                    "RESULT": {
+                        "BACKSPACES": 0,
+                        "FUNC": 0,
+                        "OUTPUT": "uo"
+                    }
+                }
+            ]
+        }
+    },
+    "\ud83d\udc4d": {
+        "a": {
+            "u": {
+                "q": {
+                    "\u23b5": {
+                        "MATCH": [
+                            "\u23b5qua\ud83d\udc4d",
+                            {
+                                "TARGET": "\u23b5\u23b5quali",
+                                "RESULT": {
+                                    "BACKSPACES": 3,
+                                    "FUNC": 0,
+                                    "OUTPUT": " quali"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "MATCH": [
+            "\ud83d\udc4d",
+            {
+                "TARGET": "",
+                "RESULT": {
+                    "BACKSPACES": 0,
+                    "FUNC": 0,
+                    "OUTPUT": ""
+                }
+            }
+        ]
+    },
+    "t": {
+        "\ud83d\udc4d": {
+            "a": {
+                "q": {
+                    "\u23b5": {
+                        "MATCH": [
+                            "\u23b5qa\ud83d\udc4dt",
+                            {
+                                "TARGET": "\u23b5\u23b5quality",
+                                "RESULT": {
+                                    "BACKSPACES": 3,
+                                    "FUNC": 0,
+                                    "OUTPUT": " quality"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "\u2605": {
+        "MATCH": [
+            "\u2605",
+            {
+                "TARGET": "",
+                "RESULT": {
+                    "BACKSPACES": 0,
+                    "FUNC": 0,
+                    "OUTPUT": ""
+                }
+            }
+        ]
+    },
+    "\u272a": {
+        "MATCH": [
+            "\u272a",
+            {
+                "TARGET": "",
+                "RESULT": {
+                    "BACKSPACES": 0,
+                    "FUNC": 0,
+                    "OUTPUT": ""
+                }
+            }
+        ]
+    }
+}
+[' quality', ' quali', ' and', 'ue', 'uo', 'ua', 'ui', 'i', 'n', 'a', 'o', 'e', '']
+ quality added at 0
+ quali found at 0
+ and added at 8
+ue added at 12
+uo added at 14
+ua found at 2
+ui added at 16
+i found at 5
+n found at 10
+a found at 3
+o found at 15
+e found at 13
+ found at 0
+ quality andueuoui

@@ -4,10 +4,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "qmk_wrapper.h"
+#include "keybuffer.h"
 #include "triecodes.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
 #include "st_assert.h"
+#include "predicates.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
@@ -118,6 +120,16 @@ uint16_t st_ascii_to_keycode(uint8_t triecode)
     if (is_shifted)
         k = S(k);
     return k;
+}
+////////////////////////////////////////////////////////////////////////////////
+bool st_match_triecode(uint8_t triecode, st_key_t key)
+{
+    if (triecode < TRIECODE_SEQUENCE_PRED_0) {
+        // Not a predicate. Do an exact match
+        return triecode == key.triecode;
+    }
+    const uint8_t pred_index = triecode - TRIECODE_SEQUENCE_PRED_0;
+    return st_predicate_test_triecode(pred_index, key.pred_proxy);
 }
 
 //////////////////////////////////////////////////////////////////////

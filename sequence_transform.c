@@ -10,10 +10,11 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
-#include "triecodes.h"
 #include "sequence_transform.h"
+#include "triecodes.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
+#include "predicates.h"
 
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
@@ -34,7 +35,7 @@ static bool post_process_do_rule_search = false;
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
-static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{{KC_SPC, 0}, ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{{KC_SPC, KC_SPACE}, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
@@ -204,27 +205,25 @@ bool st_process_check(uint16_t *keycode,
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-bool search_for_regular_key(st_key_info_t *key)
+bool search_for_regular_key(st_key_t *key)
 {
     for (int i = 1; i < key_buffer.size; ++i) {
-
-        if (!st_key_buffer_get_key(&key_buffer, i, key)) {
-            return false;
-        }
-        if (!(st_is_seq_token_triecode(key->triecode))) {
-            return true;
+        key->triecode = st_key_buffer_get_triecode(&key_buffer, i);
+        if (!key->triecode || !st_is_seq_token_triecode(key->triecode)) {
+            break;
         }
     }
-    return false;
+    key->pred_proxy = key->triecode;
+    return key->triecode;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key(void)
 {
-    st_key_info_t last_regular_key;
+    st_key_t last_regular_key;
     if (search_for_regular_key(&last_regular_key)) {
         st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_key);
         st_key_buffer_get(&key_buffer, 0)->key = last_regular_key;
-        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
+        st_key_buffer_get(&key_buffer, 0)->action = ST_DEFAULT_KEY_ACTION;
         st_send_key(st_ascii_to_keycode(last_regular_key.triecode));
     }
 }
@@ -311,10 +310,15 @@ void st_find_missed_rule(void)
 void st_handle_result(const st_trie_t *trie,
                       const st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
-    st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
+    st_key_action_t * const keyaction = st_key_buffer_get(&key_buffer, 0);
+    keyaction->action = res->trie_match.trie_match_index;
     // fill completion buffer
     char completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
     st_completion_to_str(trie, &res->trie_payload, completion_str);
+    // Set last completion char as the predicate proxy
+    if (res->trie_payload.completion_len > 0) {
+        keyaction->key.pred_proxy = completion_str[res->trie_payload.completion_len - 1];
+    }
     // Log newly added rule match
     log_rule(res, completion_str);
     // Send backspaces

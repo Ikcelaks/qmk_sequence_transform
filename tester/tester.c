@@ -8,10 +8,10 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "utils.h"
+#include "keybuffer.h"
 #include "triecodes.h"
 // fixme: rule search callback should just pass 2 strings,
 // instead of st_trie_rule_t, which creates unnecessary header depends
-#include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "tester.h"
