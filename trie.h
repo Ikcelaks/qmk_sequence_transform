@@ -101,3 +101,13 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
 bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
 void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
 bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
+
+#ifdef ST_TESTER
+#   define TDATAW(trie, L) st_get_trie_data_word(trie, L)
+#   define TDATA(trie, L)  st_get_trie_data_byte(trie, L)
+#   define CDATA(trie, L)  st_get_trie_completion_byte(trie, L)
+#else
+#   define TDATAW(trie, L) ((pgm_read_byte(&trie->data[L]) << 8) + pgm_read_byte(&trie->data[L + 1]))
+#   define TDATA(trie, L)  pgm_read_byte(&trie->data[L])
+#   define CDATA(trie, L)  pgm_read_byte(&trie->completions[L])
+#endif
