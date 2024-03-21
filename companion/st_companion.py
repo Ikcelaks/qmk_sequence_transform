@@ -7,9 +7,9 @@ def main():
     """Acquire debugging information from usb hid devices"""
     print_observer = PrintObserver()
 
-    device_finder = DeviceListener((
+    device_finder = DeviceListener([
         print_observer,
-    ))
+    ])
 
     print("Looking for devices...", flush=True)
     device_finder.run_forever()
