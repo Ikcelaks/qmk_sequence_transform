@@ -110,13 +110,6 @@ st_cursor_t     *st_get_cursor(void) { return &trie_cursor; }
 bool st_process_check(uint16_t *keycode,
                       const keyrecord_t *record,
                       uint8_t *mods) {
-    if (!record->event.pressed &&
-        QK_MODS_GET_BASIC_KEYCODE(*keycode) != KC_BSPC) {
-        // We generally only process key presses, not releases, but we must make an
-        // exception for Backspace, because enhanced backspace does its action on
-        // the release of backspace.
-        return false;
-    }
     // See quantum_keycodes.h for reference on these matched ranges.
     switch (*keycode) {
         // Exclude these keycodes from processing.
@@ -399,6 +392,53 @@ bool st_perform() {
 }
 
 /**
+ * @return true if keycode should be treated as a wordbreak
+ */
+bool st_is_wordbreak_keycode(uint16_t keycode)
+{    
+    switch (keycode) {
+        case KC_A ... KC_0:
+        case S(KC_1)... S(KC_0):
+        case KC_MINUS ... KC_SLASH:
+            // FIXME: symbols should convert to space if not used in rules!
+            return false;
+        case S(KC_MINUS)... S(KC_SLASH):
+            // treat " (shifted ') as a word boundary
+            if (keycode == S(KC_QUOTE)) {
+                return true;
+            }
+            return false;
+    }
+    // set word boundary if some other non-alpha key is pressed
+    return true;
+}
+
+/**
+ * @brief sets flag to later perform enhanced backspace
+ *        or simply clears the buffer on key hold
+ */
+void st_on_backspace(keyrecord_t *record)
+{
+#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
+    if (record->event.pressed) {
+        backspace_timer = timer_read32();
+        // set flag so that post_process_sequence_transform will perfom an undo
+        post_process_do_enhanced_backspace = true;
+        return;
+    }
+    // This is a release
+    if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
+        // Clear the buffer if the backspace key was held past the tapping term
+        st_key_buffer_reset(&key_buffer);
+    }
+#else
+    if (record->event.pressed) {
+        st_key_buffer_reset(&key_buffer);
+    }
+#endif
+}
+
+/**
  * @brief Process handler for sequence_transform feature.
  *
  * @param keycode Keycode registered by matrix press, per keymap
@@ -407,7 +447,10 @@ bool st_perform() {
  * @return true Continue processing keycodes, and send to host
  * @return false Stop processing keycodes, and don't send to host
  */
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start) {
+bool process_sequence_transform(uint16_t keycode,
+                                keyrecord_t *record,
+                                uint16_t sequence_token_start)
+{
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
@@ -418,55 +461,34 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    // keycode verification and extraction
-    if (!st_is_seq_token_keycode(keycode, sequence_token_start)
-        && !st_process_check(&keycode, record, &mods))
+    
+    // Keycode verification and extraction
+    const bool is_seq_tok = st_is_seq_token_keycode(keycode, sequence_token_start);
+    if (!is_seq_tok && !st_process_check(&keycode, record, &mods)) {
         return true;
-
+    }
+    // Handle backspace
     if (keycode == KC_BSPC) {
-#if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
-        if (record->event.pressed) {
-            backspace_timer = timer_read32();
-            // set flag so that post_process_sequence_transform will perfom an undo
-            post_process_do_enhanced_backspace = true;
-            return true;
-        }
-        // This is a release
-        if (timer_elapsed32(backspace_timer) > TAPPING_TERM) {
-            // Clear the buffer if the backspace key was held past the tapping term
-            st_key_buffer_reset(&key_buffer);
-        }
+        st_on_backspace(record);
         return true;
-#else
-        st_key_buffer_reset(&key_buffer);
+    }
+    // Don't process on key up
+    if (!record->event.pressed) {
         return true;
-#endif
     }
-    // keycode buffer check
-    if (!st_is_seq_token_keycode(keycode, sequence_token_start)) {
-        switch (keycode) {
-            case KC_A ... KC_0:
-            case S(KC_1)... S(KC_0):
-            case KC_MINUS ... KC_SLASH:
-                // process normally
-                break;
-            case S(KC_MINUS)... S(KC_SLASH):
-                // treat " (shifted ') as a word boundary
-                if (keycode == S(KC_QUOTE)) keycode = KC_SPC;
-                break;
-            default:
-                // set word boundary if some other non-alpha key is pressed
-                keycode = KC_SPC;
-        }
+    // Convert keycode to KC_SPC if necessary
+    if (!is_seq_tok && st_is_wordbreak_keycode(keycode)) {
+        keycode = KC_SPC;
     }
+    // Convert to triecode and add it to our buffer
     const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);
     st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
         keycode, st_triecode_to_ascii(triecode));
-
     st_key_buffer_push(&key_buffer, triecode);
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(&key_buffer);
     }
+    // Try to perform a sequence transform!
     if (st_perform()) {
         // tell QMK to not process this key
         return false;
