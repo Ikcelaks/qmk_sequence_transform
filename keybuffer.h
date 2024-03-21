@@ -1,11 +1,7 @@
-// Copyright 2021 Google LLC
-// Copyright 2021 @filterpaper
-// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
 // Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
 // Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #pragma once
 
 //////////////////////////////////////////////////////////////////
@@ -40,12 +36,16 @@ typedef struct
     int                     head;       // current head for circular access
 } st_key_buffer_t;
 
-st_key_action_t         *st_key_buffer_get(const st_key_buffer_t *buf, int index);
-uint8_t                 st_key_buffer_get_triecode(const st_key_buffer_t *buf, int index);
-bool                    st_key_buffer_get_key(const st_key_buffer_t *buf, int index, st_key_info_t *key);
-bool                    st_key_buffer_matches_predicate(const st_key_buffer_t *buf, int index, uint8_t pred);
-void                    st_key_buffer_reset(st_key_buffer_t *buf);
-void                    st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode);
-void                    st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
-void                    st_key_buffer_print(const st_key_buffer_t *buf);
-void                    st_key_buffer_to_str(const st_key_buffer_t *buf, char *output_string, uint8_t len);
+st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index);
+uint8_t         st_key_buffer_get_triecode(const st_key_buffer_t *buf, int index);
+bool            st_key_buffer_get_key(const st_key_buffer_t *buf, int index, st_key_info_t *key);
+bool            st_key_buffer_matches_predicate(const st_key_buffer_t *buf, int index, uint8_t pred);
+void            st_key_buffer_reset(st_key_buffer_t *buf);
+void            st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode);
+void            st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num);
+void            st_key_buffer_print(const st_key_buffer_t *buf);
+
+#ifdef ST_TESTER
+bool            st_key_buffer_has_unexpanded_seq(st_key_buffer_t *buf);
+void            st_key_buffer_to_ascii_str(const st_key_buffer_t *buf, char *str);
+#endif

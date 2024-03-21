@@ -1,3 +1,8 @@
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
 #include <stdbool.h>
 #include <string.h>
 #include "st_debug.h"

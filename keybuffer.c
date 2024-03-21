@@ -1,18 +1,17 @@
-// Copyright 2021 Google LLC
-// Copyright 2021 @filterpaper
-// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
 // Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
 // Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "utils.h"
 #include <ctype.h>
+
+#define TRIECODE_AT(i) st_key_buffer_get_triecode(buf, (i))
 
 //////////////////////////////////////////////////////////////////
 // Public
@@ -99,9 +98,6 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
             buf->data[buf->head].key.preds |= ST_PBIT_NONALPHA;
     }
     buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
-    if (st_debug_check(ST_DBG_GENERAL)) {
-        st_key_buffer_print(buf);
-    }
 }
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
@@ -119,20 +115,53 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_print(const st_key_buffer_t *buf)
 {
+#ifndef NO_PRINT
     uprintf("buffer: |");
-    for (int i = -1; i >= -buf->size; --i)
-        uprintf("%c", st_triecode_to_char(st_key_buffer_get(buf, i)->key.triecode));
+    for (int i = -1; i >= -buf->size; --i) {
+        const uint8_t code = TRIECODE_AT(i);
+#ifdef ST_TESTER
+        const char *token = st_get_seq_token_utf8(code);
+        if (token) {
+            uprintf("%s", token);
+        } else {
+            uprintf("%c", code);
+        }
+#else
+        const char c = st_triecode_to_ascii(code);
+        uprintf("%c", c);
+#endif
+    }
     uprintf("| (%d)\n", buf->size);
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+// These are (currently) only used by the tester,
+// so let's not compile them into the firmware.
+#ifdef ST_TESTER
+
+//////////////////////////////////////////////////////////////////////
+// returns true if there are any sequence tokens in the buffer
+// before the most recent key
+bool st_key_buffer_has_unexpanded_seq(st_key_buffer_t *buf)
+{
+    for (int i = 1; i < buf->size; ++i) {
+        const uint8_t code = TRIECODE_AT(i);
+        if (st_is_seq_token_triecode(code)) {
+            return true;
+        }
+    }
+    return false;
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_to_str(const st_key_buffer_t *buf, char* output_string, uint8_t len)
+// Converts keys from buffer to null terminated ascii string
+void st_key_buffer_to_ascii_str(const st_key_buffer_t *buf, char *str)
 {
-    int i = 0;
-
-    for (; i < len; i += 1) {
-        uint16_t current_triecode = st_key_buffer_get_triecode(buf, len - i - 1);
-        output_string[i] = st_triecode_to_char(current_triecode);
+    for (int i = -1; i >= -buf->size; --i) {
+        const uint8_t code = TRIECODE_AT(i);
+        *str++ = st_triecode_to_ascii(code);
     }
-
-    output_string[i] = '\0';
+    *str = 0;
 }
+
+#endif // ST_TESTER

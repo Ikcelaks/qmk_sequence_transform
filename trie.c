@@ -1,19 +1,14 @@
-// Copyright 2021 Google LLC
-// Copyright 2021 @filterpaper
-// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
 // Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
 // Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "st_assert.h"
-#include <string.h>
-#include <stdbool.h>
 #include <ctype.h>
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
@@ -24,10 +19,10 @@
 #define TRIECODE_SEQUENCE_PRED_MASK 0x0F
 
 //////////////////////////////////////////////////////////////////////
-uint16_t st_get_trie_data_byte(const st_trie_t *trie, int index)
+uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index < trie->data_size,
-        "Tried reading outside trie data! index: %d, size: %d\n",
+        "Tried reading outside trie data! index: %d, size: %d",
         index, trie->data_size);
     return pgm_read_byte(&trie->data[index]);
 }
@@ -35,7 +30,7 @@ uint16_t st_get_trie_data_byte(const st_trie_t *trie, int index)
 uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index + 1 < trie->data_size,
-        "Tried reading outside trie data! index: %d, size: %d\n",
+        "Tried reading outside trie data! index: %d, size: %d",
         index, trie->data_size);
     return (pgm_read_byte(&trie->data[index]) << 8) + pgm_read_byte(&trie->data[index + 1]);
 }
@@ -43,7 +38,7 @@ uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
 uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
 {
     st_assert(0 <= index && index < trie->completions_size,
-        "Tried reading outside completion data! index: %d, size: %d\n",
+        "Tried reading outside completion data! index: %d, size: %d",
         index, trie->completions_size);
     return pgm_read_byte(&trie->completions[index]);
 }
@@ -69,9 +64,14 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
     return false;
 }
 //////////////////////////////////////////////////////////////////
-void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t match_index)
+void st_get_payload_from_match_index(const st_trie_t *trie,
+                                     st_trie_payload_t *payload,
+                                     uint16_t match_index)
 {
-    st_get_payload_from_code(payload, TDATA(trie, match_index), TDATA(trie, match_index+1), (TDATA(trie, match_index+2) << 8) + TDATA(trie, match_index+3));
+    st_get_payload_from_code(payload,
+        TDATA(trie, match_index),
+        TDATA(trie, match_index+1),
+        (TDATA(trie, match_index+2) << 8) + TDATA(trie, match_index+3));
 }
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index)
@@ -284,7 +284,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
     const st_trie_t *trie = search->trie;
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_key_stack_t *key_stack = search->key_stack;
-    uint16_t code = TDATA(trie, offset);
+    uint8_t code = TDATA(trie, offset);
     // Match Node if bit 7 is set
     if (code & TRIE_MATCH_BIT) {
         // If bit 6 is also set, there's a child node after the completion string
@@ -315,7 +315,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         code = TDATA(trie, ++offset);
         bool res = false;
         const bool check = key_stack->size >= search->skip_levels;
-        const uint16_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
+        const uint8_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
         // find child that matches our current buffer location
         // (if this is a skip level, we go down all children)
         for (; code; offset += 3, code = TDATA(trie, offset)) {
@@ -343,7 +343,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
             return false;
         }
         const bool check = key_stack->size >= search->skip_levels;
-        const uint16_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
+        const uint8_t cur_key = check ? OFFSET_BUFFER_VAL : 0;
         if (check && cur_key != code) {
             key_stack->size = prev_stack_size;
             return false;
@@ -354,16 +354,6 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
     const bool res = st_trie_rule_search(search, offset+1);
     key_stack->size = prev_stack_size;
     return res;
-}
-//////////////////////////////////////////////////////////////////////
-bool stack_contains_unexpanded_seq(const st_key_stack_t *s)
-{
-    for (int i = 1; i < s->size; ++i) {
-        const uint16_t key = s->buffer[i];
-        if (st_is_seq_token_triecode(key))
-            return true;
-    }
-    return false;
 }
 //////////////////////////////////////////////////////////////////////
 bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search)
@@ -381,7 +371,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     // If stack contains an un-expanded sequence, and this rule
     // requires backspaces, we cannot properly check this rule
     const int backspaces = payload->num_backspaces;
-    if (stack_contains_unexpanded_seq(key_stack) && backspaces) {
+    if (st_stack_has_unexpanded_seq(key_stack) && backspaces) {
         st_debug(ST_DBG_RULE_SEARCH, "  untestable rule!\n");
         return false;
     }
@@ -390,8 +380,8 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     for (int i = 1 + backspaces, j = 0; i < key_stack->size; ++i, ++j) {
         const uint8_t stack_key = key_stack->buffer[i];
         const uint8_t buf_key = st_key_buffer_get_triecode(key_buffer, j+payload->completion_len);
-        st_debug(ST_DBG_RULE_SEARCH, "[%02X(%c), %02X(%c)] ",
-            stack_key, st_triecode_to_char(stack_key), buf_key, st_triecode_to_char(buf_key));
+        st_debug(ST_DBG_RULE_SEARCH, "[%c, %c] ",
+            st_triecode_to_ascii(stack_key), st_triecode_to_ascii(buf_key));
         if (stack_key != buf_key) {
             st_debug(ST_DBG_RULE_SEARCH, "  no match.\n");
             return false;
@@ -404,7 +394,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         const char ascii_code = CDATA(trie, i);
         const uint8_t buf_key = st_key_buffer_get_triecode(key_buffer, -(j+1));
         st_debug(ST_DBG_RULE_SEARCH, "[%c, %c] ",
-            ascii_code, st_triecode_to_char(buf_key));
+            ascii_code, st_triecode_to_ascii(buf_key));
         if (ascii_code != buf_key) {
             st_debug(ST_DBG_RULE_SEARCH, "  no match.\n");
             return false;
@@ -418,10 +408,9 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     char *transform = res->transform;
     for (int i = key_stack->size - 1; i >= 0; --i) {
         const uint8_t keycode = key_stack->buffer[i];
-        const char c = st_triecode_to_char(keycode);
+        const char c = st_triecode_to_ascii(keycode);
         *seq++ = c;
-        if (i >= 1 + backspaces &&
-            !(i == key_stack->size - 1 && keycode == KC_SPACE)) {
+        if (i >= 1 + backspaces) {
             *transform++ = c;
         }
     }
