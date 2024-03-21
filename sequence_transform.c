@@ -10,6 +10,7 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "triecodes.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
@@ -218,7 +219,7 @@ uint8_t search_for_regular_keypress(void)
         if (!triecode) {
             return '\0';
         }
-        if (!(st_is_seq_token_triecode(triecode))) {
+        if (!st_is_seq_token_triecode(triecode)) {
             return triecode;
         }
     }
@@ -227,12 +228,12 @@ uint8_t search_for_regular_keypress(void)
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key(void)
 {
-    const uint16_t last_regular_keypress = search_for_regular_keypress();
+    const uint8_t last_regular_keypress = search_for_regular_keypress();
     if (last_regular_keypress) {
         st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
         st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        st_send_key(st_char_to_keycode(last_regular_keypress));
+        st_send_key(st_ascii_to_keycode(last_regular_keypress));
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -328,7 +329,7 @@ void st_handle_result(const st_trie_t *trie,
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
     for (char *c = completion_str; *c; ++c) {
-        st_send_key(st_char_to_keycode(*c));
+        st_send_key(st_ascii_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {
         case 1:  // repeat
@@ -381,35 +382,6 @@ void st_handle_backspace() {
     st_key_buffer_pop(&key_buffer, 1);
 }
 #endif
-
-/**
- * @brief Fills the provided buffer with up to `count` characters from the virtual output
- *
- * @param str char* to write the virtual output to. Will be null terminated.
- * @param history int 0 for the current output. N for the output N keypresses ago.
- * @param count int representing the number of characters requested. str must be hold `count + 1` chars
- * @return the number of characters written to the str not including the null terminator
- */
-uint8_t st_get_virtual_output(char *str, uint8_t count)
-{
-    if (!st_cursor_init(&trie_cursor, 0, true)) {
-        str[0] = '\0';
-        return 0;
-    }
-    int i = 0;
-    for (; i < count; ++i, st_cursor_next(&trie_cursor)) {
-        const uint8_t triecode = st_cursor_get_triecode(&trie_cursor);
-        if (!triecode) {
-            break;
-        }
-        // We don't want st_wordbreak_ascii here
-        // (doing the change here removes unnecessary depends in the tester)
-        // FIXME: we should really be comparing keycodes instead of chars!
-        str[i] = st_triecode_to_char(triecode);
-    }
-    str[i] = '\0';
-    return i;
-}
 
 /**
  * @brief Performs sequence transform if a match is found in the trie
@@ -489,9 +461,12 @@ bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t 
     }
     const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);
     st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
-        keycode, st_triecode_to_char(triecode));
+        keycode, st_triecode_to_ascii(triecode));
 
     st_key_buffer_push(&key_buffer, triecode);
+    if (st_debug_check(ST_DBG_GENERAL)) {
+        st_key_buffer_print(&key_buffer);
+    }
     if (st_perform()) {
         // tell QMK to not process this key
         return false;

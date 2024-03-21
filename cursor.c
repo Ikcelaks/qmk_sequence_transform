@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "qmk_wrapper.h"
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
@@ -186,7 +187,8 @@ void st_cursor_print(st_cursor_t *cursor)
     st_cursor_pos_t cursor_pos = st_cursor_save(cursor);
     uprintf("cursor: |");
     while (!st_cursor_at_end(cursor)) {
-        uprintf("%c", st_triecode_to_char(st_cursor_get_triecode(cursor)));
+        const uint8_t code = st_cursor_get_triecode(cursor);
+        uprintf("%c", st_triecode_to_ascii(code));
         st_cursor_next(cursor);
     }
     uprintf("| (%d:%d)\n", cursor->buffer->size, cursor->pos.segment_len);

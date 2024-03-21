@@ -6,36 +6,43 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "sequence_transform.h"
-#include "sim_output_buffer.h"
 #include "tester.h"
+#include "tester_utils.h"
 
-//////////////////////////////////////////////////////////////////
-// compare the virtual output buffer state to the sim output buffer
-// FIXME: we should really be comparing keycodes instead of chars!
-bool compare_output(char *virtual_output, const char *sim_output, int count)
+// Stack containing cursor vout triecodes
+static uint8_t cursor_stack_buffer[256] = {0};
+static st_key_stack_t cursor_vout = {
+    cursor_stack_buffer,
+    256,
+    0
+};
+
+//////////////////////////////////////////////////////////////////////
+void get_cursor_virtual_output(st_key_stack_t *key_stack)
 {
-    for (int i = 0; i < count; i++) {
-        const char simc = sim_output[i];
-        const char virc = virtual_output[count - 1 - i];
-        if (simc != virc) {
-            return false;
+    st_key_stack_reset(key_stack);
+    st_cursor_t *cursor = st_get_cursor();
+    // init cursor for virtual output
+    if (!st_cursor_init(cursor, 0, true)) {
+        return;
+    }
+    for (; !st_cursor_at_end(cursor); st_cursor_next(cursor)) {
+        const uint8_t code = st_cursor_get_triecode(cursor);
+        st_key_stack_push(key_stack, code);
+        if (!code) {
+            break;
         }
     }
-    return true;
 }
 //////////////////////////////////////////////////////////////////////
 void test_virtual_output(const st_test_rule_t *rule, st_test_result_t *res)
 {
-    sim_st_perform(rule->seq_triecodes);
-    const char *sim_output = sim_output_get(false);
-    const int sim_len = sim_output_get_size();
-    char virtual_output[256] = {0};
-    const int virt_len = st_get_virtual_output(virtual_output, 255);
-    if (virt_len != sim_len) {
-        RES_FAIL("virt len (%d) != sim len (%d)", virt_len, sim_len);
-        return;
-    }
-    if (!compare_output(virtual_output, sim_output, virt_len)) {
-        RES_FAIL("mismatch! virt: |%s| sim: |%s|", virtual_output, sim_output);
+    char sim_str[256] = {0}, vout_str[256] = {0};
+    sim_st_perform(rule->sequence);
+    get_cursor_virtual_output(&cursor_vout);
+    if (st_key_stack_cmp(&cursor_vout, &sim_output, false)) {
+        st_key_stack_to_utf8(&sim_output, sim_str);
+        st_key_stack_to_utf8(&cursor_vout, vout_str);
+        RES_FAIL("mismatch! virt: |%s| sim: |%s|", vout_str, sim_str);
     }
 }

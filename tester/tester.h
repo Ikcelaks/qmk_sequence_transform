@@ -7,6 +7,13 @@
 // Strings used to store rule search result from callback
 extern char missed_rule_seq[128];
 extern char missed_rule_transform[128];
+// Virtual output
+extern st_key_stack_t sim_output;
+
+typedef enum {
+    ACTION_TEST_ALL_RULES,
+    ACTION_TEST_ASCII_STRING,
+} st_test_action_t;
 
 typedef enum {
     TEST_FAIL,
@@ -22,13 +29,14 @@ typedef enum {
     snprintf(res->message, sizeof(res->message), __VA_ARGS__); }
 
 typedef struct {
-    const uint8_t * const   seq_triecodes;
-    const char * const      transform_str;
+    // null terminated triecode arrays
+    const uint8_t * const   sequence;
+    const uint8_t * const   transform;
 } st_test_rule_t;
 
 typedef struct {
     st_result_code_t    code;
-    char                message[512];
+    char                message[1024];
 } st_test_result_t;
 
 typedef void (*st_test_func_t)(const st_test_rule_t *, st_test_result_t *);
@@ -46,12 +54,12 @@ typedef struct {
     bool    print_all;
 } st_test_options_t;
 
-typedef int (*st_test_action_t)(const st_test_options_t *);
+typedef int (*st_test_action_func_t)(const st_test_options_t *);
 
 void    print_available_tests(void);
 
 //      Internal
-void    sim_st_perform(const uint8_t *triecodes);
+void    sim_st_perform(const uint8_t *sequence);
 
 //      Rule tests
 void    test_perform(const st_test_rule_t *rule, st_test_result_t *res);

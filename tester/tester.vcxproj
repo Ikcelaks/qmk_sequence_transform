@@ -160,10 +160,10 @@
     <ClCompile Include="..\key_stack.c" />
     <ClCompile Include="..\sequence_transform.c" />
     <ClCompile Include="..\st_debug.c" />
+    <ClCompile Include="..\triecodes.c" />
     <ClCompile Include="..\trie.c" />
     <ClCompile Include="..\utils.c" />
     <ClCompile Include="qmk_wrapper.c" />
-    <ClCompile Include="sim_output_buffer.c" />
     <ClCompile Include="tester.c" />
     <ClCompile Include="tester_utils.c" />
     <ClCompile Include="test_all_rules.c" />
@@ -177,6 +177,7 @@
   <ItemGroup>
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\keybuffer.h" />
+    <ClInclude Include="..\key_stack.h" />
     <ClInclude Include="..\qmk_wrapper.h" />
     <ClInclude Include="..\sequence_transform.h" />
     <ClInclude Include="..\sequence_transform_data.h" />
@@ -184,9 +185,9 @@
     <ClInclude Include="..\st_assert.h" />
     <ClInclude Include="..\st_debug.h" />
     <ClInclude Include="..\st_defaults.h" />
+    <ClInclude Include="..\triecodes.h" />
     <ClInclude Include="..\trie.h" />
     <ClInclude Include="..\utils.h" />
-    <ClInclude Include="sim_output_buffer.h" />
     <ClInclude Include="tester.h" />
     <ClInclude Include="tester_utils.h" />
   </ItemGroup>

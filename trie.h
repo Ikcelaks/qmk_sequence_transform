@@ -79,7 +79,7 @@ bool st_trie_do_rule_searches(const st_trie_t *trie,
                               st_key_stack_t *key_stack,
                               int word_start_idx,
                               st_trie_rule_t *rule);
-uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
+uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index);
 uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
 //////////////////////////////////////////////////////////////////
