@@ -1,11 +1,7 @@
-// Copyright 2021 Google LLC
-// Copyright 2021 @filterpaper
-// Copyright 2023 Pablo Martinez (@elpekenin) <elpekenin@elpekenin.dev>
 // Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
 // Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
 // Copyright 2024 QKekos <q.kekos.q@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-// Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #pragma once
 
 //////////////////////////////////////////////////////////////////
@@ -83,7 +79,7 @@ bool st_trie_do_rule_searches(const st_trie_t *trie,
                               st_key_stack_t *key_stack,
                               int word_start_idx,
                               st_trie_rule_t *rule);
-uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
+uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index);
 uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
 //////////////////////////////////////////////////////////////////
