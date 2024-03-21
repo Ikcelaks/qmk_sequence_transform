@@ -90,6 +90,7 @@ void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
 //////////////////////////////////////////////////////////////////
 void st_key_buffer_print(const st_key_buffer_t *buf)
 {
+#ifndef NO_PRINT
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->size; --i) {
         const uint8_t code = TRIECODE_AT(i);
@@ -103,9 +104,10 @@ void st_key_buffer_print(const st_key_buffer_t *buf)
 #else
         const char c = st_triecode_to_ascii(code);
         uprintf("%c", c);
-#endif        
+#endif
     }
     uprintf("| (%d)\n", buf->size);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
