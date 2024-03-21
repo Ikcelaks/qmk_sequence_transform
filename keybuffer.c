@@ -32,7 +32,17 @@
 uint8_t st_key_buffer_get_triecode(const st_key_buffer_t *buf, int index)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
-    return (keyaction ? keyaction->triecode : '\0');
+    return (keyaction ? keyaction->key.triecode : '\0');
+}
+// returns false if index is out of bounds
+bool st_key_buffer_get_key(const st_key_buffer_t *buf, int index, st_key_info_t *key)
+{
+    const st_key_action_t *keyaction = st_key_buffer_get(buf, index);
+    if (!keyaction) {
+        return false;
+    }
+    *key = keyaction->key;
+    return true;
 }
 /**
  * @brief Gets an st_key_action_t from the `index` position in the key_buffer
@@ -72,7 +82,22 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
     if (++buf->head >= buf->capacity) {  // increment cur_pos
         buf->head = 0;               // wrap to 0
     }
-    buf->data[buf->head].triecode = tolower(triecode);
+    buf->data[buf->head].key.triecode = triecode;
+    buf->data[buf->head].key.preds = 0;
+    switch (triecode) {
+        case 'A'...'Z':
+            buf->data[buf->head].key.triecode = tolower(triecode);
+            buf->data[buf->head].key.preds |= ST_PBIT_ALPHA | ST_PBIT_UPPERALPHA;
+            break;
+        case 'a'...'z':
+            buf->data[buf->head].key.preds |= ST_PBIT_ALPHA;
+            break;
+        case '0'...'9':
+            buf->data[buf->head].key.preds |= ST_PBIT_DIGIT;
+            break;
+        default:
+            buf->data[buf->head].key.preds |= ST_PBIT_NONALPHA;
+    }
     buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(buf);
@@ -96,7 +121,7 @@ void st_key_buffer_print(const st_key_buffer_t *buf)
 {
     uprintf("buffer: |");
     for (int i = -1; i >= -buf->size; --i)
-        uprintf("%c", st_triecode_to_char(st_key_buffer_get(buf, i)->triecode));
+        uprintf("%c", st_triecode_to_char(st_key_buffer_get(buf, i)->key.triecode));
     uprintf("| (%d)\n", buf->size);
 }
 //////////////////////////////////////////////////////////////////

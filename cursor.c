@@ -13,6 +13,10 @@
 #include "trie.h"
 #include "utils.h"
 #include "cursor.h"
+#include "st_debug.h"
+
+#define TRIECODE_SEQUENCE_PRED_0 0xA0
+#define TRIECODE_SEQUENCE_PRED_MASK 0x0F
 
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
@@ -89,7 +93,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     if (!cursor->pos.as_output
             || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // we need the actual key that was pressed
-        return keyaction->triecode;
+        return keyaction->key.triecode;
     }
     // This is an output cursor focused on rule matching keypress
     // get the character at the sub_indax of the transform completion
@@ -97,6 +101,30 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     int completion_char_index = action->completion_index;
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
     return CDATA(cursor->trie, completion_char_index);
+}
+//////////////////////////////////////////////////////////////////
+bool st_cursor_get_key(st_cursor_t *cursor, st_key_info_t *key)
+{
+    if (st_cursor_at_end(cursor)) {
+        return false;
+    }
+    if (cursor->pos.as_output) {
+        key->triecode = st_cursor_get_triecode(cursor);
+        // TODO: handle preds in virtual output
+        key->preds = 0;
+        return true;
+    }
+    return st_key_buffer_get_key(cursor->buffer, cursor->pos.index, key);
+}
+//////////////////////////////////////////////////////////////////
+const st_key_action_t * const st_cursor_get_keyaction(st_cursor_t *cursor)
+{
+    if (cursor->pos.as_output) {
+        // not supprted for virtual output buffer
+        st_debug(ST_DBG_CURSOR, "Key Action not valid for virtual output cursor\n");
+        return NULL;
+    }
+    return st_key_buffer_get(cursor->buffer, cursor->pos.index);
 }
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act

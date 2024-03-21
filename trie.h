@@ -19,9 +19,10 @@
 #   define CDATA(trie, L) pgm_read_byte(&trie->completions[L])
 #endif
 
-#define TRIE_MATCH_BIT      0x80
-#define TRIE_BRANCH_BIT     0x40
-#define TRIE_CODE_MASK      0x3F
+#define TRIE_MATCH_BIT          0x80
+#define TRIE_BRANCH_BIT         0x40
+#define TRIE_MULTI_BRANCH_BIT   0x20
+#define TRIE_CODE_MASK          0x3F
 
 typedef struct
 {

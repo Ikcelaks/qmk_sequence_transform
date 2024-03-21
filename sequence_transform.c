@@ -33,7 +33,7 @@ static bool post_process_do_rule_search = false;
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
-static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{{KC_SPC, 0}, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
@@ -210,29 +210,28 @@ bool st_process_check(uint16_t *keycode,
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
-uint8_t search_for_regular_keypress(void)
+bool search_for_regular_key(st_key_info_t *key)
 {
-    uint8_t triecode = '\0';
     for (int i = 1; i < key_buffer.size; ++i) {
-        triecode = st_key_buffer_get_triecode(&key_buffer, i);
-        if (!triecode) {
-            return '\0';
+
+        if (!st_key_buffer_get_key(&key_buffer, i, key)) {
+            return false;
         }
-        if (!(st_is_seq_token_triecode(triecode))) {
-            return triecode;
+        if (!(st_is_seq_token_triecode(key->triecode))) {
+            return true;
         }
     }
-    return '\0';
+    return false;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_repeat_key(void)
 {
-    const uint16_t last_regular_keypress = search_for_regular_keypress();
-    if (last_regular_keypress) {
-        st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
-        st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
+    st_key_info_t last_regular_key;
+    if (search_for_regular_key(&last_regular_key)) {
+        st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_key);
+        st_key_buffer_get(&key_buffer, 0)->key = last_regular_key;
         st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        st_send_key(st_char_to_keycode(last_regular_keypress));
+        st_send_key(st_char_to_keycode(last_regular_key.triecode));
     }
 }
 ///////////////////////////////////////////////////////////////////////////////

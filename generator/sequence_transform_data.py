@@ -58,8 +58,10 @@ GENERATED_HEADER_C_LIKE = f'''\
 # KC_1 = 0x1E
 # MOD_LSFT = 0x0200
 TRIECODE_SEQUENCE_TOKEN_0 = 0x80
+TRIECODE_SEQUENCE_PRED_0 = 0xA0
 TRIE_MATCH_BIT = 0x80
 TRIE_BRANCH_BIT = 0x40
+TRIE_MULTI_BRANCH_BIT = 0x20
 qmk_digits = digits[1:] + digits[0]
 OUTPUT_FUNC_1 = 1
 OUTPUT_FUNC_COUNT_MAX = 7
@@ -119,8 +121,9 @@ def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]
         **map_ascii(qmk_digits),
         **map_ascii("!@#$%^&*()"),
         **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
+        **map_range(TRIECODE_SEQUENCE_PRED_0, PRED_SYMBOLS),
 
-        wordbreak_symbol: ord(" "),  # "Word break" symbol.
+        # wordbreak_symbol: ord(" "),  # "Word break" symbol.
         **{chr(c): c for c in range(ord('a'), ord('z') + 1)}
     }
 
@@ -522,7 +525,10 @@ def serialize_sequence_trie(
             return data + [1] + [symbol_map[c] for c in node['chars']] + [0]
 
         else:  # Handle a branch table entry.
-            links = [TRIE_BRANCH_BIT]
+            code = TRIE_BRANCH_BIT
+            if any([(symbol_map[c] & TRIECODE_SEQUENCE_PRED_0) == TRIECODE_SEQUENCE_PRED_0 for c in node['chars']]):
+                code = code | TRIE_MULTI_BRANCH_BIT
+            links = [code]
 
             for c, link in zip(node['chars'], node['links']):
                 links += [symbol_map[c]] + encode_link(link)
@@ -757,6 +763,7 @@ if __name__ == '__main__':
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
         WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
+        DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
@@ -767,6 +774,9 @@ if __name__ == '__main__':
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
     WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
+    DIGIT_ASCII = config['digit_symbol'][DIGIT_SYMBOL]
+    PRED_SYMBOLS = [WORDBREAK_SYMBOL, DIGIT_SYMBOL]
+    PRED_ASCII_CHARS = [WORDBREAK_ASCII, DIGIT_ASCII]
 
     IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)
