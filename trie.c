@@ -284,7 +284,7 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         for (; code; offset += 3, code = TDATA(trie, offset)) {
             if (!check || cur_key == code) {
                 // Get 16bit offset to child node
-                const uint16_t child_offset = (TDATA(trie, offset + 1) << 8) + TDATA(trie, offset + 2);
+                const uint16_t child_offset = TDATAW(trie, offset+1);
                 // Traverse down child node
                 st_key_stack_push(key_stack, code);
                 res = st_trie_rule_search(search, child_offset) || res;
