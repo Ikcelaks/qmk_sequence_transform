@@ -65,6 +65,13 @@ bool st_is_seq_token_triecode(uint8_t triecode)
     const uint8_t tok_last = tok_first + SEQUENCE_TOKEN_COUNT;
     return (tok_first <= triecode && triecode < tok_last);
 }
+//////////////////////////////////////////////////////////////////////
+bool st_is_seq_pred_triecode(uint8_t triecode)
+{
+    const uint8_t pred_first = TRIECODE_SEQUENCE_PRED_0;
+    const uint8_t pred_last = pred_first + SEQUENCE_PREDICATE_COUNT;
+    return (pred_first <= triecode && triecode < pred_last);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // if triecode is a token that can be translated back to its user symbol,
 // returns its ascii code, otherwise returns 0
@@ -78,12 +85,28 @@ char st_get_seq_token_ascii(uint8_t triecode)
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
+// if triecode is a predicate that can be translated back to its user symbol,
+// returns its ascii code, otherwise returns 0
+char st_get_seq_pred_ascii(uint8_t triecode)
+{
+    if (st_is_seq_pred_triecode(triecode)) {
+        return st_seq_pred_ascii_chars[triecode - TRIECODE_SEQUENCE_PRED_0];
+    } else if (triecode == ' ') {
+        return st_wordbreak_ascii;
+    }
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
 // converts a triecode to a printable ascii char
 char st_triecode_to_ascii(uint8_t triecode)
 {
     const char token = st_get_seq_token_ascii(triecode);
     if (token) {
         return token;
+    }
+    const char pred = st_get_seq_pred_ascii(triecode);
+    if (pred) {
+        return pred;
     }
     st_assert(triecode < 128, "Unprintable triecode: %d", triecode);
     return (char)triecode;
@@ -111,9 +134,9 @@ char st_keycode_to_ascii(uint16_t keycode)
 ////////////////////////////////////////////////////////////////////////////////
 uint16_t st_ascii_to_keycode(uint8_t triecode)
 {
-    st_assert(triecode < 128, "char (%d) not valid ascii", triecode);
+    // st_assert(triecode < 128, "char (%d) not valid ascii", triecode);
     if (triecode >= 128) {
-        return KC_NO;
+        return KC_QUES;
     }
     uint16_t k = pgm_read_byte(&ascii_to_keycode_lut[(uint8_t)triecode]);
     bool is_shifted = PGM_LOADBIT(ascii_to_shift_lut, (uint8_t)triecode);
@@ -152,6 +175,22 @@ const char *st_get_seq_token_utf8(uint8_t triecode)
 {
     if (st_is_seq_token_triecode(triecode)) {
         return st_seq_tokens[triecode - TRIECODE_SEQUENCE_TOKEN_0];
+    } if (st_is_seq_pred_triecode(triecode)) {
+        return st_seq_preds[triecode - TRIECODE_SEQUENCE_PRED_0];
+    } else if (triecode == ' ') {
+        return st_wordbreak_token;
+    }
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+// if triecode is a token that can be translated back to its user symbol,
+// returns pointer to its utf8 string, otherwise returns 0
+const char *st_get_seq_pred_utf8(uint8_t triecode)
+{
+    if (st_is_seq_token_triecode(triecode)) {
+        return st_seq_tokens[triecode - TRIECODE_SEQUENCE_TOKEN_0];
+    } if (st_is_seq_pred_triecode(triecode)) {
+        return st_seq_preds[triecode - TRIECODE_SEQUENCE_PRED_0];
     } else if (triecode == ' ') {
         return st_wordbreak_token;
     }
