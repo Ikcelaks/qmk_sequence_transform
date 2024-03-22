@@ -66,7 +66,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
         // If trans_prefix is not in rule->transform,
         // this is an untestable rule.
         //char trans_prefix_str[128] = {0};
-        //triecodes_to_ascii_str(trans_prefix, trans_prefix_str);
+        //st_triecodes_to_ascii_str(trans_prefix, trans_prefix_str);
         //printf("trans_prefix %s is not in rule->transform!\n", trans_prefix_str);
         return false;
     }
