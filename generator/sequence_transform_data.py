@@ -187,36 +187,82 @@ def make_sequence_trie(
     output_func_symbol_map: Dict[str, int]
 ) -> Dict[str, tuple[str, dict]]:
     """Makes a trie from the sequences, writing in reverse."""
+    seq_list.sort(key=len)
     trie = {}
+    rules = []
 
-    for sequence, transform in seq_list:
+    for rule_number, (sequence, transform) in enumerate(seq_list):
         node = trie
 
         if transform[-1] in output_func_symbol_map:
             output_func = output_func_symbol_map[transform[-1]]
-            target = transform[:len(transform)-1]
+            transform = transform[:len(transform)-1]
 
         else:
             output_func = 0
-            target = transform
 
-        for letter in sequence[::-1]:
-            node = node.setdefault(letter, {})
+        for sub_seq, sub_match in reversed(rules):
+            if sequence.startswith(sub_seq):
+                prematch_output = sub_match['TRANSFORM'] + sequence[len(sub_seq):]
+                i = 0
+                while (
+                    i < min(len(prematch_output), len(transform)) and
+                    prematch_output[i] == transform[i]
+                ):
+                    i += 1
 
-        node['MATCH'] = (sequence, {
-            'TARGET': target,
-            'RESULT': {
-                'BACKSPACES': -1,
+                backspaces = len(prematch_output) - i
+                completion = transform[i:]
+                match = (sequence, {
+                    'TRANSFORM': transform,
+                    'ACTION': {
+                        'BACKSPACES': backspaces,
+                        'FUNC': output_func,
+                        'COMPLETION': completion
+                    }
+                })
+
+                for letter in sequence[len(sub_seq)::-1]:
+                    node = node.setdefault('TOKEN', {}).setdefault(letter, {})
+
+                chains = node.setdefault('CHAIN', [])
+                chains.append({
+                    'SUB_MATCH': sub_match,
+                    'MATCH': match
+                })
+
+                rules.append(sequence, match)
+
+                break
+
+        i = 0
+        while (
+            i < min(len(sequence), len(transform)) and
+            sequence[i] == transform[i]
+        ):
+            i +=1
+
+        backspaces = len(prematch_output) - i
+        completion = transform[i:]
+        match = (sequence, {
+            'TRANSFORM': transform,
+            'ACTION': {
+                'BACKSPACES': backspaces,
                 'FUNC': output_func,
-                'OUTPUT': ""
+                'COMPLETION': completion
             }
         })
+
+        for letter in sequence[::-1]:
+            node = node.setdefault('TOKEN', {}).setdefault(letter, {})
+
+        node['MATCH'] = (sequence, match)
 
     return trie
 
 
 ###############################################################################
-def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[str]:
+def complete_sequence_trie(trie: Dict[str, Any]) -> set[str]:
     outputs = set()
 
     def complete_node(sequence, action):
@@ -251,7 +297,7 @@ def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[s
             i += 1
 
         backspaces = len(expanded_sequence) - i
-        output = target[i:].replace(wordbreak_symbol, " ")
+        output = target[i:].replace(WORDBREAK_SYMBOL, " ")
 
         outputs.add(output)
         action['RESULT']['BACKSPACES'] = backspaces
@@ -583,7 +629,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
     trie = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
-    outputs = complete_sequence_trie(trie, WORDBREAK_SYMBOL)
+    outputs = complete_sequence_trie(trie)
     quiet_print(json.dumps(trie, indent=4))
 
     s_outputs = serialize_outputs(outputs)
@@ -647,8 +693,8 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SEQUENCE_TRIE_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
-        '',        
-        st_seq_token_ascii_chars,        
+        '',
+        st_seq_token_ascii_chars,
         st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
