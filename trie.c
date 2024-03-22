@@ -186,14 +186,18 @@ bool st_trie_do_rule_searches(const st_trie_t       *trie,
     // Convert word_start_index to reverse index
     const int search_base_ridx = st_clamp(key_buffer->size - word_start_idx,
                                           1, key_buffer->size - 1);
-    st_trie_search_t search = {trie, key_buffer, key_stack, 0, 0, rule};
+    st_trie_search_t search = {trie, key_buffer, key_stack, 0, 0, 0, rule};
     const int max_skip_levels = st_min(1 + trie->max_backspaces,
                                        SEQUENCE_TRANSFORM_RULE_SEARCH_MAX_SKIP);
     for (int i = search_base_ridx; i < key_buffer->size; ++i) {
+        search.search_max_seq_len = 0;
         // For every base search_base_ridx, increase skip_levels until we find a match.
         // Each skip level allows for a rule trigger key or deleted char.
         for (search.skip_levels = 1; search.skip_levels <= max_skip_levels; ++search.skip_levels) {
             search.search_end_ridx = i + search.skip_levels;
+            if (search.search_end_ridx > key_buffer->size + 1) {
+                break;
+            }
             st_debug(ST_DBG_RULE_SEARCH, "searching from ridx %d, skips: %d\n", i, search.skip_levels);
             key_stack->size = 0;
             if (st_trie_rule_search(&search, 0)) {
@@ -213,17 +217,22 @@ void debug_rule_match(const st_trie_payload_t *payload,
 {
 #if SEQUENCE_TRANSFORM_DEBUG
     const st_trie_t *trie = search->trie;
+    const st_key_buffer_t *key_buffer = search->key_buffer;
     const st_key_stack_t *key_stack = search->key_stack;
     char stackstr[key_stack->size + 1];
     char compstr[payload->completion_len + 1];
     st_completion_to_str(trie, payload, compstr);
     st_key_stack_to_str(key_stack, stackstr);
-    const int search_base_ridx = search->search_end_ridx - search->skip_levels;
+    const int seq_skips = 1 + payload->num_backspaces;
+    const int search_base_ridx = search->search_end_ridx - seq_skips;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
-    const int backspaces = payload->num_backspaces;
-    st_debug(ST_DBG_RULE_SEARCH,
-        "  checking match @%d, transform_end_ridx: %d, stack: |%s|, comp: |%s|(%d bs)\n",
-        offset, transform_end_ridx, stackstr, compstr, backspaces);
+    uprintf("  checking match @%d, transform_end_ridx: %d (%send), stack: |%s|, comp: |%s|(%d bs)\n",
+            offset,
+            transform_end_ridx,
+            transform_end_ridx != key_buffer->size ? "!" : "",
+            stackstr,
+            compstr,
+            payload->num_backspaces);
 #endif
 }
 //////////////////////////////////////////////////////////////////////
@@ -242,15 +251,18 @@ bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset)
         if ((code & TRIE_BRANCH_BIT) && st_trie_rule_search(search, offset + 4)) {
             return true;
         }
+        // If we found a longer sequence match (but not a full rule match)
+        // we don't need to test any shorter sequence matches
+        if (key_stack->size < search->search_max_seq_len) {
+            return false;
+        }
         // If no better match found deeper,
         // inspect this payload to see if the rule would match
         st_trie_payload_t payload;
-        st_get_payload_from_code(&payload, code, TDATA(trie, offset+1),
-            (TDATA(trie, offset+2) << 8) + TDATA(trie, offset+3));
-        // Make sure skip_levels matches 1 sequence token key + backspaces,
-        // and that removing those wouldn't leave us with an empty buffer
+        st_get_payload_from_code(&payload, code, TDATA(trie, offset+1), TDATAW(trie, offset+2));
+        // Bail if removing trigger key + backspaces would result in empty seq
         const int skips = 1 + payload.num_backspaces;
-        if (search->skip_levels != skips || key_stack->size <= skips) {
+        if (key_stack->size <= skips) {
             return false;
         }
         if (st_debug_check(ST_DBG_RULE_SEARCH)) {
@@ -313,45 +325,51 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     const st_key_stack_t *key_stack = search->key_stack;
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_trie_rule_t *res = search->result;
+    // After removing 'skipped' keys (trigger and backspaces),
+    // check that the stack matches the input buffer.    
+    const int seq_skips = 1 + payload->num_backspaces;
+    const int search_base_ridx = search->search_end_ridx - seq_skips;
+    st_debug(ST_DBG_RULE_SEARCH, "    testing stack:");
+    for (int i = seq_skips, j = 0; i < key_stack->size; ++i, ++j) {
+        const uint8_t stack_key = key_stack->buffer[i];
+        const int buf_ridx = search_base_ridx - j;
+        const uint8_t buf_key = st_key_buffer_get_triecode(key_buffer, -buf_ridx);
+        st_debug(ST_DBG_RULE_SEARCH, " [%c, %c]",
+            st_triecode_to_ascii(stack_key), st_triecode_to_ascii(buf_key));
+        if (stack_key != buf_key) {
+            st_debug(ST_DBG_RULE_SEARCH, " no match.\n");
+            return false;
+        }
+    }
+    // Record search_max_seq_len so we can avoid reporting
+    // false positives during this run that have shorter sequences
+    st_debug(ST_DBG_RULE_SEARCH, " potential match! seq_len: %d\n", key_stack->size);
+    search->search_max_seq_len = key_stack->size;    
     // Early return if potential transform doesn't reach end of search buffer
-    const int search_base_ridx = search->search_end_ridx - search->skip_levels;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
     if (transform_end_ridx != key_buffer->size) {
         return false;
     }
     // If stack contains an un-expanded sequence, and this rule
     // requires backspaces, we cannot properly check this rule
-    const int backspaces = payload->num_backspaces;
-    if (st_stack_has_unexpanded_seq(key_stack) && backspaces) {
-        st_debug(ST_DBG_RULE_SEARCH, "  untestable rule!\n");
+    if (st_stack_has_unexpanded_seq(key_stack) && seq_skips > 1) {
+        st_debug(ST_DBG_RULE_SEARCH, "    unexpanded seq!\n");
         return false;
     }
-    // Check that the stack matches the input buffer
-    st_debug(ST_DBG_RULE_SEARCH, "  testing stack: ");
-    for (int i = 1 + backspaces, j = 0; i < key_stack->size; ++i, ++j) {
-        const uint8_t stack_key = key_stack->buffer[i];
-        const uint8_t buf_key = st_key_buffer_get_triecode(key_buffer, j+payload->completion_len);
-        st_debug(ST_DBG_RULE_SEARCH, "[%c, %c] ",
-            st_triecode_to_ascii(stack_key), st_triecode_to_ascii(buf_key));
-        if (stack_key != buf_key) {
-            st_debug(ST_DBG_RULE_SEARCH, "  no match.\n");
-            return false;
-        }
-    }
     // Check if completed string matches what comes next in our search buffer
-    st_debug(ST_DBG_RULE_SEARCH, "  testing completion: ");
+    st_debug(ST_DBG_RULE_SEARCH, "    testing completion:");
     const int completion_end = payload->completion_index + payload->completion_len;
     for (int i = payload->completion_index, j = search_base_ridx; i < completion_end; ++i, ++j) {
         const char ascii_code = CDATA(trie, i);
         const uint8_t buf_key = st_key_buffer_get_triecode(key_buffer, -(j+1));
-        st_debug(ST_DBG_RULE_SEARCH, "[%c, %c] ",
+        st_debug(ST_DBG_RULE_SEARCH, " [%c, %c]",
             ascii_code, st_triecode_to_ascii(buf_key));
         if (ascii_code != buf_key) {
-            st_debug(ST_DBG_RULE_SEARCH, "  no match.\n");
+            st_debug(ST_DBG_RULE_SEARCH, " no match.\n");
             return false;
         }
     }
-    st_debug(ST_DBG_RULE_SEARCH, "  match!\n");
+    st_debug(ST_DBG_RULE_SEARCH, " match!\n");
     // Save payload data
     res->payload = *payload;
     // Fill the result sequence and start of transform
@@ -361,7 +379,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
         const uint8_t keycode = key_stack->buffer[i];
         const char c = st_triecode_to_ascii(keycode);
         *seq++ = c;
-        if (i >= 1 + backspaces) {
+        if (i >= seq_skips) {
             *transform++ = c;
         }
     }
