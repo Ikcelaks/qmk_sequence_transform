@@ -729,8 +729,8 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
-        WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
+        SEQ_TOKEN_SYMBOLS = "".join(config['sequence_token_symbols'].keys())
+        WORDBREAK_SYMBOL = "".join(config['wordbreak_symbol'].keys())
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
