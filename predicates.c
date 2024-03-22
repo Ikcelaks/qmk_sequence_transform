@@ -22,7 +22,7 @@ __attribute__((weak)) bool st_pred_upper_alpha(uint8_t triecode)
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) bool st_pred_alpha(uint8_t triecode)
 {
-    const bool res = triecode >= 'A' && triecode <= 'Z' && triecode >= 'a' && triecode <= 'z';
+    const bool res = triecode >= 'A' && triecode <= 'Z' || triecode >= 'a' && triecode <= 'z';
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_alpha: Code: %d; Code: %#04X\n", res, triecode);
     return res;
 }
@@ -103,7 +103,7 @@ static const st_predicate_t st_predicates[ST_PREDICATE_COUNT] = {
 //////////////////////////////////////////////////////////////////////
 bool st_predicate_test_triecode(uint8_t predicate_index, uint8_t triecode)
 {
-    if (predicate_index > ST_PREDICATE_COUNT) {
+    if (predicate_index >= ST_PREDICATE_COUNT) {
         return false;
     }
     return st_predicates[predicate_index](triecode);

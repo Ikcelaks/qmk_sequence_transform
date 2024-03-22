@@ -622,7 +622,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     for sequence, transform in seq_tranform_list:
         # Don't add rules with transformation functions to test header for now
-        if len(transform) == 0 or transform[-1] not in output_func_symbol_map:
+        if len(transform) > 0 and transform[-1] not in output_func_symbol_map:
             c_sequence = create_triecode_array_c_string(symbol_map, sequence)
             c_transform = create_triecode_array_c_string(symbol_map, transform)
             test_rule_c_sequences.append(c_sequence)
