@@ -27,6 +27,12 @@ static uint32_t backspace_timer = 0;
 
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
 static bool post_process_do_rule_search = false;
+void schedule_rule_search(void)
+{
+    post_process_do_rule_search = true;
+}
+#else
+void schedule_rule_search(void){}
 #endif
 
 #define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
@@ -473,6 +479,7 @@ bool process_sequence_transform(uint16_t keycode,
     }
     // Don't process on key up
     if (!record->event.pressed) {
+        schedule_rule_search();
         return true;
     }
     // Convert keycode to KC_SPC if necessary
@@ -491,10 +498,6 @@ bool process_sequence_transform(uint16_t keycode,
     if (st_perform()) {
         // tell QMK to not process this key
         return false;
-    } else {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-        post_process_do_rule_search = true;
-#endif
     }
     return true;
 }
