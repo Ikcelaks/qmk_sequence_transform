@@ -10,6 +10,7 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "triecodes.h"
 #include "sequence_transform.h"
 #include "triecodes.h"
 #include "sequence_transform_data.h"

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "qmk_wrapper.h"
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "triecodes.h"
 #include "key_stack.h"

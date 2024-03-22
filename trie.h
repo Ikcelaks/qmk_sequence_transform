@@ -8,11 +8,13 @@
 // Public API
 
 #ifdef ST_TESTER
-#   define TDATA(trie, L) st_get_trie_data_byte(trie, L)
-#   define CDATA(trie, L) st_get_trie_completion_byte(trie, L)
+#   define TDATAW(trie, L) st_get_trie_data_word(trie, L)
+#   define TDATA(trie, L)  st_get_trie_data_byte(trie, L)
+#   define CDATA(trie, L)  st_get_trie_completion_byte(trie, L)
 #else
-#   define TDATA(trie, L) pgm_read_byte(&trie->data[L])
-#   define CDATA(trie, L) pgm_read_byte(&trie->completions[L])
+#   define TDATAW(trie, L) ((pgm_read_byte(&trie->data[L]) << 8) + pgm_read_byte(&trie->data[L + 1]))
+#   define TDATA(trie, L)  pgm_read_byte(&trie->data[L])
+#   define CDATA(trie, L)  pgm_read_byte(&trie->completions[L])
 #endif
 
 #define TRIE_MATCH_BIT          0x80
@@ -80,8 +82,10 @@ bool st_trie_do_rule_searches(const st_trie_t *trie,
                               st_key_stack_t *key_stack,
                               int word_start_idx,
                               st_trie_rule_t *rule);
-uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index);
-uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index);
+
+uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
+uint8_t  st_get_trie_data_byte(const st_trie_t *trie, int index);
+uint8_t  st_get_trie_completion_byte(const st_trie_t *trie, int index);
 
 //////////////////////////////////////////////////////////////////
 // Internal

@@ -5,6 +5,7 @@
 
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
+#include "triecodes.h"
 #include "sequence_transform.h"
 #include "triecodes.h"
 #include "utils.h"

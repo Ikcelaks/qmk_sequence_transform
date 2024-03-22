@@ -12,6 +12,9 @@
 #include <ctype.h>
 
 #define TRIECODE_AT(i) st_key_buffer_get_triecode(buf, (i))
+#include <ctype.h>
+
+#define TRIECODE_AT(i) st_key_buffer_get_triecode(buf, (i))
 
 //////////////////////////////////////////////////////////////////
 // Public

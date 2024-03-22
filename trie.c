@@ -8,6 +8,7 @@
 #include "st_debug.h"
 #include "st_assert.h"
 #include <ctype.h>
+#include "triecodes.h"
 #include "keybuffer.h"
 #include "triecodes.h"
 #include "key_stack.h"
@@ -68,6 +69,9 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 void st_get_payload_from_match_index(const st_trie_t *trie,
                                      st_trie_payload_t *payload,
                                      uint16_t match_index)
+void st_get_payload_from_match_index(const st_trie_t *trie,
+                                     st_trie_payload_t *payload,
+                                     uint16_t match_index)
 {
     st_get_payload_from_code(payload,
         TDATA(trie, match_index),
@@ -76,10 +80,11 @@ void st_get_payload_from_match_index(const st_trie_t *trie,
 }
 //////////////////////////////////////////////////////////////////
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index)
+void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index)
 {
     // Payload data is bit-backed into 16bits:
-    // (N: node type, F: func, B: backspackes, C: completion index)
-    // 0b NNFF FBBB BCCC CCCC
+    // (N: node type, F: func, B: backspaces, C: completion length)
+    // 0b NNFF BBBB CCCC CCCC
     payload->func_code = (code_byte1 >> 4) & 3;
     payload->num_backspaces = code_byte1 & 15;
     payload->completion_len = code_byte2;
