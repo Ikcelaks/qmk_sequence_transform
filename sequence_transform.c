@@ -280,8 +280,7 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    st_debug(ST_DBG_RULE_SEARCH, "START OF RULE SEARCH\n");
+#if SEQUENCE_TRANSFORM_RULE_SEARCH    
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
@@ -302,7 +301,6 @@ void st_find_missed_rule(void)
            KEY_AT(word_start_idx) != ' ') {
         ++word_start_idx;
     }
-    //uprintf("word_start_idx: %d\n", word_start_idx);
     st_trie_rule_t result = {{0}, sequence_str, transform_str};
     if (st_trie_do_rule_searches(&trie,
                                  &key_buffer,

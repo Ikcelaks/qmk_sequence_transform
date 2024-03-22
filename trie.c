@@ -183,6 +183,8 @@ bool st_trie_do_rule_searches(const st_trie_t       *trie,
                               int                   word_start_idx,
                               st_trie_rule_t        *rule)
 {
+    st_debug(ST_DBG_RULE_SEARCH,
+        "START OF RULE SEARCH - word_start_idx: %d\n", word_start_idx);
     // Convert word_start_index to reverse index
     const int search_base_ridx = st_clamp(key_buffer->size - word_start_idx,
                                           1, key_buffer->size - 1);
@@ -226,13 +228,14 @@ void debug_rule_match(const st_trie_payload_t *payload,
     const int seq_skips = 1 + payload->num_backspaces;
     const int search_base_ridx = search->search_end_ridx - seq_skips;
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
-    uprintf("  checking match @%d, transform_end_ridx: %d (%send), stack: |%s|, comp: |%s|(%d bs)\n",
-            offset,
-            transform_end_ridx,
-            transform_end_ridx != key_buffer->size ? "!" : "",
-            stackstr,
-            compstr,
-            payload->num_backspaces);
+    st_debug(ST_DBG_RULE_SEARCH,
+        "  checking match @%d, transform_end_ridx: %d (%send), stack: |%s|, comp: |%s|(%d bs)\n",
+        offset,
+        transform_end_ridx,
+        transform_end_ridx != key_buffer->size ? "!" : "",
+        stackstr,
+        compstr,
+        payload->num_backspaces);
 #endif
 }
 //////////////////////////////////////////////////////////////////////
