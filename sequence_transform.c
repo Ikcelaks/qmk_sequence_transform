@@ -27,6 +27,12 @@ static uint32_t backspace_timer = 0;
 
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
 static bool post_process_do_rule_search = false;
+void schedule_rule_search(void)
+{
+    post_process_do_rule_search = true;
+}
+#else
+void schedule_rule_search(void){}
 #endif
 
 #define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
@@ -274,9 +280,7 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    st_debug(ST_DBG_RULE_SEARCH,
-        "MISSED RULE SEARCH");
+#if SEQUENCE_TRANSFORM_RULE_SEARCH    
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
@@ -297,7 +301,6 @@ void st_find_missed_rule(void)
            KEY_AT(word_start_idx) != ' ') {
         ++word_start_idx;
     }
-    //uprintf("word_start_idx: %d\n", word_start_idx);
     st_trie_rule_t result = {{0}, sequence_str, transform_str};
     if (st_trie_do_rule_searches(&trie,
                                  &key_buffer,
@@ -474,6 +477,7 @@ bool process_sequence_transform(uint16_t keycode,
     }
     // Don't process on key up
     if (!record->event.pressed) {
+        schedule_rule_search();
         return true;
     }
     // Convert keycode to KC_SPC if necessary
@@ -492,10 +496,6 @@ bool process_sequence_transform(uint16_t keycode,
     if (st_perform()) {
         // tell QMK to not process this key
         return false;
-    } else {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-        post_process_do_rule_search = true;
-#endif
     }
     return true;
 }

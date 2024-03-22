@@ -40,14 +40,11 @@ int test_ascii_string(const st_test_options_t *options)
         st_key_buffer_push(buf, st_keycode_to_triecode(key, TEST_KC_SEQ_TOKEN_0));
         st_key_buffer_print(buf);
         // let sequence transform do its thing!
-        if (st_perform()) {
-            // st_perform sent a transform to the output buffer
-            st_key_stack_print(&sim_output);
-            continue;
-        }
-        // st_perform didn't do anything special with this key,
-        // so we must add it to the output buffer
-        tap_code16(key);
+        if (!st_perform()) {
+            // st_perform didn't do anything special with this key,
+            // so we must add it to the output buffer
+            tap_code16(key);
+        }        
         st_key_stack_print(&sim_output);
         // check for missed rule
         missed_rule_seq[0] = 0;
