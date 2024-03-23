@@ -8,6 +8,7 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #pragma once
 
+#include "st_defaults.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "action.h"
