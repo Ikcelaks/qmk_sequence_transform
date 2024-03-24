@@ -436,7 +436,7 @@ def serialize_sequence_trie(
         assert 0 <= func < 4
         code += func << 5
 
-        # 6 bits (4..0) are used for backspaces
+        # 5 bits (4..0) are used for backspaces
         assert 0 <= backspaces < 32
         code += backspaces
 
@@ -467,13 +467,13 @@ def serialize_sequence_trie(
             node_header_data = [node_type]
 
         if chain_match_count > 0:
-            if chain_match_count > 0x1f:
-                if chain_match_count > 0x1fff:
+            if chain_match_count > 0x0f:
+                if chain_match_count > 0x0fff:
                     raise SystemExit(
-                        f'{err()} Impressive. More than 8191 rules chained at once'
+                        f'{err()} Impressive. More than 4095 rules chained at once'
                     )
                 count_code_byte1, count_code_byte2 = divmod(chain_match_count, 0x100)
-                node_header_data = [node_header_data[0] | 0x20 | count_code_byte1, count_code_byte2]
+                node_header_data = [node_header_data[0] | 0x10 | count_code_byte1, count_code_byte2]
             else:
                 node_header_data[0] = node_header_data[0] | chain_match_count
 
@@ -571,8 +571,8 @@ def serialize_sequence_trie(
         if 'chain_data' in table_entry:
             # print(f"offset chain_data {table_entry['chain_data']}")
             for cmatch, cnode in table_entry['chain_data']:
-                cnode['OFFSET'] = uint16_offset
-                temp_uint16_offset += len(cmatch['DATA'])
+                cnode['OFFSET'] = temp_uint16_offset + 2
+                temp_uint16_offset += 2 + len(cmatch['DATA'])
 
         uint16_offset += len(serialize(table_entry))
 

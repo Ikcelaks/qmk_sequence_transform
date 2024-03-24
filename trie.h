@@ -31,6 +31,14 @@ typedef struct
 
 typedef struct
 {
+    bool has_match;             // true if node has a match
+    bool has_branch;            // true if node is a branch or there are longe
+    bool has_unchained_match;   // true if unchained match is present
+    int  chain_check_count;     // number chained rules that can match here
+} st_trie_node_info_t;
+
+typedef struct
+{
     int     index;          // buffer index of cursor position
     int     sub_index;      // Sub-position within the current buffer position
     int     segment_len;    // Number of elements traversed
