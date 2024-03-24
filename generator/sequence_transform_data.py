@@ -217,7 +217,7 @@ def make_sequence_trie(
                     i += 1
 
                 backspaces = len(prematch_output) - 1 - i
-                completion = transform[i:]
+                completion = transform[i:].replace(WORDBREAK_SYMBOL, ' ')
                 match = {
                     'SEQUENCE': sequence,
                     'TRANSFORM': transform,
@@ -253,7 +253,7 @@ def make_sequence_trie(
                 i +=1
 
             backspaces = len(sequence) - 1 - i
-            completion = transform[i:]
+            completion = transform[i:].replace(WORDBREAK_SYMBOL, ' ')
             match = {
                 'SEQUENCE': sequence,
                 'TRANSFORM': transform,
@@ -563,8 +563,6 @@ def serialize_sequence_trie(
 
     # To encode links, first compute byte offset of each entry.
     for table_entry in table:
-        print(f"unint16_offset: {uint16_offset}")
-        # print(f"table_entry: {json.dumps(table_entry, indent=4)}")
         table_entry['node']['OFFSET'] = uint16_offset
         temp_uint16_offset = uint16_offset + len(table_entry.get('node_header_data', []))
         if 'match_data' in table_entry:
@@ -574,7 +572,6 @@ def serialize_sequence_trie(
             # print(f"offset chain_data {table_entry['chain_data']}")
             for cmatch, cnode in table_entry['chain_data']:
                 cnode['OFFSET'] = uint16_offset
-                print(f"cnode: {json.dumps(cnode, indent=4)}")
                 temp_uint16_offset += len(cmatch['DATA'])
 
         uint16_offset += len(serialize(table_entry))
@@ -583,11 +580,6 @@ def serialize_sequence_trie(
 
     # Serialize final table.
     trie_data = [b for node in table for b in serialize(node)]
-
-    # for entry in table:
-    #     del(entry['node'])
-
-    # print(f"Table_Data:{json.dumps(table, indent=4)}\n")
 
     return trie_data
 
@@ -651,13 +643,12 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
     trie, outputs = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
-    quiet_print(json.dumps(trie, indent=4))
 
     s_outputs = serialize_outputs(outputs)
     completions_data, completions_map, max_completion_len = s_outputs
 
     trie_data = serialize_sequence_trie(symbol_map, trie, completions_map)
-    print(json.dumps(trie, indent=4))
+    quiet_print(json.dumps(trie, indent=4))
 
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
