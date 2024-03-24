@@ -191,7 +191,7 @@ def make_sequence_trie(
         return len(seq_trans[0])
 
     seq_list.sort(key=seq_len)
-    trie = {'TOKEN': {}, 'CHAIN': {}, 'OFFSET': 0}
+    trie = {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}
     rules = []
     completions = set()
 
@@ -266,7 +266,7 @@ def make_sequence_trie(
             }
 
             for letter in sequence[::-1]:
-                node = node['TOKEN'].setdefault(letter, {'TOKEN': {}, 'CHAIN': {}, 'OFFSET': 0})
+                node = node['TOKEN'].setdefault(letter, {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0})
 
             node['MATCH'] = match
 
@@ -381,7 +381,7 @@ def serialize_outputs(
         if i == -1:
             quiet_print(f'{output} added at {completions_offset}')
             completions_map[output] = completions_offset
-            completions_str += output
+            completions_str += output.replace(WORDBREAK_SYMBOL, ' ')
             completions_offset += len(output)
 
         else:
