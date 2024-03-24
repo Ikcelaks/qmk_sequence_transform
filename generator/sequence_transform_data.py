@@ -374,7 +374,10 @@ def serialize_outputs(
     completions_offset = 0
     max_completion_len = 0
 
-    for output in sorted(outputs, key=len, reverse=True):
+    output_list = list(outputs)
+    output_list.sort()
+
+    for output in sorted(output_list, key=len, reverse=True):
         max_completion_len = max(max_completion_len, len(output))
         i = completions_str.find(output)
 
