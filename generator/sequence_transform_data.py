@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_0"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -185,7 +185,7 @@ def parse_file(
 def make_sequence_trie(
     seq_list: List[Tuple[str, str]],
     output_func_symbol_map: Dict[str, int]
-) -> Dict[str, tuple[str, dict]]:
+) -> Tuple[Dict[str, tuple[str, dict]], set[str], set[str, List[str]]]:
     """Makes a trie from the sequences, writing in reverse."""
     def seq_len(seq_trans):
         return len(seq_trans[0])
@@ -194,6 +194,7 @@ def make_sequence_trie(
     trie = {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}
     rules = []
     completions = set()
+    missing_intermediate_rules = {}
 
     for sequence, transform in seq_list:
         node = trie
@@ -243,6 +244,11 @@ def make_sequence_trie(
                 completions.add(completion)
 
                 break
+            elif sub_seq in sequence and not sequence.endswith(sub_seq):
+                # This rule's sequence is a substring that is neither a prefix nor a suffix
+                # of the current sequence, nor any of the current rule's sub-rules and will cause a problem.
+                missing_prefix = sequence[:sequence.find(sub_seq)]
+                missing_intermediate_rules.setdefault(missing_prefix + sub_seq, set()).add(f"{sequence} {SEP_STR} {transform}")
 
         else:
             i = 0
@@ -273,11 +279,7 @@ def make_sequence_trie(
             rules.append((sequence, match))
             completions.add(completion)
 
-    # for sequence, match in rules:
-    #     jsond = json.dumps(match, indent=4)
-    #     print(f"{sequence} {jsond}")
-
-    return trie, completions
+    return trie, completions, missing_intermediate_rules
 
 
 ###############################################################################
@@ -642,7 +644,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
-    trie, outputs = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
+    trie, outputs, missing_intermediate_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
+    for missing_rule, affected_rules in missing_intermediate_rules.items():
+        print(f"Consider adding a rule for this sequence: {missing_rule}\n  To fix these rules")
+        for rule in affected_rules:
+            print(f"    {rule}")
 
     s_outputs = serialize_outputs(outputs)
     completions_data, completions_map, max_completion_len = s_outputs
