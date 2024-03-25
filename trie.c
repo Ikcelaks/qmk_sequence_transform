@@ -43,7 +43,7 @@ uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
     st_cursor_init(cursor, 0, false);
-    st_find_longest_chain(cursor, &res->trie_match, 0);
+    st_log_time(st_find_longest_chain(cursor, &res->trie_match, 0));
 #if SEQUENCE_TRANSFORM_FALLBACK_BUFFER
     if (!res->trie_match.is_chained_match && st_cursor_init(cursor, 0, true)) {
         st_find_longest_chain(cursor, &res->trie_match, 0);

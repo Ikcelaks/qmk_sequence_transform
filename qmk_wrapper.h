@@ -21,8 +21,16 @@
                F; \
                uprintf("%s time: %lu\n", #F, timer_elapsed32(t)); \
            }
+#   define st_log_time_with_result(F, R) { \
+               const uint32_t t = timer_read32(); \
+               *R = F; \
+               uprintf("%s time: %lu\n", #F, timer_elapsed32(t)); \
+           }
 #else
 #   define st_log_time(F) F;
+#   define st_log_time_with_result(F, R) { \
+                *R = F; \
+            }
 #endif
 
 #else

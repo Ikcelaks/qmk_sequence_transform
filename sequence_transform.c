@@ -236,38 +236,9 @@ void st_handle_repeat_key(void)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
-void log_rule(const st_trie_search_result_t *res, const char *completion_str) {
+void log_rule(const uint16_t trie_match_index) {
 #if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE
-    st_cursor_init(&trie_cursor, 0, false);
-    const uint16_t rule_trigger_keycode = st_cursor_get_keycode(&trie_cursor);
-    const st_trie_payload_t *rule_action = st_cursor_get_action(&trie_cursor);
-    const bool is_repeat = rule_action->func_code == 1;
-    const int prev_seq_len = res->trie_match.seq_match_pos.segment_len - 1;
-    // The cursor can't be empty here even if it is as output, because we know it matched a rule
-    st_cursor_init(&trie_cursor, 1, res->trie_match.seq_match_pos.as_output);
-    st_cursor_push_to_stack(&trie_cursor, &trie_stack, prev_seq_len);
-    char seq_str[SEQUENCE_MAX_LENGTH + 1];
-    st_key_stack_to_str(&trie_stack, seq_str);
-
-    uprintf("st_rule,%s,%d,%c,", seq_str, res->trie_payload.num_backspaces, st_keycode_to_char(rule_trigger_keycode));
-
-    // Completion string
-    uprintf(completion_str);
-
-    // Special function cases
-    switch (res->trie_payload.func_code) {
-        case 1:  // repeat
-            if (is_repeat)
-                uprintf("%c", st_keycode_to_char(search_for_regular_keypress()));
-            break;
-
-        case 2:  // set one-shot shift
-            uprintf("%c", 'S');
-            break;
-    }
-
-    // Terminator
-    uprintf("\n");
+    uprintf("st_rule,%d\n", trie_match_index);
 #endif
 }
 //////////////////////////////////////////////////////////////////////
@@ -320,7 +291,7 @@ void st_handle_result(const st_trie_t *trie,
     char completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
     st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
-    log_rule(res, completion_str);
+    log_rule(res->trie_match.trie_match_index);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
@@ -493,7 +464,9 @@ bool process_sequence_transform(uint16_t keycode,
         st_key_buffer_print(&key_buffer);
     }
     // Try to perform a sequence transform!
-    if (st_perform()) {
+    bool st_perform_res;
+    st_log_time_with_result(st_perform(), &st_perform_res);
+    if (st_perform_res) {
         // tell QMK to not process this key
         return false;
     }
