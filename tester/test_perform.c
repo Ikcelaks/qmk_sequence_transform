@@ -20,7 +20,7 @@ void sim_st_perform(const uint8_t *sequence)
     // we don't use st_key_buffer_reset(buf) here because
     // we don't nec want a space at the start of the buffer
     st_key_buffer_t *buf = st_get_key_buffer();
-    buf->size = 0;    
+    buf->size = 0;
     for (uint8_t triecode = *sequence; triecode; triecode = *++sequence) {
         st_key_buffer_push(buf, triecode);
         // If st_perform doesn't do anything special with this key,

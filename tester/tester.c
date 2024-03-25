@@ -53,7 +53,9 @@ void tap_code16(uint16_t keycode)
 {
     switch (keycode) {
         case KC_BSPC:
-            st_key_stack_pop(&sim_output);
+            if (sim_output.size > 0) {
+                st_key_stack_pop(&sim_output);
+            }
             break;
         default:
         {

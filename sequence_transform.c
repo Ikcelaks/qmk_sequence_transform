@@ -27,6 +27,12 @@ static uint32_t backspace_timer = 0;
 
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
 static bool post_process_do_rule_search = false;
+void schedule_rule_search(void)
+{
+    post_process_do_rule_search = true;
+}
+#else
+void schedule_rule_search(void){}
 #endif
 
 #define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
@@ -275,8 +281,6 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 void st_find_missed_rule(void)
 {
 #if SEQUENCE_TRANSFORM_RULE_SEARCH
-    st_debug(ST_DBG_RULE_SEARCH,
-        "MISSED RULE SEARCH");
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
@@ -297,7 +301,6 @@ void st_find_missed_rule(void)
            KEY_AT(word_start_idx) != ' ') {
         ++word_start_idx;
     }
-    //uprintf("word_start_idx: %d\n", word_start_idx);
     st_trie_rule_t result = {{0}, sequence_str, transform_str};
     if (st_trie_do_rule_searches(&trie,
                                  &key_buffer,
@@ -365,7 +368,7 @@ void st_handle_backspace() {
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
             for (int i = trie_stack.size - 1; i >= 0; --i) {
-                st_send_key(trie_stack.buffer[i]);
+                st_send_key(st_ascii_to_keycode(trie_stack.buffer[i]));
             }
         }
     } else {
@@ -395,7 +398,7 @@ bool st_perform() {
  * @return true if keycode should be treated as a wordbreak
  */
 bool st_is_wordbreak_keycode(uint16_t keycode)
-{    
+{
     switch (keycode) {
         case KC_A ... KC_0:
         case S(KC_1)... S(KC_0):
@@ -461,7 +464,7 @@ bool process_sequence_transform(uint16_t keycode,
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    
+
     // Keycode verification and extraction
     const bool is_seq_tok = st_is_seq_token_keycode(keycode, sequence_token_start);
     if (!is_seq_tok && !st_process_check(&keycode, record, &mods)) {
@@ -474,6 +477,7 @@ bool process_sequence_transform(uint16_t keycode,
     }
     // Don't process on key up
     if (!record->event.pressed) {
+        schedule_rule_search();
         return true;
     }
     // Convert keycode to KC_SPC if necessary
@@ -492,10 +496,6 @@ bool process_sequence_transform(uint16_t keycode,
     if (st_perform()) {
         // tell QMK to not process this key
         return false;
-    } else {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-        post_process_do_rule_search = true;
-#endif
     }
     return true;
 }
