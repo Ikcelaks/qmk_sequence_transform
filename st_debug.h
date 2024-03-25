@@ -35,5 +35,5 @@ const char  **st_debug_get_flag_names(void);
 #define st_debug_check(flag)     \
     (SEQUENCE_TRANSFORM_DEBUG && \
      st_debug_test_flag(flag))
-    
+
 
