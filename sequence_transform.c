@@ -280,7 +280,7 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
 //////////////////////////////////////////////////////////////////////
 void st_find_missed_rule(void)
 {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH    
+#if SEQUENCE_TRANSFORM_RULE_SEARCH
     char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
     char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
     // find buffer index for the space before the last word,
@@ -368,7 +368,7 @@ void st_handle_backspace() {
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
             for (int i = trie_stack.size - 1; i >= 0; --i) {
-                st_send_key(trie_stack.buffer[i]);
+                st_send_key(st_ascii_to_keycode(trie_stack.buffer[i]));
             }
         }
     } else {
@@ -398,7 +398,7 @@ bool st_perform() {
  * @return true if keycode should be treated as a wordbreak
  */
 bool st_is_wordbreak_keycode(uint16_t keycode)
-{    
+{
     switch (keycode) {
         case KC_A ... KC_0:
         case S(KC_1)... S(KC_0):
@@ -464,7 +464,7 @@ bool process_sequence_transform(uint16_t keycode,
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
-    
+
     // Keycode verification and extraction
     const bool is_seq_tok = st_is_seq_token_keycode(keycode, sequence_token_start);
     if (!is_seq_tok && !st_process_check(&keycode, record, &mods)) {
