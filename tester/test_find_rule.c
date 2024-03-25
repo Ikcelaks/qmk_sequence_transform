@@ -61,7 +61,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     // input now contains seq_prefix (^d@)
     // output now contains trans_prefix (develop)
     sim_output.buffer[sim_output.size] = 0;
-    const uint8_t *trans_prefix = &sim_output.buffer[0];    
+    const uint8_t *trans_prefix = &sim_output.buffer[0];
     if (!strstr((char*)rule->transform, (char*)trans_prefix)) {
         // If trans_prefix is not in rule->transform,
         // this is an untestable rule.
@@ -96,7 +96,7 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
     // rule search starts looking from the last space in the buffer
     // so if there is a space in the rule transform,
     // this rule is untestable (except if space is at the start or end)
-    char *space = strchr((char*)rule->transform, ' ');   
+    char *space = strchr((char*)rule->transform, ' ');
     if (space) {
         const int transform_len = strlen((char*)rule->transform);
         const int space_idx = space - (char*)rule->transform;

@@ -11,7 +11,7 @@ LIB_DIR			:= ../
 TESTER_DIR		:= ./
 LIB_SOURCES		:= $(wildcard $(LIB_DIR)/*.c)
 LIB_OBJECTS		:= $(LIB_SOURCES:$(LIB_DIR)/%.c=$(ODIR)/%.o)
-TESTER_SOURCES	:= $(wildcard $(TESTER_DIR)/*.c) 
+TESTER_SOURCES	:= $(wildcard $(TESTER_DIR)/*.c)
 TESTER_OBJECTS	:= $(TESTER_SOURCES:$(TESTER_DIR)/%.c=$(ODIR)/%.o) $(LIB_OBJECTS)
 DEPENDS			:= $(TESTER_OBJECTS:%.o=%.d)
 
@@ -47,7 +47,7 @@ $(ST_GEN_OUT): $(ST_GEN_IN)
 	@echo Running generator
 	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
 
-gen: $(ST_GEN_OUT) 
+gen: $(ST_GEN_OUT)
 
 tester: $(TESTER_OBJECTS)
 	@$(CC) -o $@ $^ $(CFLAGS)
@@ -59,7 +59,7 @@ $(ODIR)/%.o: %.c | $(ODIR)
 	@echo Compiling $<
 	@$(CC) -MMD -c -o $@ $< $(CFLAGS)
 
-$(ODIR): 
+$(ODIR):
 	@mkdir -p $@
 
 .PHONY: clean

@@ -329,7 +329,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     const st_key_buffer_t *key_buffer = search->key_buffer;
     st_trie_rule_t *res = search->result;
     // After removing 'skipped' keys (trigger and backspaces),
-    // check that the stack matches the input buffer.    
+    // check that the stack matches the input buffer.
     const int seq_skips = 1 + payload->num_backspaces;
     const int search_base_ridx = search->search_end_ridx - seq_skips;
     st_debug(ST_DBG_RULE_SEARCH, "    testing stack:");
@@ -347,7 +347,7 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     // Record search_max_seq_len so we can avoid reporting
     // false positives during this run that have shorter sequences
     st_debug(ST_DBG_RULE_SEARCH, " potential match! seq_len: %d\n", key_stack->size);
-    search->search_max_seq_len = key_stack->size;    
+    search->search_max_seq_len = key_stack->size;
     // Early return if potential transform doesn't reach end of search buffer
     const int transform_end_ridx = search_base_ridx + payload->completion_len;
     if (transform_end_ridx != key_buffer->size) {

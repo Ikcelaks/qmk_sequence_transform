@@ -647,8 +647,8 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SEQUENCE_TRIE_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
-        '',        
-        st_seq_token_ascii_chars,        
+        '',
+        st_seq_token_ascii_chars,
         st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
