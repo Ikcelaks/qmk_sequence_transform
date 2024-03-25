@@ -82,6 +82,7 @@ def color_currying(color: str) -> Callable:
 ###############################################################################
 red = color_currying(bcolors.RED)
 cyan = color_currying(bcolors.CYAN)
+yellow = color_currying(bcolors.YELLOW)
 
 
 ###############################################################################
@@ -195,6 +196,14 @@ def make_sequence_trie(
     rules = []
     completions = set()
     missing_intermediate_rules = {}
+    missing_prefix_rules = {}
+    is_suffix_of = {}
+
+    for seq, trans in seq_list:
+        is_suffix_of[seq] = set()
+        for cand_seq, cand_trans in seq_list:
+            if cand_seq.endswith(seq) and cand_trans.endswith(trans):
+                is_suffix_of[seq].add(cand_seq)
 
     for sequence, transform in seq_list:
         node = trie
@@ -243,12 +252,22 @@ def make_sequence_trie(
                 rules.append((sequence, match))
                 completions.add(completion)
 
+                # Check for missing prefix rules. These rules are not always desird, but they triggered
+                # under the automatically under the old system and the user should be aware that they now
+                # need to be specified explicitly
+                for cand_sub_seq in is_suffix_of[sub_seq]:
+                    prefix = cand_sub_seq[:cand_sub_seq.find(sub_seq)]
+                    cand_seq = prefix + sequence
+                    cand_trans = prefix + transform
+                    if (prefix + sequence) not in [s for s, t in seq_list]:
+                        missing_prefix_rules.setdefault(cand_sub_seq, []).append(f"{cand_seq} {SEP_STR} {cand_trans} ({sequence} {SEP_STR} {transform})")
+
                 break
             elif sub_seq in sequence and not sequence.endswith(sub_seq):
                 # This rule's sequence is a substring that is neither a prefix nor a suffix
                 # of the current sequence, nor any of the current rule's sub-rules and will cause a problem.
                 missing_prefix = sequence[:sequence.find(sub_seq)]
-                missing_intermediate_rules.setdefault(missing_prefix + sub_seq, set()).add(f"{sequence} {SEP_STR} {transform}")
+                missing_intermediate_rules.setdefault(missing_prefix + sub_seq, []).append(f"{sequence} {SEP_STR} {transform}")
 
         else:
             i = 0
@@ -279,7 +298,7 @@ def make_sequence_trie(
             rules.append((sequence, match))
             completions.add(completion)
 
-    return trie, completions, missing_intermediate_rules
+    return trie, completions, missing_intermediate_rules, missing_prefix_rules
 
 
 ###############################################################################
@@ -644,10 +663,16 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
-    trie, outputs, missing_intermediate_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
+    trie, outputs, missing_intermediate_rules, missing_prefix_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
+
     for missing_rule, affected_rules in missing_intermediate_rules.items():
-        print(f"Consider adding a rule for this sequence: {missing_rule}\n  To fix these rules")
+        print(f"Consider adding a rule for this sequence: {cyan(missing_rule)}\n  To fix these rules")
         for rule in affected_rules:
+            print(f"    {cyan(missing_rule)}{yellow(rule[len(missing_rule):])}")
+
+    for cand_seq, missing_rules in missing_prefix_rules.items():
+        print(f"Missing potential rules starting with {cand_seq}")
+        for rule in missing_rules:
             print(f"    {rule}")
 
     s_outputs = serialize_outputs(outputs)
