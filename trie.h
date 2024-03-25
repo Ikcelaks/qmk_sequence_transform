@@ -17,9 +17,13 @@
 #   define CDATA(trie, L)  pgm_read_byte(&trie->completions[L])
 #endif
 
-#define TRIE_MATCH_BIT      0x80
-#define TRIE_BRANCH_BIT     0x40
-#define TRIE_CODE_MASK      0x3F
+#define TRIE_MATCH_BIT              0x80
+#define TRIE_BRANCH_BIT             0x40
+#define TRIE_UNCHAINED_MATCH_BIT    0x20
+#define TRIE_EXTENDED_HEADER_BIT    0x10
+#define TRIE_CHAIN_CHECK_COUNT_MASK 0x0F
+#define TRIE_MATCH_SIZE             4
+#define TRIE_CHAINED_MATCH_SIZE     6
 
 typedef struct
 {
@@ -75,6 +79,7 @@ typedef struct
 {
     uint16_t            trie_match_index;
     st_cursor_pos_t     seq_match_pos;
+    bool                is_chained_match;
 } st_trie_match_t;
 
 typedef struct

@@ -386,7 +386,7 @@ void st_handle_backspace() {
  */
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
-    st_trie_search_result_t res = {{0, {0,0,0}}, {0, 0, 0, 0}};
+    st_trie_search_result_t res = {{0,  {0, 0, 0}, 0}, {0,  0,  0, 0}};
     if (st_trie_get_completion(&trie_cursor, &res)) {
         st_handle_result(&trie, &res);
         return true;

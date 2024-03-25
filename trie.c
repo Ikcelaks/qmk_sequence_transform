@@ -45,7 +45,7 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
     st_cursor_init(cursor, 0, false);
     st_find_longest_chain(cursor, &res->trie_match, 0);
 #if SEQUENCE_TRANSFORM_FALLBACK_BUFFER
-    if (st_cursor_init(cursor, 0, true)) {
+    if (!res->trie_match.is_chained_match && st_cursor_init(cursor, 0, true)) {
         st_find_longest_chain(cursor, &res->trie_match, 0);
     }
 #endif
@@ -94,9 +94,9 @@ void st_get_node_info(const st_trie_t *trie, st_trie_node_info_t *node_info, uin
     st_debug(ST_DBG_SEQ_MATCH, "Node Info %#04X (%#04X): ", *offset-1, byte1);
     node_info->has_match = byte1 & TRIE_MATCH_BIT;
     node_info->has_branch = byte1 & TRIE_BRANCH_BIT;
-    node_info->has_unchained_match = byte1 & 0x20;
-    node_info->chain_check_count = byte1 & 0x0f;
-    if (byte1 & 0x10) {
+    node_info->has_unchained_match = byte1 & TRIE_UNCHAINED_MATCH_BIT;
+    node_info->chain_check_count = byte1 & TRIE_CHAIN_CHECK_COUNT_MASK;
+    if (byte1 & TRIE_EXTENDED_HEADER_BIT) {
         node_info->chain_check_count = (node_info->chain_check_count << 8) + TDATA(trie, (*offset)++);
     }
     st_debug(ST_DBG_SEQ_MATCH, "has_match %d, has_branch %d, has_unchained_match %d, chain_match_count %d\n",
@@ -148,7 +148,7 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                     longest_match->trie_match_index = offset;
                     longest_match->seq_match_pos = st_cursor_save(cursor);
                 }
-                offset += 4;
+                offset += TRIE_MATCH_SIZE;
             }
             if (node_info.chain_check_count > 0) {
                 uint16_t match_index = st_cursor_get_matched_rule(cursor);
@@ -164,14 +164,15 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                             // (sub-rule-byte1 sub-rule-byte2 match-byte1 match-byte2 match-byte3 match-byte4)
                             longest_match->trie_match_index = offset + 2;
                             longest_match->seq_match_pos = st_cursor_save(cursor);
+                            longest_match->is_chained_match = true;
                             return true;
                         }
-                        offset += 6;
+                        offset += TRIE_CHAINED_MATCH_SIZE;
                     }
                 } else {
                     // The currently focused key was not a match, so no sub-rule couled possibly match
-                    // Skip over all the chain rule checks (each is 4 bytes long)
-                    offset += 6 * node_info.chain_check_count;
+                    // Skip over all the chain rule checks (each is 6 bytes long)
+                    offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
                 }
             }
             // If bit 14 is also set, there is a child node after the completion string
@@ -198,14 +199,14 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
         } else {
             // No high bits set, so this is a chain node
             // Travel down chain until we reach a zero byte, or we no longer match our buffer
-            uint8_t code = TDATA(trie, offset++);
-            do {
+            uint8_t code;
+            while ((code = TDATA(trie, offset++))) {
                 st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
                 if (code != st_cursor_get_triecode(cursor))
                     return longer_match_found;
-            } while ((code = TDATA(trie, offset++)) && st_cursor_next(cursor));
+                st_cursor_next(cursor);
+            }
             // After a chain, there should be a match or branch
-            st_cursor_next(cursor);
         }
     } while (true);
 }
