@@ -45,6 +45,9 @@
 
 #define uprintf printf
 #define st_log_time(F) F;
+#define st_log_time_with_result(F, R) { \
+                *R = F; \
+        }
 
 #define TAPPING_TERM 200
 #define FAST_TIMER_T_SIZE 0
