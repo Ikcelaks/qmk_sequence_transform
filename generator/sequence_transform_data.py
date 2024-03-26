@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_0"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_1"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -181,6 +181,23 @@ def parse_file(
 
     return rules
 
+###############################################################################
+def add_default_rules(
+    trie: Dict[str, tuple[str, dict]]
+):
+    for seq_token in SEQ_TOKEN_SYMBOLS:
+        if 'MATCH' not in trie['TOKEN'].setdefault(seq_token, {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}):
+            quiet_print("Adding missing default rule for {seq_token}\n")
+            trie['TOKEN'][seq_token]['MATCH'] = {
+                    'SEQUENCE': seq_token,
+                    'TRANSFORM': "",
+                    'ACTION': {
+                        'BACKSPACES': 0,
+                        'FUNC': 0,
+                        'COMPLETION': ""
+                    },
+                    'OFFSET': 0
+                }
 
 ###############################################################################
 def make_sequence_trie(
@@ -208,7 +225,7 @@ def make_sequence_trie(
     for sequence, transform in seq_list:
         node = trie
 
-        if transform[-1] in output_func_symbol_map:
+        if len(transform) > 0 and transform[-1] in output_func_symbol_map:
             output_func = output_func_symbol_map[transform[-1]]
             transform = transform[:len(transform)-1]
 
@@ -297,6 +314,8 @@ def make_sequence_trie(
 
             rules.append((sequence, match))
             completions.add(completion)
+
+    add_default_rules(trie)
 
     return trie, completions, missing_intermediate_rules, missing_prefix_rules
 
