@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_2_0"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_1"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -82,6 +82,7 @@ def color_currying(color: str) -> Callable:
 ###############################################################################
 red = color_currying(bcolors.RED)
 cyan = color_currying(bcolors.CYAN)
+yellow = color_currying(bcolors.YELLOW)
 
 
 ###############################################################################
@@ -180,116 +181,143 @@ def parse_file(
 
     return rules
 
+###############################################################################
+def add_default_rules(
+    trie: Dict[str, tuple[str, dict]]
+):
+    for seq_token in SEQ_TOKEN_SYMBOLS:
+        if 'MATCH' not in trie['TOKEN'].setdefault(seq_token, {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}):
+            quiet_print("Adding missing default rule for {seq_token}\n")
+            trie['TOKEN'][seq_token]['MATCH'] = {
+                    'SEQUENCE': seq_token,
+                    'TRANSFORM': "",
+                    'ACTION': {
+                        'BACKSPACES': 0,
+                        'FUNC': 0,
+                        'COMPLETION': ""
+                    },
+                    'OFFSET': 0
+                }
 
 ###############################################################################
 def make_sequence_trie(
     seq_list: List[Tuple[str, str]],
     output_func_symbol_map: Dict[str, int]
-) -> Dict[str, tuple[str, dict]]:
+) -> Tuple[Dict[str, tuple[str, dict]], set[str], set[str, List[str]]]:
     """Makes a trie from the sequences, writing in reverse."""
-    trie = {}
+    def seq_len(seq_trans):
+        return len(seq_trans[0])
+
+    seq_list.sort(key=seq_len)
+    trie = {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}
+    rules = []
+    completions = set()
+    missing_intermediate_rules = {}
+    missing_prefix_rules = {}
+    is_suffix_of = {}
+
+    for seq, trans in seq_list:
+        is_suffix_of[seq] = set()
+        for cand_seq, cand_trans in seq_list:
+            if cand_seq.endswith(seq) and cand_trans.endswith(trans):
+                is_suffix_of[seq].add(cand_seq)
 
     for sequence, transform in seq_list:
         node = trie
 
-        if transform[-1] in output_func_symbol_map:
+        if len(transform) > 0 and transform[-1] in output_func_symbol_map:
             output_func = output_func_symbol_map[transform[-1]]
-            target = transform[:len(transform)-1]
+            transform = transform[:len(transform)-1]
 
         else:
             output_func = 0
-            target = transform
 
-        for letter in sequence[::-1]:
-            node = node.setdefault(letter, {})
+        for sub_seq, sub_match in reversed(rules):
+            if sequence.startswith(sub_seq):
+                suffix = sequence[len(sub_seq):]
+                prematch_output = sub_match['TRANSFORM'] + suffix
+                i = 0
+                while (
+                    i < min(len(prematch_output) - 1, len(transform)) and
+                    prematch_output[i] == transform[i]
+                ):
+                    i += 1
 
-        node['MATCH'] = (sequence, {
-            'TARGET': target,
-            'RESULT': {
-                'BACKSPACES': -1,
-                'FUNC': output_func,
-                'OUTPUT': ""
-            }
-        })
+                backspaces = len(prematch_output) - 1 - i
+                completion = transform[i:].replace(WORDBREAK_SYMBOL, ' ')
+                match = {
+                    'SEQUENCE': sequence,
+                    'TRANSFORM': transform,
+                    'ACTION': {
+                        'BACKSPACES': backspaces,
+                        'FUNC': output_func,
+                        'COMPLETION': completion
+                    },
+                    'OFFSET': 0
+                }
 
-    return trie
+                for letter in suffix[i::-1]:
+                    node = node['TOKEN'].setdefault(letter, {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0})
 
+                chains = node['CHAIN']
+                chains.append({
+                    'SUB_RULE': sub_match,
+                    'MATCH': match,
+                    'OFFSET': 0
+                })
 
-###############################################################################
-def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[str]:
-    outputs = set()
+                rules.append((sequence, match))
+                completions.add(completion)
 
-    def complete_node(sequence, action):
-        nonlocal outputs
+                # Check for missing prefix rules. These rules are not always desird, but they triggered
+                # under the automatically under the old system and the user should be aware that they now
+                # need to be specified explicitly
+                for cand_sub_seq in is_suffix_of[sub_seq]:
+                    prefix = cand_sub_seq[:cand_sub_seq.find(sub_seq)]
+                    cand_seq = prefix + sequence
+                    cand_trans = prefix + transform
+                    if (prefix + sequence) not in [s for s, t in seq_list]:
+                        missing_prefix_rules.setdefault(cand_sub_seq, []).append(f"{cand_seq} {SEP_STR} {cand_trans} ({sequence} {SEP_STR} {transform})")
 
-        back_sequence = []
-        expanded_sequence = []
-
-        for c in sequence[:-1]:
-            back_sequence.append(c)
-            expanded_sequence.append(c)
-            match = get_trie_result(back_sequence)
-
-            if not match:
-                match = get_trie_result(expanded_sequence)
-
-            if match:
-                match_backspaces = match['RESULT']['BACKSPACES']
-                match_output = match['RESULT']['OUTPUT']
-
-                del expanded_sequence[-(match_backspaces + 1):]
-                expanded_sequence.extend(match_output)
-                # quiet_print(c, expanded_sequence)
-
-        target = action['TARGET']
-
-        i = 0
-        while (
-            i < min(len(expanded_sequence), len(target)) and
-            expanded_sequence[i] == target[i]
-        ):
-            i += 1
-
-        backspaces = len(expanded_sequence) - i
-        output = target[i:].replace(wordbreak_symbol, " ")
-
-        outputs.add(output)
-        action['RESULT']['BACKSPACES'] = backspaces
-        action['RESULT']['OUTPUT'] = output
-
-    def get_trie_result(buffer: List[str]) -> dict[str, dict[str]]:
-        longest_match = {}
-        trienode = trie
-
-        for c in reversed(buffer):
-            if c not in trienode:
                 break
+            elif sub_seq in sequence and not sequence.endswith(sub_seq):
+                # This rule's sequence is a substring that is neither a prefix nor a suffix
+                # of the current sequence, nor any of the current rule's sub-rules and will cause a problem.
+                missing_prefix = sequence[:sequence.find(sub_seq)]
+                missing_intermediate_rules.setdefault(missing_prefix + sub_seq, []).append(f"{sequence} {SEP_STR} {transform}")
 
-            # quiet_print(c)
-            trienode = trienode[c]
+        else:
+            i = 0
+            while (
+                i < min(len(sequence) - 1, len(transform)) and
+                sequence[i] == transform[i]
+            ):
+                i +=1
 
-            if 'MATCH' in trienode:
-                sequence, action = trienode['MATCH']
+            backspaces = len(sequence) - 1 - i
+            completion = transform[i:].replace(WORDBREAK_SYMBOL, ' ')
+            match = {
+                'SEQUENCE': sequence,
+                'TRANSFORM': transform,
+                'ACTION': {
+                    'BACKSPACES': backspaces,
+                    'FUNC': output_func,
+                    'COMPLETION': completion
+                },
+                'OFFSET': 0
+            }
 
-                if action['RESULT']['BACKSPACES'] == -1:
-                    complete_node(sequence, action)
+            for letter in sequence[::-1]:
+                node = node['TOKEN'].setdefault(letter, {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0})
 
-                longest_match = action
+            node['MATCH'] = match
 
-        return longest_match
+            rules.append((sequence, match))
+            completions.add(completion)
 
-    def traverse_trienode(trinode: Dict[str, Any]):
-        for key, value in trinode.items():
-            if key == 'MATCH':
-                sequence, action = value
+    add_default_rules(trie)
 
-                if action['RESULT']['BACKSPACES'] == -1:
-                    complete_node(sequence, action)
-            else:
-                traverse_trienode(value)
-
-    traverse_trienode(trie)
-    return outputs
+    return trie, completions, missing_intermediate_rules, missing_prefix_rules
 
 
 ###############################################################################
@@ -386,14 +414,16 @@ def serialize_outputs(
     completions_offset = 0
     max_completion_len = 0
 
-    for output in sorted(outputs, key=len, reverse=True):
+    output_list = sorted(outputs)
+
+    for output in sorted(output_list, key=len, reverse=True):
         max_completion_len = max(max_completion_len, len(output))
         i = completions_str.find(output)
 
         if i == -1:
             quiet_print(f'{output} added at {completions_offset}')
             completions_map[output] = completions_offset
-            completions_str += output
+            completions_str += output.replace(WORDBREAK_SYMBOL, ' ')
             completions_offset += len(output)
 
         else:
@@ -421,72 +451,117 @@ def serialize_sequence_trie(
     """
     table = []
 
+    def build_chain_match(sub_rule, match):
+        return {
+            'SUB_RULE': sub_rule,
+            'DATA': build_match(match)
+        }
+
+    def build_match(match, more_branching = False):
+        global max_backspaces
+
+        action = match['ACTION']
+
+        backspaces = action['BACKSPACES']
+        max_backspaces = max(max_backspaces, backspaces)
+        func = action['FUNC']
+        completion = action['COMPLETION']
+        completion_index = completions_map[completion]
+
+        # 1 bit reserved for marking if trie branching continues
+        code = 0x80 if more_branching else 0
+
+        # 2 bits (6..5) are used for special function
+        assert 0 <= func < 4
+        code += func << 5
+
+        # 5 bits (4..0) are used for backspaces
+        assert 0 <= backspaces < 32
+        code += backspaces
+
+        # 8 bits (bits 7..0) are used for completion_len
+        completion_len = len(completion)
+        assert 0 <= completion_len < 256
+        completion_len
+
+        completion_index_byte1, completion_index_byte2 = divmod(completion_index, 0x100)
+
+        # First output word stores coded info
+        # Second stores completion data offset index
+        return [code, completion_len, completion_index_byte1, completion_index_byte2]
+
     # Traverse trie in depth first order.
     def traverse(trie_node):
-        global max_backspaces
-        if 'MATCH' in trie_node:  # Handle a MATCH trie node.
-            sequence, action = trie_node['MATCH']
-            backspaces = action['RESULT']['BACKSPACES']
-            max_backspaces = max(max_backspaces, backspaces)
-            func = action['RESULT']['FUNC']
-            output = action['RESULT']['OUTPUT']
-            output_index = completions_map[output]
 
-            # 2 bits (7, 6) are used for node type
-            code = TRIE_MATCH_BIT + TRIE_BRANCH_BIT * (len(trie_node) > 1)
+        node_header_data = []
+        chain_matches = trie_node['CHAIN']
+        chain_match_count = len(chain_matches)
+        has_match = 'MATCH' in trie_node
+        token_count = len(trie_node['TOKEN'])
 
-            # 2 bits (5..4) are used for special function
-            assert 0 <= func < 4
-            code += func << 4
+        if has_match or chain_match_count > 0:
+            node_type = TRIE_MATCH_BIT + \
+                            (TRIE_BRANCH_BIT if token_count > 0 else 0) + \
+                            (0x20 if has_match else 0x00)
+            node_header_data = [node_type]
 
-            # 4 bits (3..0) are used for backspaces
-            assert 0 <= backspaces < 16
-            code += backspaces
+        if chain_match_count > 0:
+            if chain_match_count > 0x0f:
+                if chain_match_count > 0x0fff:
+                    raise SystemExit(
+                        f'{err()} Impressive. More than 4095 rules chained at once'
+                    )
+                count_code_byte1, count_code_byte2 = divmod(chain_match_count, 0x100)
+                node_header_data = [node_header_data[0] | 0x10 | count_code_byte1, count_code_byte2]
+            else:
+                node_header_data[0] = node_header_data[0] | chain_match_count
 
-            # 8 bits (bits 7..0) are used for completion_len
-            completion_len = len(output)
-            assert 0 <= completion_len < 256
-            completion_len
+        entry = {'node': trie_node}
 
-            output_index_byte1, output_index_byte2 = divmod(output_index, 0x100)
+        if len(node_header_data) > 0:
+            entry['node_header_data'] = node_header_data
 
-            # First output word stores coded info
-            # Second stores completion data offset index
-            data = [code, completion_len, output_index_byte1, output_index_byte2]
-            # quiet_print(f'{err(0)} Data "{cyan(data)}"')
-            del trie_node['MATCH']
+        if has_match:
+            # Node has at lest one match, and or chained match
+            # serialize the match node
+            entry['match_data'] = build_match(trie_node['MATCH'], token_count > 0)
+            entry['match_node'] = trie_node['MATCH']
 
-        else:
-            data = []
+        chain_data = []
+        for cmatch in chain_matches:
+            chain_data.append((
+                build_chain_match(cmatch['SUB_RULE'], cmatch['MATCH']),
+                cmatch['MATCH']
+            ))
+        if len(chain_data) > 0:
+            entry['chain_data'] = chain_data
 
-        if len(trie_node) == 0:
-            entry = {'data': data, 'links': [], 'uint16_offset': 0}
-            table.append(entry)
-
-        elif len(trie_node) == 1:  # Handle trie node with a single child.
-            c, trie_node = next(iter(trie_node.items()))
-            entry = {'data': data, 'chars': c, 'uint16_offset': 0}
+        if token_count == 1:  # Handle trie node with a single child.
+            c, trie_node = next(iter(trie_node['TOKEN'].items()))
+            entry['str'] = c
 
             # It's common for a trie to have long chains of single-child nodes.
 
             # We find the whole chain so that
             # we can serialize it more efficiently.
-            while len(trie_node) == 1 and 'MATCH' not in trie_node:
-                c, trie_node = next(iter(trie_node.items()))
-                entry['chars'] += c
+            # print(f"Singe-chain: Char {c}\n{json.dumps(trie_node, indent=4)}")
+            while len(trie_node['TOKEN']) == 1 and len(trie_node['CHAIN']) == 0 and 'MATCH' not in trie_node:
+                c, trie_node = next(iter(trie_node['TOKEN'].items()))
+                # print(f"Singe-chain: Char {c}\n{json.dumps(trie_node, indent=4)}")
+                entry['str'] += c
 
             table.append(entry)
             entry['links'] = [traverse(trie_node)]
 
-        else:  # Handle trie node with multiple children.
-            entry = {
-                'data': data,
-                'chars': ''.join(sorted(trie_node.keys())),
-                'uint16_offset': 0
-            }
+        elif token_count > 0:  # Handle trie node with multiple children.
+            entry['chars'] = ''.join(sorted(trie_node['TOKEN'].keys()))
 
             table.append(entry)
-            entry['links'] = [traverse(trie_node[c]) for c in entry['chars']]
+            # print(f"branch node: {json.dumps(entry, indent=4)}")
+            entry['links'] = [traverse(trie_node['TOKEN'][c]) for c in entry['chars']]
+
+        else:
+            table.append(entry)
 
         # quiet_print(f'{err(0)} Data "{cyan(entry["data"])}"')
         return entry
@@ -495,40 +570,64 @@ def serialize_sequence_trie(
     # quiet_print(f'{err(0)} Data "{cyan(table)}"')
 
     def serialize(node: Dict[str, Any]) -> List[int]:
-        data = node['data']
+        # print(f"{json.dumps(node, indent=4)}")
+        data = []
+        # data = node['data']
         # quiet_print(f'{err(0)} Serialize Data "{cyan(data)}"')
+        if 'node_header_data' in node:
+            data = data + node['node_header_data']
 
-        if not node['links']:  # Handle a leaf table entry.
-            return data
+        if 'match_data' in node:
+            data = data + node['match_data']
 
-        elif len(node['links']) == 1:  # Handle a chain table entry.
-            return data + [1] + [symbol_map[c] for c in node['chars']] + [0]
+        if 'chain_data' in node:
+            for cmatch, _ in node['chain_data']:
+                data = data + encode_link(cmatch['SUB_RULE']) + \
+                    cmatch['DATA']
 
-        else:  # Handle a branch table entry.
+        if 'str' in node:  # Handle a chain table entry.
+            return data + [1] + [symbol_map[c] for c in node['str']] + [0]
+
+        if 'chars' in node:  # Handle a branch table entry.
             links = [TRIE_BRANCH_BIT]
 
             for c, link in zip(node['chars'], node['links']):
-                links += [symbol_map[c]] + encode_link(link)
+                links += [symbol_map[c]] + encode_link(link['node'])
 
             return data + links + [0]
+
+        return data
 
     uint16_offset = 0
 
     # To encode links, first compute byte offset of each entry.
     for table_entry in table:
-        table_entry['uint16_offset'] = uint16_offset
+        table_entry['node']['OFFSET'] = uint16_offset
+        temp_uint16_offset = uint16_offset + len(table_entry.get('node_header_data', []))
+        if 'match_data' in table_entry:
+            table_entry['match_node']['OFFSET'] = temp_uint16_offset
+            temp_uint16_offset += len(table_entry['match_data'])
+        if 'chain_data' in table_entry:
+            # print(f"offset chain_data {table_entry['chain_data']}")
+            for cmatch, cnode in table_entry['chain_data']:
+                cnode['OFFSET'] = temp_uint16_offset + 2
+                temp_uint16_offset += 2 + len(cmatch['DATA'])
+
         uint16_offset += len(serialize(table_entry))
 
         assert 0 <= uint16_offset <= 0xffff
 
     # Serialize final table.
-    return [b for node in table for b in serialize(node)]
+    trie_data = [b for node in table for b in serialize(node)]
+
+    return trie_data
 
 
 ###############################################################################
 def encode_link(link: Dict[str, Any]) -> List[int]:
     """Encodes a node link as two bytes."""
-    uint16_offset = link['uint16_offset']
+    # print(f"{json.dumps(link, indent=4)}")
+    uint16_offset = link['OFFSET']
 
     if not (0 <= uint16_offset <= 0xffff):
         raise SystemExit(
@@ -582,14 +681,23 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
-    trie = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
-    outputs = complete_sequence_trie(trie, WORDBREAK_SYMBOL)
-    quiet_print(json.dumps(trie, indent=4))
+    trie, outputs, missing_intermediate_rules, missing_prefix_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
+
+    for missing_rule, affected_rules in missing_intermediate_rules.items():
+        print(f"Consider adding a rule for this sequence: {cyan(missing_rule)}\n  To fix these rules")
+        for rule in affected_rules:
+            print(f"    {cyan(missing_rule)}{yellow(rule[len(missing_rule):])}")
+
+    for cand_seq, missing_rules in missing_prefix_rules.items():
+        print(f"Missing potential rules starting with {cand_seq}")
+        for rule in missing_rules:
+            print(f"    {rule}")
 
     s_outputs = serialize_outputs(outputs)
     completions_data, completions_map, max_completion_len = s_outputs
 
     trie_data = serialize_sequence_trie(symbol_map, trie, completions_map)
+    quiet_print(json.dumps(trie, indent=4))
 
     assert all(0 <= b <= 0xffff for b in trie_data)
     assert all(0 <= b <= 0xff for b in completions_data)
@@ -664,7 +772,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
         textwrap.fill(
             '    %s' % (', '.join(map(byte_to_hex, trie_data))),
-            width=135, subsequent_indent='    '
+            width=100, subsequent_indent='    '
         ),
         '};\n',
 

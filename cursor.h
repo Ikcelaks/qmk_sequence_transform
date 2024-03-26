@@ -9,6 +9,7 @@
 
 bool                    st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output);
 uint8_t                 st_cursor_get_triecode(st_cursor_t *cursor);
+uint16_t                st_cursor_get_matched_rule(st_cursor_t *cursor);
 const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor);
 bool                    st_cursor_at_end(const st_cursor_t *cursor);
 bool                    st_cursor_next(st_cursor_t *cursor);

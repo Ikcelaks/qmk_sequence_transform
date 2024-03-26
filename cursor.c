@@ -92,6 +92,16 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
     return CDATA(cursor->trie, completion_char_index);
 }
+
+
+uint16_t st_cursor_get_matched_rule(st_cursor_t *cursor)
+{
+    const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
+    if (cursor->pos.as_output || !keyaction) {
+        return ST_DEFAULT_KEY_ACTION;
+    }
+    return keyaction->action_taken;
+}
 //////////////////////////////////////////////////////////////////
 // DO NOT USE externally when cursor is initialized to act
 // as a virtual output. Behavior is not stable in the presence
