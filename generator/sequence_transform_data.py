@@ -180,6 +180,22 @@ def parse_file(
 
     return rules
 
+###############################################################################
+def add_default_rules(
+    trie: Dict[str, tuple[str, dict]]
+):
+    for seq_token in SEQ_TOKEN_SYMBOLS:
+        if 'MATCH' not in trie.setdefault(seq_token, {}):
+            quiet_print("Adding missing default rule for {seq_token}\n")
+            trie[seq_token]['MATCH'] = (seq_token, {
+            'TARGET': "",
+            'RESULT': {
+                'BACKSPACES': 0,
+                'FUNC': 0,
+                'OUTPUT': ""
+            }
+        })
+
 
 ###############################################################################
 def make_sequence_trie(
@@ -289,6 +305,9 @@ def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[s
                 traverse_trienode(value)
 
     traverse_trienode(trie)
+
+    add_default_rules(trie)
+
     return outputs
 
 
