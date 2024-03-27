@@ -40,11 +40,12 @@ void schedule_rule_search(void){}
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
-static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
-    1
+    1,
+    0
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
