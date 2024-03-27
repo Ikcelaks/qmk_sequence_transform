@@ -154,7 +154,32 @@ bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
 // These are (currently) only used by the tester,
 // so let's not compile them into the firmware.
 #ifdef ST_TESTER
-
+////////////////////////////////////////////////////////////////////////////////
+uint8_t st_get_metachar_example_triecode(uint8_t triecode)
+{
+    if (!st_is_seq_metachar_triecode(triecode)) {
+        return triecode;
+    }
+    // TODO: get these from the generator
+    switch (triecode) {
+        case 0xA0:
+            return 'A';
+        case 0xA1:
+            return 'a';
+        case 0xA2:
+            return '1';
+        case 0xA3:
+            return '.';
+        case 0xA4:
+            return ',';
+        case 0xA5:
+            return '!';
+        case 0xA6:
+            return ' ';
+        case 0xA7:
+            return '%';
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////
 uint16_t st_triecode_to_keycode(uint8_t triecode, uint16_t kc_seq_token_0)
 {

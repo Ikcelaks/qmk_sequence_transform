@@ -16,6 +16,9 @@
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
 {
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    if (!action) {
+        return false;
+    }
     if (cursor->pos.sub_index < action->completion_len) {
         // current sub-index is valid; no need to advance
         return true;
@@ -29,7 +32,6 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         if (st_cursor_at_end(cursor)) {
             return false;
         }
-        cursor->cache_valid = false;
         const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
         st_assert(keyaction, "reached the end without finding the next output key");
         if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
@@ -59,7 +61,7 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     cursor->pos.as_output = as_output;
     cursor->pos.sub_index = as_output ? 0 : 255;
     cursor->pos.segment_len = 1;
-    cursor->cache_valid = false;
+    cursor->cache_valid = 255;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
         // This is crazy, but it is theoretically possible that the
         // entire buffer is full of backspaces such that no valid
@@ -90,6 +92,8 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     int completion_char_index = action->completion_index;
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
+    st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
+                completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
     return CDATA(cursor->trie, completion_char_index);
 }
 
@@ -109,7 +113,7 @@ uint16_t st_cursor_get_matched_rule(st_cursor_t *cursor)
 const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 {
     st_trie_payload_t *action = &cursor->cached_action;
-    if (cursor->cache_valid) {
+    if (cursor->cache_valid == cursor->pos.index) {
         return action;
     }
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
@@ -124,7 +128,7 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     } else {
         st_get_payload_from_match_index(cursor->trie, action, keyaction->action_taken);
     }
-    cursor->cache_valid = true;
+    cursor->cache_valid = cursor->pos.index;
     return action;
 }
 //////////////////////////////////////////////////////////////////
@@ -137,7 +141,6 @@ bool st_cursor_next(st_cursor_t *cursor)
 {
     if (!cursor->pos.as_output) {
         ++cursor->pos.index;
-        cursor->cache_valid = false;
         if (st_cursor_at_end(cursor)) {
             // leave `index` at the End position
             cursor->pos.index = cursor->buffer->size;
@@ -154,11 +157,10 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
         ++cursor->pos.index;
-        if (st_cursor_at_end(cursor)) {
+        cursor->pos.sub_index = 0;
+        if (!cursor_advance_to_valid_output(cursor)) {
             return false;
         }
-        cursor->cache_valid = false;
-        cursor->pos.sub_index = 0;
         ++cursor->pos.segment_len;
         return true;
     }
@@ -169,6 +171,8 @@ bool st_cursor_next(st_cursor_t *cursor)
         ++cursor->pos.segment_len;
         return true;
     }
+    cursor->pos.index = cursor->buffer->size;
+    cursor->pos.sub_index = 0;
     return false;
 }
 //////////////////////////////////////////////////////////////////
@@ -180,7 +184,6 @@ st_cursor_pos_t st_cursor_save(const st_cursor_t *cursor)
 void st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos)
 {
     cursor->pos = *cursor_pos;
-    cursor->cache_valid = false;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *past_pos)

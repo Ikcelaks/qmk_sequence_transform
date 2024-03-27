@@ -557,7 +557,7 @@ def serialize_sequence_trie(
             entry['links'] = [traverse(trie_node)]
 
         elif token_count > 0:  # Handle trie node with multiple children.
-            entry['chars'] = ''.join(sorted(trie_node['TOKEN'].keys()))
+            entry['chars'] = ''.join(sorted(trie_node['TOKEN'].keys(), key=lambda k : symbol_map[k]))
 
             table.append(entry)
             # print(f"branch node: {json.dumps(entry, indent=4)}")

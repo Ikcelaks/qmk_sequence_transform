@@ -14,6 +14,7 @@ uint16_t    st_ascii_to_keycode(uint8_t triecode);
 bool        st_match_triecode(uint8_t triecode, uint8_t key_triecode);
 
 #ifdef ST_TESTER
+uint8_t     st_get_metachar_example_triecode(uint8_t triecode);
 uint16_t    st_triecode_to_keycode(uint8_t triecode, uint16_t kc_seq_token_0);
 const char *st_get_seq_token_utf8(uint8_t triecode);
 const char *st_get_seq_pred_utf8(uint8_t triecode);

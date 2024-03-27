@@ -25,6 +25,12 @@
 #define TRIE_MATCH_SIZE             4
 #define TRIE_CHAINED_MATCH_SIZE     6
 
+typedef enum {
+    ST_NO_MATCH = 0,
+    ST_MATCH = 1,
+    ST_FINAL_MATCH = 2
+} st_trie_match_type_t;
+
 typedef struct
 {
     int completion_index;   // index to start of completion string in trie_t.completions
@@ -119,6 +125,6 @@ typedef struct
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
 bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
-bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
+st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
 void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
 bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
