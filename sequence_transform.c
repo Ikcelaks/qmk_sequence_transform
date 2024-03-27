@@ -44,7 +44,8 @@ static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', ST_DEFAULT_
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
-    1
+    1,
+    0
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
