@@ -52,8 +52,10 @@ GENERATED_HEADER_C_LIKE = f'''\
 '''
 
 TRIECODE_SEQUENCE_TOKEN_0 = 0x80
+TRIECODE_SEQUENCE_METACHAR_0 = 0xA0
 TRIE_MATCH_BIT = 0x80
 TRIE_BRANCH_BIT = 0x40
+TRIE_MULTI_BRANCH_BIT = 0x20
 OUTPUT_FUNC_1 = 1
 OUTPUT_FUNC_COUNT_MAX = 7
 max_backspaces = 0
@@ -104,7 +106,8 @@ def map_ascii(symbols: str) -> dict[str, int]:
 def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]:
     return {
         **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
-        wordbreak_symbol: ord(" "),  # "Word break" symbol.
+        **map_range(TRIECODE_SEQUENCE_METACHAR_0, SEQ_METACHAR_SYMBOLS),
+        # wordbreak_symbol: ord(" "),  # "Word break" symbol.
         **{chr(c): c for c in range(32, 126)}
     }
 
@@ -589,7 +592,10 @@ def serialize_sequence_trie(
             return data + [1] + [symbol_map[c] for c in node['str']] + [0]
 
         if 'chars' in node:  # Handle a branch table entry.
-            links = [TRIE_BRANCH_BIT]
+            code = TRIE_BRANCH_BIT
+            if any([(symbol_map[c] & TRIECODE_SEQUENCE_METACHAR_0) == TRIECODE_SEQUENCE_METACHAR_0 for c in node['chars']]):
+                code = code | TRIE_MULTI_BRANCH_BIT
+            links = [code]
 
             for c, link in zip(node['chars'], node['links']):
                 links += [symbol_map[c]] + encode_link(link['node'])
@@ -735,18 +741,23 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     ]
 
     # token symbols stored as utf8 strings
-    sym_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_TOKEN_SYMBOLS))
-    st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {sym_array_str} }};'
+    seq_sym_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_TOKEN_SYMBOLS))
+    seq_metachar_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_METACHAR_SYMBOLS))
+    st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {seq_sym_array_str} }};'
+    st_seq_metachars = f'static const char *st_seq_metachars[] = {{ {seq_metachar_array_str} }};'
     st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_SYMBOL}";'
     # ascii versions
-    char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
-    st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {char_array_str} }};'
+    seq_token_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
+    seq_metachar_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_METACHAR_ASCII_CHARS))
+    st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {seq_token_char_array_str} }};'
+    st_seq_metachar_ascii_chars = f'static const char st_seq_metachar_ascii_chars[] = {{ {seq_metachar_char_array_str} }};'
     st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
 
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         '',
         f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(TRIECODE_SEQUENCE_TOKEN_0)}',
+        f'#define TRIECODE_SEQUENCE_METACHAR_0 {uint16_to_hex(TRIECODE_SEQUENCE_METACHAR_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define TRANSFORM_MAX_LENGTH {len(max_transform)} // "{max_transform}"',
@@ -755,13 +766,16 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SEQUENCE_TRIE_SIZE {len(trie_data)}',
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
+        f'#define SEQUENCE_METACHAR_COUNT {len(SEQ_METACHAR_SYMBOLS)}',
         '',
         st_seq_token_ascii_chars,
+        st_seq_metachar_ascii_chars,
         st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
         '#ifdef ST_TESTER',
         st_seq_tokens,
+        st_seq_metachars,
         st_wordbreak_token,
         '#endif'
     ]
@@ -837,8 +851,15 @@ if __name__ == '__main__':
     config = json.load(open(config_file, 'rt', encoding="utf-8"))
 
     try:
-        SEQ_TOKEN_SYMBOLS = "".join(config['sequence_token_symbols'].keys())
-        WORDBREAK_SYMBOL = "".join(config['wordbreak_symbol'].keys())
+        SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
+        WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
+        DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
+        ALPHA_SYMBOL = list(config['alpha_symbol'].keys())[0]
+        UPPER_ALPHA_SYMBOL = list(config['upper_alpha_symbol'].keys())[0]
+        PUNCT_SYMBOL = list(config['punct_symbol'].keys())[0]
+        NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
+        TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
+        ANY_SYMBOL = list(config['any_symbol'].keys())[0]
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
@@ -849,6 +870,15 @@ if __name__ == '__main__':
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
     WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
+    DIGIT_ASCII = config['digit_symbol'][DIGIT_SYMBOL]
+    ALPHA_ASCII = config['alpha_symbol'][ALPHA_SYMBOL]
+    UPPER_ALPHA_ASCII = config['upper_alpha_symbol'][UPPER_ALPHA_SYMBOL]
+    PUNCT_ASCII = config['punct_symbol'][PUNCT_SYMBOL]
+    NONTERMINATING_PUNCT_ASCII = config['nonterminating_punct_symbol'][NONTERMINATING_PUNCT_SYMBOL]
+    TERMINATING_PUNCT_ASCII = config['terminating_punct_symbol'][TERMINATING_PUNCT_SYMBOL]
+    ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
+    SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
+    SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
 
     IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)

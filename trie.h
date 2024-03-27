@@ -36,8 +36,11 @@ typedef struct
 typedef struct
 {
     bool has_match;             // true if node has a match
-    bool has_branch;            // true if node is a branch or there are longe
-    bool has_unchained_match;   // true if unchained match is present
+    bool has_branch;            // true if node is a branch or there are longer
+    union {                         // the 5th bit is overloaded depending on the context
+        bool has_unchained_match;   // true if unchained match is present
+        bool is_multibranch;        // true if the branch contains metacharacters
+    };
     int  chain_check_count;     // number chained rules that can match here
 } st_trie_node_info_t;
 

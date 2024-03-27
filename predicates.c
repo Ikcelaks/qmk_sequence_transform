@@ -20,7 +20,7 @@ __attribute__((weak)) bool st_pred_upper_alpha(uint8_t triecode)
 //////////////////////////////////////////////////////////////////////
 __attribute__((weak)) bool st_pred_alpha(uint8_t triecode)
 {
-    const bool res = triecode >= 'A' && triecode <= 'Z' || triecode >= 'a' && triecode <= 'z';
+    const bool res = (triecode >= 'A' && triecode <= 'Z') || (triecode >= 'a' && triecode <= 'z');
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_alpha: Code: %d; Code: %#04X\n", res, triecode);
     return res;
 }
