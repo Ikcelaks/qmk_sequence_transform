@@ -7,13 +7,15 @@
 #include "qmk_wrapper.h"
 #include "st_debug.h"
 #include "st_assert.h"
-#include <ctype.h>
 #include "triecodes.h"
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
 #include "cursor.h"
 #include "utils.h"
+
+#define TRIECODE_SEQUENCE_PRED_0 0xA0
+#define TRIECODE_SEQUENCE_PRED_MASK 0x0F
 
 //////////////////////////////////////////////////////////////////////
 uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
@@ -44,11 +46,6 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
     st_cursor_init(cursor, 0, false);
     st_log_time(st_find_longest_chain(cursor, &res->trie_match, 0));
-#if SEQUENCE_TRANSFORM_FALLBACK_BUFFER
-    if (!res->trie_match.is_chained_match && st_cursor_init(cursor, 0, true)) {
-        st_find_longest_chain(cursor, &res->trie_match, 0);
-    }
-#endif
     if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(cursor->trie, &res->trie_payload, res->trie_match.trie_match_index);
         st_debug(ST_DBG_SEQ_MATCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
@@ -104,17 +101,46 @@ void st_get_node_info(const st_trie_t *trie, st_trie_node_info_t *node_info, uin
 }
 
 //////////////////////////////////////////////////////////////////////
-bool find_branch_offset(const st_trie_t *trie, uint16_t *offset, uint8_t cur_key)
+bool find_branch_offset(const st_trie_t *trie, st_cursor_t * cursor, uint16_t *offset)
 {
+    uint8_t key_triecode = st_cursor_get_triecode(cursor);
+    if (!key_triecode) {
+        return false;
+    }
     for (uint8_t code = TDATA(trie, *offset); code; *offset += 3, code = TDATA(trie, *offset)) {
-        st_debug(ST_DBG_SEQ_MATCH, " B Offset: %d; Code: %#04X; Key: %#04X\n", *offset, code, cur_key);
-        if (code == cur_key) {
+        st_debug(ST_DBG_SEQ_MATCH, " B Offset: %d; Code: %#04X; Key: %#04X\n", *offset, code, key_triecode);
+        if (code == key_triecode) {
             // 16bit offset to child node is built from next uint16_t
             *offset = st_get_trie_data_word(trie, *offset + 1);
             return true;
         }
     }
-    return 0;
+    return false;
+}
+//////////////////////////////////////////////////////////////////////
+bool follow_multi_branches(const st_trie_t *trie, st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
+{
+    st_trie_match_type_t match_type = ST_NO_MATCH;
+    uint8_t key_triecode = st_cursor_get_triecode(cursor);
+    if (!key_triecode) {
+        return false;
+    }
+    st_cursor_next(cursor);
+    st_cursor_pos_t pos = st_cursor_save(cursor);
+    for (uint8_t code = TDATA(trie, offset); code; offset += 3, code = TDATA(trie, offset)) {
+        st_debug(ST_DBG_SEQ_MATCH, " Multi-B Offset: %d; Code: %#04X; Key: %#04X\n", offset, code, key_triecode);
+        if (st_match_triecode(code, key_triecode)) {
+            // 16bit offset to child node is built from next uint16_t
+            st_debug(ST_DBG_SEQ_MATCH, " Multi-B MATCH Offset: %d; Code: %#04X; Key: %#04X\n", offset, code, key_triecode);
+            const uint16_t child_offset = st_get_trie_data_word(trie, offset + 1);
+            match_type = st_find_longest_chain(cursor, longest_match, child_offset);
+            if (match_type == ST_FINAL_MATCH) {
+                return ST_FINAL_MATCH;
+            }
+            st_cursor_restore(cursor, &pos);
+        }
+    }
+    return match_type;
 }
 
 /**
@@ -126,10 +152,10 @@ bool find_branch_offset(const st_trie_t *trie, uint16_t *offset, uint8_t cur_key
  * @param depth  current depth in trie
  * @return       true if match found
  */
-bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
+st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
 {
     const st_trie_t *trie = cursor->trie;
-    bool longer_match_found = false;
+    st_trie_match_type_t match_type = ST_NO_MATCH;
     do {
         st_assert(TDATA(trie, offset), "Unexpected null code! Offset: %d", offset);
         st_trie_node_info_t node_info;
@@ -144,16 +170,16 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                     longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
                 // record this if it is the longest match
                 if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
-                    longer_match_found = true;
+                    match_type = ST_MATCH;
                     longest_match->trie_match_index = offset;
                     longest_match->seq_match_pos = st_cursor_save(cursor);
                 }
                 offset += TRIE_MATCH_SIZE;
             }
-            if (node_info.chain_check_count > 0) {
-                uint16_t match_index = st_cursor_get_matched_rule(cursor);
-                st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
-                if (match_index != ST_DEFAULT_KEY_ACTION) {
+            uint16_t match_index = st_cursor_get_matched_rule(cursor);
+            if (match_index != ST_DEFAULT_KEY_ACTION) {
+                if (node_info.chain_check_count > 0) {
+                    st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
                     for (int i = 0; i < node_info.chain_check_count; i++) {
                         const uint16_t sub_rule_match_index = st_get_trie_data_word(trie, offset);
                         st_debug(ST_DBG_SEQ_MATCH, "  sub-rule %#06X\n", sub_rule_match_index);
@@ -165,15 +191,18 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                             longest_match->trie_match_index = offset + 2;
                             longest_match->seq_match_pos = st_cursor_save(cursor);
                             longest_match->is_chained_match = true;
-                            return true;
+                            return ST_FINAL_MATCH;
                         }
                         offset += TRIE_CHAINED_MATCH_SIZE;
                     }
-                } else {
-                    // The currently focused key was not a match, so no sub-rule couled possibly match
-                    // Skip over all the chain rule checks (each is 6 bytes long)
-                    offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
+                    // We can no longer match a chained rule. Convert to an output cursor
+                    // and continue looking for an anchor rule
+                    st_cursor_convert_to_output(cursor);
                 }
+            } else {
+                // The currently focused key was not a match, so no sub-rule couled possibly match
+                // Skip over all the chain rule checks (each is 6 bytes long)
+                offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
             }
             // If bit 14 is also set, there is a child node after the completion string
             if (node_info.has_branch) {
@@ -183,17 +212,21 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
                     offset, TDATA(trie, offset));
             } else {
                 // No more matches; return
-                return longer_match_found;
+                return match_type;
             }
         } else if (node_info.has_branch) {
             // Branch Node (with multiple children) if bit 14 is set
             // st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X", offset, code);
             // code = TDATA(trie, ++offset);
             // Find child key that matches the search buffer at the current depth
-            const uint8_t cur_key = st_cursor_get_triecode(cursor);
-            if (!cur_key || !find_branch_offset(trie, &offset, cur_key)) {
+            if (node_info.is_multibranch) {
+                // It is possible for a key to match multiple branches, so we recursively
+                // follow all matches
+                return follow_multi_branches(trie, cursor, longest_match, offset) || match_type;
+            }
+            if (!find_branch_offset(trie, cursor, &offset)) {
                 // Couldn't go deeper; return.
-                return longer_match_found;
+                return match_type;
             }
             st_cursor_next(cursor);
         } else {
@@ -202,8 +235,8 @@ bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, 
             uint8_t code;
             while ((code = TDATA(trie, offset++))) {
                 st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
-                if (code != st_cursor_get_triecode(cursor))
-                    return longer_match_found;
+                if (!st_match_triecode(code, st_cursor_get_triecode(cursor)))
+                    return match_type;
                 st_cursor_next(cursor);
             }
             // After a chain, there should be a match or branch

@@ -75,7 +75,7 @@ int st_key_stack_cmp(const st_key_stack_t *s1,
 int st_key_stack_cmp_buf(const st_key_stack_t *stack, const uint8_t *buf)
 {
     for (int i = 0; i < stack->size; ++i) {
-        if (stack->buffer[i] != buf[i]) {
+        if (stack->buffer[i] != st_get_metachar_example_triecode(buf[i])) {
             return 1;
         }
     }
