@@ -11,28 +11,28 @@
 #include "predicates.h"
 
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_upper_alpha(uint8_t triecode)
+bool st_pred_upper_alpha(uint8_t triecode)
 {
     const bool res = triecode >= 'A' && triecode <= 'Z';
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_upper_alpha: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_alpha(uint8_t triecode)
+bool st_pred_alpha(uint8_t triecode)
 {
     const bool res = (triecode >= 'A' && triecode <= 'Z') || (triecode >= 'a' && triecode <= 'z');
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_alpha: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_digit(uint8_t triecode)
+bool st_pred_digit(uint8_t triecode)
 {
     const bool res = triecode >= '0' && triecode <= '9';
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_digit: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_terminating_punct(uint8_t triecode)
+bool st_pred_terminating_punct(uint8_t triecode)
 {
     bool res;
     switch (triecode) {
@@ -49,7 +49,7 @@ __attribute__((weak)) bool st_pred_terminating_punct(uint8_t triecode)
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_nonterminating_punct(uint8_t triecode)
+bool st_pred_nonterminating_punct(uint8_t triecode)
 {
     bool res;
     switch (triecode) {
@@ -67,21 +67,21 @@ __attribute__((weak)) bool st_pred_nonterminating_punct(uint8_t triecode)
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_punct(uint8_t triecode)
+bool st_pred_punct(uint8_t triecode)
 {
     const bool res = st_pred_terminating_punct(triecode) || st_pred_nonterminating_punct(triecode);
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_punct: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_nonalpha(uint8_t triecode)
+bool st_pred_nonalpha(uint8_t triecode)
 {
     const bool res = triecode < 0x80 && !st_pred_alpha(triecode);
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_nonalpha: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-__attribute__((weak)) bool st_pred_any(uint8_t triecode)
+bool st_pred_any(uint8_t triecode)
 {
     const bool res = true;
     st_debug(ST_DBG_SEQ_MATCH, " st_pred_any: Res: %d; Code: %#04X\n", res, triecode);
