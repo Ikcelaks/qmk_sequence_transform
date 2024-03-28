@@ -53,6 +53,7 @@ GENERATED_HEADER_C_LIKE = f'''\
 
 TRIECODE_SEQUENCE_TOKEN_0 = 0x80
 TRIECODE_SEQUENCE_METACHAR_0 = 0xA0
+TRIECODE_TRANSFORM_SEQUENCE_REF_0 = 0x80
 TRIE_MATCH_BIT = 0x80
 TRIE_BRANCH_BIT = 0x40
 TRIE_MULTI_BRANCH_BIT = 0x20
@@ -118,6 +119,13 @@ def quiet_print(*args, **kwargs):
         return
 
     print(*args, **kwargs)
+
+
+###############################################################################
+def generate_transform_symbol_map() -> Dict[str, int]:
+    return {
+        **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS)
+    }
 
 
 ###############################################################################
@@ -684,6 +692,7 @@ def create_triecode_array_c_string(
 ###############################################################################
 def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
+    transform_symbol_map = generate_transform_symbol_map()
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
@@ -861,6 +870,7 @@ if __name__ == '__main__':
         TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
         ANY_SYMBOL = list(config['any_symbol'].keys())[0]
         OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
+        TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']

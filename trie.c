@@ -46,11 +46,6 @@ bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
     st_cursor_init(cursor, 0, false);
     st_log_time(st_find_longest_chain(cursor, &res->trie_match, 0));
-#if SEQUENCE_TRANSFORM_FALLBACK_BUFFER
-    if (!res->trie_match.is_chained_match && st_cursor_init(cursor, 0, true)) {
-        st_find_longest_chain(cursor, &res->trie_match, 0);
-    }
-#endif
     if (res->trie_match.seq_match_pos.segment_len > 0) {
         st_get_payload_from_match_index(cursor->trie, &res->trie_payload, res->trie_match.trie_match_index);
         st_debug(ST_DBG_SEQ_MATCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
@@ -181,10 +176,10 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
                 }
                 offset += TRIE_MATCH_SIZE;
             }
-            if (node_info.chain_check_count > 0) {
-                uint16_t match_index = st_cursor_get_matched_rule(cursor);
-                st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
-                if (match_index != ST_DEFAULT_KEY_ACTION) {
+            uint16_t match_index = st_cursor_get_matched_rule(cursor);
+            if (match_index != ST_DEFAULT_KEY_ACTION) {
+                if (node_info.chain_check_count > 0) {
+                    st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
                     for (int i = 0; i < node_info.chain_check_count; i++) {
                         const uint16_t sub_rule_match_index = st_get_trie_data_word(trie, offset);
                         st_debug(ST_DBG_SEQ_MATCH, "  sub-rule %#06X\n", sub_rule_match_index);
@@ -200,11 +195,14 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
                         }
                         offset += TRIE_CHAINED_MATCH_SIZE;
                     }
-                } else {
-                    // The currently focused key was not a match, so no sub-rule couled possibly match
-                    // Skip over all the chain rule checks (each is 6 bytes long)
-                    offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
+                    // We can no longer match a chained rule. Convert to an output cursor
+                    // and continue looking for an anchor rule
+                    st_cursor_convert_to_output(cursor);
                 }
+            } else {
+                // The currently focused key was not a match, so no sub-rule couled possibly match
+                // Skip over all the chain rule checks (each is 6 bytes long)
+                offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
             }
             // If bit 14 is also set, there is a child node after the completion string
             if (node_info.has_branch) {

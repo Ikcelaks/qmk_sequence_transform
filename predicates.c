@@ -54,7 +54,6 @@ bool st_pred_nonterminating_punct(uint8_t triecode)
     bool res;
     switch (triecode) {
         case ',':
-        case '-':
         case ';':
         case ':':
             res = true;

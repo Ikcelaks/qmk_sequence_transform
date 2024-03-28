@@ -177,6 +177,16 @@ bool st_cursor_next(st_cursor_t *cursor)
     cursor->pos.sub_index = 0;
     return false;
 }
+
+//////////////////////////////////////////////////////////////////
+bool st_cursor_convert_to_output(st_cursor_t *cursor)
+{
+    if (cursor->pos.as_output) {
+        return true;
+    }
+    cursor->pos.as_output = true;
+    return cursor_advance_to_valid_output(cursor);
+}
 //////////////////////////////////////////////////////////////////
 st_cursor_pos_t st_cursor_save(const st_cursor_t *cursor)
 {
