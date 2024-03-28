@@ -126,5 +126,5 @@ void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *p
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
 bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
 st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
-void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
+void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, uint8_t *str);
 bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);

@@ -124,7 +124,9 @@ def quiet_print(*args, **kwargs):
 ###############################################################################
 def generate_transform_symbol_map() -> Dict[str, int]:
     return {
-        **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS)
+        SPACE_SYMBOL: ord(" "),  # "Word break" symbol.
+        **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS),
+        **{chr(c): c for c in range(32, 126)}
     }
 
 
@@ -434,7 +436,7 @@ def serialize_outputs(
         if i == -1:
             quiet_print(f'{output} added at {completions_offset}')
             completions_map[output] = completions_offset
-            completions_str += output.replace(WORDBREAK_SYMBOL, ' ')
+            completions_str += output
             completions_offset += len(output)
 
         else:
@@ -444,7 +446,7 @@ def serialize_outputs(
     quiet_print(completions_str)
 
     return (
-        list(bytes(completions_str, 'ascii')),
+        [TRANFORM_SYMBOL_MAP[c] for c in completions_str],
         completions_map,
         max_completion_len
     )
@@ -692,7 +694,6 @@ def create_triecode_array_c_string(
 ###############################################################################
 def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
-    transform_symbol_map = generate_transform_symbol_map()
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
     seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
@@ -730,7 +731,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         # Don't add rules with transformation functions to test header for now
         if transform[-1] not in output_func_symbol_map:
             c_sequence = create_triecode_array_c_string(symbol_map, sequence)
-            c_transform = create_triecode_array_c_string(symbol_map, transform)
+            c_transform = create_triecode_array_c_string(symbol_map | TRANFORM_SYMBOL_MAP, transform)
             test_rule_c_sequences.append(c_sequence)
             test_rule_c_transforms.append(c_transform)
         transform = transform.replace("\\", "\\ [escape]")
@@ -861,6 +862,7 @@ if __name__ == '__main__':
 
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
+        SPACE_SYMBOL = config['space_symbol']
         WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
         DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
         ALPHA_SYMBOL = list(config['alpha_symbol'].keys())[0]
@@ -889,6 +891,7 @@ if __name__ == '__main__':
     ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
     SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
+    TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)

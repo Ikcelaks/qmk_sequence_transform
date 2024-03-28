@@ -161,6 +161,13 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
         st_trie_node_info_t node_info;
         st_get_node_info(trie, &node_info, &offset);
 
+        uint16_t match_index = st_cursor_get_matched_rule(cursor);
+        if (match_index != ST_DEFAULT_KEY_ACTION) {
+            // We can no longer match a chained rule. Convert to an output cursor
+            // and continue looking for an anchor rule
+            st_cursor_convert_to_output(cursor);
+        }
+
         // Match Node if bit 15 is set
         if (node_info.has_match) {
             if (node_info.has_unchained_match) {
@@ -176,7 +183,6 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
                 }
                 offset += TRIE_MATCH_SIZE;
             }
-            uint16_t match_index = st_cursor_get_matched_rule(cursor);
             if (match_index != ST_DEFAULT_KEY_ACTION) {
                 if (node_info.chain_check_count > 0) {
                     st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
@@ -195,9 +201,6 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
                         }
                         offset += TRIE_CHAINED_MATCH_SIZE;
                     }
-                    // We can no longer match a chained rule. Convert to an output cursor
-                    // and continue looking for an anchor rule
-                    st_cursor_convert_to_output(cursor);
                 }
             } else {
                 // The currently focused key was not a match, so no sub-rule couled possibly match
@@ -302,7 +305,7 @@ void debug_rule_match(const st_trie_payload_t *payload,
     const st_key_stack_t *key_stack = search->key_stack;
     char stackstr[key_stack->size + 1];
     char compstr[payload->completion_len + 1];
-    st_completion_to_str(trie, payload, compstr);
+    //st_completion_to_str(trie, payload, compstr);
     st_key_stack_to_str(key_stack, stackstr);
     const int seq_skips = 1 + payload->num_backspaces;
     const int search_base_ridx = search->search_end_ridx - seq_skips;
@@ -467,13 +470,13 @@ bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *sea
     }
     *seq = 0;
     // Finish writing transform
-    st_completion_to_str(trie, payload, transform);
+    //st_completion_to_str(trie, payload, transform);
     return true;
 }
 //////////////////////////////////////////////////////////////////////
 void st_completion_to_str(const st_trie_t *trie,
                           const st_trie_payload_t *payload,
-                          char *str)
+                          uint8_t *str)
 {
     const uint16_t completion_end = payload->completion_index + payload->completion_len;
     for (uint16_t i = payload->completion_index; i < completion_end; ++i) {

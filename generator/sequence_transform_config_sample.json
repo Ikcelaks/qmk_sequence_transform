@@ -6,6 +6,8 @@
         "★":  "#",
         "✪":  "&"
     },
+    "transform_sequence_reference_symbols": "◯⑴⑵⑶⑷⑸⑹⑺",
+    "space_symbol": "⎵",
     "wordbreak_symbol": {
         "⎵": "^"
     },
@@ -31,7 +33,7 @@
         "∀": "~"
     },
     "output_func_symbols": "↻⇑",
-    "comment_str": "#",
+    "comment_str": "//",
     "separator_str": "⇒",
     "implicit_transform_leading_wordbreak": true
 }

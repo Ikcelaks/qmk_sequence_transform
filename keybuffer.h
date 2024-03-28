@@ -12,6 +12,7 @@
 typedef struct
 {
     uint8_t triecode;
+    uint8_t is_anchor_match;
     uint16_t action_taken;
 } st_key_action_t;
 

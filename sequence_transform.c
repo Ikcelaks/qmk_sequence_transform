@@ -40,7 +40,7 @@ void schedule_rule_search(void){}
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
-static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', 0, ST_DEFAULT_KEY_ACTION}};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
@@ -202,7 +202,7 @@ bool st_process_check(uint16_t *keycode,
 #endif
     }
     // Disable autocorrect while a mod other than shift is active.
-    if ((*mods & ~MOD_MASK_SHIFT) != 0) {
+    if (((*mods | QK_MODS_GET_MODS(*keycode)) & ~MOD_MASK_SHIFT) != 0) {
         st_debug(ST_DBG_GENERAL, "clearing buffer (mods: 0x%04X)\n", *mods);
         st_key_buffer_reset(&key_buffer);
         return false;
@@ -287,16 +287,25 @@ void st_find_missed_rule(void)
 void st_handle_result(const st_trie_t *trie,
                       const st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
-    st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
+    st_key_action_t *current_key = st_key_buffer_get(&key_buffer, 0);
+    current_key->action_taken = res->trie_match.trie_match_index;
+    current_key->is_anchor_match = !res->trie_match.is_chained_match;
     // fill completion buffer
-    char completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
+    uint8_t completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
     st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    for (char *c = completion_str; *c; ++c) {
+    for (uint8_t *c = completion_str; *c; ++c) {
+        if (*c > 127) {
+            st_cursor_init(&trie_cursor, 0, false);
+            const uint8_t nth = *c - 128;
+            const uint8_t nth_triecode = st_cursor_get_seq_triecode(&trie_cursor, nth);
+            st_send_key(st_ascii_to_keycode(nth_triecode));
+            continue;
+        }
         st_send_key(st_ascii_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {

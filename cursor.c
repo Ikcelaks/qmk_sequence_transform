@@ -94,7 +94,17 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
     st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
-    return CDATA(cursor->trie, completion_char_index);
+    const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+    if (triecode > 127) {
+        const st_cursor_pos_t current_pos = st_cursor_save(cursor);
+        cursor->pos.as_output = false;
+        const uint8_t nth = triecode - 128;
+        const uint8_t nth_triecode = st_cursor_get_seq_triecode(cursor, nth);
+        st_cursor_restore(cursor, &current_pos);
+        // printf("cursor triecode: %d at (%d, %d)\n", nth_triecode, current_pos.index, current_pos.sub_index);
+        return nth_triecode;
+    }
+    return triecode;
 }
 
 
@@ -130,6 +140,25 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     }
     cursor->cache_valid = cursor->pos.index;
     return action;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_cursor_get_seq_triecode(st_cursor_t *cursor, uint8_t nth)
+{
+    cursor->pos.sub_index = 0;
+    while (nth > 0) {
+        if (st_cursor_at_end(cursor)) {
+            // nth character in the sequence is not currently available
+            return 0;
+        }
+        --nth;
+        st_cursor_next(cursor);
+        if (!cursor->pos.as_output && cursor->buffer->data[cursor->pos.index].is_anchor_match) {
+            // reached the anchor of the sequence, move past the match
+            // and get the rest of the sequence from the virtual output
+            st_cursor_convert_to_output(cursor);
+        }
+    }
+    return st_cursor_get_triecode(cursor);
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_at_end(const st_cursor_t *cursor)
@@ -193,7 +222,7 @@ st_cursor_pos_t st_cursor_save(const st_cursor_t *cursor)
     return cursor->pos;
 }
 //////////////////////////////////////////////////////////////////
-void st_cursor_restore(st_cursor_t *cursor, st_cursor_pos_t *cursor_pos)
+void st_cursor_restore(st_cursor_t *cursor, const st_cursor_pos_t *cursor_pos)
 {
     cursor->pos = *cursor_pos;
 }

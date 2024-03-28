@@ -34,6 +34,9 @@ int test_ascii_string(const st_test_options_t *options)
             st_handle_backspace();
             st_key_buffer_print(buf);
             st_key_stack_print(&sim_output);
+            st_cursor_t *cursor = st_get_cursor();
+            st_cursor_init(cursor, 0, true);
+            st_cursor_print(cursor);
             continue;
         }
         // send they key to the input buffer
@@ -46,6 +49,9 @@ int test_ascii_string(const st_test_options_t *options)
             tap_code16(key);
         }
         st_key_stack_print(&sim_output);
+        st_cursor_t *cursor = st_get_cursor();
+        st_cursor_init(cursor, 0, true);
+        st_cursor_print(cursor);
         // check for missed rule
         missed_rule_seq[0] = 0;
         missed_rule_transform[0] = 0;
