@@ -59,7 +59,7 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
 {
     cursor->pos.index = history;
     cursor->pos.as_output = as_output;
-    cursor->pos.sub_index = as_output ? 0 : 255;
+    cursor->pos.sub_index = 0;
     cursor->pos.segment_len = 1;
     cursor->cache_valid = 255;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
@@ -159,6 +159,8 @@ bool st_cursor_next(st_cursor_t *cursor)
         ++cursor->pos.index;
         cursor->pos.sub_index = 0;
         if (!cursor_advance_to_valid_output(cursor)) {
+            cursor->pos.index = cursor->buffer->size;
+            cursor->pos.sub_index = 0;
             return false;
         }
         ++cursor->pos.segment_len;
