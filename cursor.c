@@ -95,15 +95,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
     const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-    if (triecode > 127) {
-        const st_cursor_pos_t current_pos = st_cursor_save(cursor);
-        cursor->pos.as_output = false;
-        const uint8_t nth = triecode - 128;
-        const uint8_t nth_triecode = st_cursor_get_seq_triecode(cursor, nth);
-        st_cursor_restore(cursor, &current_pos);
-        return nth_triecode;
-    }
-    return triecode;
+    return st_cursor_get_seq_ascii(cursor, triecode);
 }
 
 
@@ -141,12 +133,19 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     return action;
 }
 //////////////////////////////////////////////////////////////////
-uint8_t st_cursor_get_seq_triecode(st_cursor_t *cursor, uint8_t nth)
+uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
 {
+    if (triecode < 128) {
+        return triecode;
+    }
+    int nth = triecode - 128;
+    st_cursor_pos_t original_pos = st_cursor_save(cursor);
+    cursor->pos.as_output = false;
     cursor->pos.sub_index = 0;
     while (nth > 0) {
         if (st_cursor_at_end(cursor)) {
             // nth character in the sequence is not currently available
+            st_cursor_restore(cursor, &original_pos);
             return 0;
         }
         --nth;
@@ -160,7 +159,9 @@ uint8_t st_cursor_get_seq_triecode(st_cursor_t *cursor, uint8_t nth)
             st_cursor_next(cursor);
         }
     }
-    return st_cursor_get_triecode(cursor);
+    triecode = st_cursor_get_triecode(cursor);
+    st_cursor_restore(cursor, &original_pos);
+    return triecode;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_at_end(const st_cursor_t *cursor)
@@ -208,7 +209,6 @@ bool st_cursor_next(st_cursor_t *cursor)
     cursor->pos.sub_index = 0;
     return false;
 }
-
 //////////////////////////////////////////////////////////////////
 bool st_cursor_convert_to_output(st_cursor_t *cursor)
 {
@@ -259,11 +259,28 @@ bool st_cursor_push_to_stack(st_cursor_t *cursor,
 {
     key_stack->size = 0;
     for (; count > 0; --count, st_cursor_next(cursor)) {
-        const uint16_t keycode = st_cursor_get_triecode(cursor);
-        if (!keycode) {
+        const uint8_t triecode = st_cursor_get_triecode(cursor);
+        if (!triecode) {
             return false;
         }
-        st_key_stack_push(key_stack, keycode);
+        st_key_stack_push(key_stack, triecode);
+    }
+    return true;
+}
+//////////////////////////////////////////////////////////////////
+bool st_cursor_completion_to_stack(st_cursor_t *cursor,
+                                   st_key_stack_t *key_stack)
+{
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    const uint16_t completion_start = action->completion_index;
+    if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
+        return false;
+    }
+    key_stack->size = 0;
+    const uint16_t completion_end = completion_start + action->completion_len;
+    for (int i = completion_start; i < completion_end; ++i) {
+        uint8_t triecode = CDATA(cursor->trie, i);
+        st_key_stack_push(key_stack, st_cursor_get_seq_ascii(cursor, triecode));
     }
     return true;
 }

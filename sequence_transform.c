@@ -68,7 +68,7 @@ void sequence_transform_task(void) {
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack used for searches
-#define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
+#define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES + TRANSFORM_MAX_LENGTH)
 static uint8_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
@@ -265,22 +265,17 @@ void st_handle_result(const st_trie_t *trie,
     current_key->action_taken = res->trie_match.trie_match_index;
     current_key->is_anchor_match = !res->trie_match.is_chained_match;
     // fill completion buffer
-    uint8_t completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
-    st_completion_to_str(trie, &res->trie_payload, completion_str);
+    // uint8_t completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
+    // st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    for (uint8_t *c = completion_str; *c; ++c) {
-        if (*c > 127) {
-            st_cursor_init(&trie_cursor, 0, false);
-            const uint8_t nth = *c - 128;
-            const uint8_t nth_triecode = st_cursor_get_seq_triecode(&trie_cursor, nth);
-            st_send_key(st_ascii_to_keycode(nth_triecode));
-            continue;
-        }
-        st_send_key(st_ascii_to_keycode(*c));
+    st_cursor_init(&trie_cursor, 0, false);
+    st_cursor_completion_to_stack(&trie_cursor, &trie_stack);
+    for (uint8_t i = 0; i < trie_stack.size; ++i) {
+        st_send_key(st_ascii_to_keycode(st_cursor_get_seq_ascii(&trie_cursor, trie_stack.buffer[i])));
     }
     switch (res->trie_payload.func_code) {
         case 2:  // set one-shot shift
