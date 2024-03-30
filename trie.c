@@ -235,10 +235,14 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
         } else {
             // No high bits set, so this is a chain node
             // Travel down chain until we reach a zero byte, or we no longer match our buffer
+            const uint8_t key_triecode = st_cursor_get_triecode(cursor);
+            if (!key_triecode) {
+                return match_type;
+            }
             uint8_t code;
             while ((code = TDATA(trie, offset++))) {
                 st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X\n", offset, code);
-                if (!st_match_triecode(code, st_cursor_get_triecode(cursor)))
+                if (!st_match_triecode(code, key_triecode))
                     return match_type;
                 st_cursor_next(cursor);
             }

@@ -210,32 +210,6 @@ bool st_process_check(uint16_t *keycode,
 
     return true;
 }
-//////////////////////////////////////////////////////////////////////////////////////////
-uint8_t search_for_regular_keypress(void)
-{
-    uint8_t triecode = '\0';
-    for (int i = 1; i < key_buffer.size; ++i) {
-        triecode = st_key_buffer_get_triecode(&key_buffer, i);
-        if (!triecode) {
-            return '\0';
-        }
-        if (!st_is_seq_token_triecode(triecode)) {
-            return triecode;
-        }
-    }
-    return '\0';
-}
-//////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_repeat_key(void)
-{
-    const uint8_t last_regular_keypress = search_for_regular_keypress();
-    if (last_regular_keypress) {
-        st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
-        st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
-        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        st_send_key(st_ascii_to_keycode(last_regular_keypress));
-    }
-}
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(const uint16_t trie_match_index) {
 #if SEQUENCE_TRANSFORM_RECORD_RULE_USAGE
@@ -309,9 +283,6 @@ void st_handle_result(const st_trie_t *trie,
         st_send_key(st_ascii_to_keycode(*c));
     }
     switch (res->trie_payload.func_code) {
-        case 1:  // repeat
-            st_handle_repeat_key();
-            break;
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
             break;

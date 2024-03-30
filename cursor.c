@@ -101,7 +101,6 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
         const uint8_t nth = triecode - 128;
         const uint8_t nth_triecode = st_cursor_get_seq_triecode(cursor, nth);
         st_cursor_restore(cursor, &current_pos);
-        // printf("cursor triecode: %d at (%d, %d)\n", nth_triecode, current_pos.index, current_pos.sub_index);
         return nth_triecode;
     }
     return triecode;
@@ -151,11 +150,14 @@ uint8_t st_cursor_get_seq_triecode(st_cursor_t *cursor, uint8_t nth)
             return 0;
         }
         --nth;
-        st_cursor_next(cursor);
-        if (!cursor->pos.as_output && cursor->buffer->data[cursor->pos.index].is_anchor_match) {
+        if (!cursor->pos.as_output && st_key_buffer_get(cursor->buffer, cursor->pos.index)->is_anchor_match) {
             // reached the anchor of the sequence, move past the match
             // and get the rest of the sequence from the virtual output
+            st_cursor_next(cursor);
             st_cursor_convert_to_output(cursor);
+            cursor_advance_to_valid_output(cursor);
+        } else {
+            st_cursor_next(cursor);
         }
     }
     return st_cursor_get_triecode(cursor);
