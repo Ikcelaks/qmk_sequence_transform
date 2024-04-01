@@ -9,6 +9,9 @@
     "wordbreak_symbol": {
         "⎵": "^"
     },
+    "token_aliases": {
+        
+    },
     "output_func_symbols": "↻⇑",
     "comment_str": "//",
     "separator_str": "⇒",

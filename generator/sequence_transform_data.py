@@ -361,7 +361,12 @@ def parse_file_lines(
 ) -> Iterator[Tuple[int, str, str]]:
     """Parses lines read from `file_name` into sequence-transform pairs."""
     with open(file_name, 'rt', encoding="utf-8") as file:
-        lines = file.readlines()
+        file_content = file.read()
+
+    for alias, token in TOKEN_ALIASES.items():
+        file_content = file_content.replace(alias, token)
+
+    lines = file_content.split("\n")
 
     regex_start = f"{COMMENT_STR}REGEX_START"
     regex_end = f"{COMMENT_STR}REGEX_END"
@@ -760,6 +765,7 @@ if __name__ == '__main__':
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
     WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
+    TOKEN_ALIASES = config.get('token_aliases', {})
 
     IS_QUIET = not cli_args.debug
     generate_sequence_transform_data(data_header_file, test_header_file)
