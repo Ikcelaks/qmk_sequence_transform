@@ -59,6 +59,7 @@ st_key_action_t *st_key_buffer_get(const st_key_buffer_t *buf, int index)
 void st_key_buffer_reset(st_key_buffer_t *buf)
 {
     buf->size = 0;
+    buf->seq_ref_size = 0;
     st_key_buffer_push(buf, ' ');
 }
 //////////////////////////////////////////////////////////////////
@@ -73,18 +74,37 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
     }
     buf->data[buf->head].triecode = tolower(triecode);
     buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
+    st_key_buffer_push_seq_ref(buf, '\0');
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_pop(st_key_buffer_t *buf, uint8_t num)
+void st_key_buffer_pop(st_key_buffer_t *buf)
 {
-    if (buf->size <= num) {
+    if (buf->size <= 1) {
         st_key_buffer_reset(buf);
+        return;
     } else {
-        buf->size -= num;
+        buf->size--;
     }
-    buf->head -= num;
+    buf->head--;
     if (buf->head < 0) {
         buf->head += buf->capacity;
+    }
+    while (buf->seq_ref_cache[buf->seq_ref_head]) {
+        buf->seq_ref_size--;
+        buf->seq_ref_head--;
+        if (buf->seq_ref_size < 1) {
+            return;
+        }
+        if (buf->seq_ref_head < 0) {
+            buf->seq_ref_head += buf->seq_ref_capacity;
+        }
+    }
+    if (buf->seq_ref_size > 0) {
+        buf->seq_ref_size--;
+        buf->seq_ref_head--;
+    }
+    if (buf->seq_ref_head < 0) {
+        buf->seq_ref_head += buf->seq_ref_capacity;
     }
 }
 //////////////////////////////////////////////////////////////////
@@ -140,3 +160,47 @@ void st_key_buffer_to_ascii_str(const st_key_buffer_t *buf, char *str)
 }
 
 #endif // ST_TESTER
+
+//////////////////////////////////////////////////////////////////
+void st_key_buffer_push_seq_ref(st_key_buffer_t *buf, uint8_t triecode)
+{
+    // Store all alpha chars as lowercase
+    if (buf->seq_ref_head < buf->seq_ref_capacity) {
+        buf->seq_ref_size++;
+    }
+    if (++buf->seq_ref_head >= buf->seq_ref_capacity) {  // increment cur_pos
+        buf->seq_ref_head = 0;               // wrap to 0
+    }
+    buf->seq_ref_cache[buf->seq_ref_head] = triecode;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_key_buffer_get_seq_ref(const st_key_buffer_t * const buf, int base, int index)
+{
+    if (base + index >= buf->seq_ref_size) {
+        return '\0';
+    }
+    int i = buf->seq_ref_head - base;
+    if (i < 0) {
+        i += buf->seq_ref_capacity;
+    }
+    while (index > 0) {
+        if (i < 0) {
+            i += buf->seq_ref_capacity;
+        }
+        if (buf->seq_ref_cache[i] == '\0') {
+            --i;
+        }
+        --i;
+        --index;
+    }
+    return buf->seq_ref_cache[i];
+}
+//////////////////////////////////////////////////////////////////
+bool st_key_buffer_advance_seq_ref_index(const st_key_buffer_t * const buf, int *index)
+{
+    while (st_key_buffer_get_seq_ref(buf, *index, 0) != '\0') {
+        ++*index;
+    }
+    ++*index;
+    return *index < buf->seq_ref_size;
+}

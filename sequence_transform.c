@@ -41,9 +41,14 @@ void schedule_rule_search(void){}
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
 static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', 0, ST_DEFAULT_KEY_ACTION}};
+static uint8_t seq_ref_cache[KEY_BUFFER_CAPACITY*2] = {'\0'};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
+    1,
+    0,
+    seq_ref_cache,
+    KEY_BUFFER_CAPACITY*2,
     1,
     0
 };
@@ -257,6 +262,26 @@ void st_find_missed_rule(void)
     }
 #endif
 }
+//////////////////////////////////////////////////////////////////
+bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
+{
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    const uint16_t completion_start = action->completion_index;
+    if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
+        return false;
+    }
+    stack->size = 0;
+    const uint16_t completion_end = completion_start + action->completion_len;
+    for (int i = completion_start; i < completion_end; ++i) {
+        uint8_t triecode = CDATA(cursor->trie, i);
+        if (triecode > 127) {
+            triecode = st_cursor_get_seq_ascii(cursor, triecode);
+            st_key_buffer_push_seq_ref(&key_buffer, triecode);
+        }
+        st_send_key(st_ascii_to_keycode(triecode));
+    }
+    return true;
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(const st_trie_t *trie,
                       const st_trie_search_result_t *res) {
@@ -273,7 +298,7 @@ void st_handle_result(const st_trie_t *trie,
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
     st_cursor_init(&trie_cursor, 0, false);
-    st_cursor_completion_to_stack(&trie_cursor, &trie_stack);
+    st_handle_completion(&trie_cursor, &trie_stack);
     for (uint8_t i = 0; i < trie_stack.size; ++i) {
         st_send_key(st_ascii_to_keycode(st_cursor_get_seq_ascii(&trie_cursor, trie_stack.buffer[i])));
     }
@@ -293,7 +318,7 @@ void st_handle_backspace() {
         // previous key-press didn't trigger a rule action. One total backspace required
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
-        st_key_buffer_pop(&key_buffer, 1);
+        st_key_buffer_pop(&key_buffer);
         return;
     }
     // Undo a rule action
@@ -322,7 +347,7 @@ void st_handle_backspace() {
         // Send backspaces since no resend is needed to complete the undo
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
-    st_key_buffer_pop(&key_buffer, 1);
+    st_key_buffer_pop(&key_buffer);
 }
 #endif
 

@@ -29,6 +29,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
     while (true) {
         // move to next key in buffer
         ++cursor->pos.index;
+        st_key_buffer_advance_seq_ref_index(cursor->buffer, &cursor->seq_ref_index);
         if (st_cursor_at_end(cursor)) {
             return false;
         }
@@ -48,7 +49,17 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         action = st_cursor_get_action(cursor);
         if (backspaces < action->completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
-            cursor->pos.sub_index = backspaces;
+            cursor->pos.sub_index = 0;
+            for (int i = 0; i < backspaces; ++i) {
+                printf("inc sub_pos\n");
+                ++cursor->pos.sub_index;
+                const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
+                const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+                if (triecode > 127) {
+                    // This is a seq_ref, increment the seq_ref_index
+                    ++cursor->seq_ref_index;
+                }
+            }
             return true;
         }
         backspaces -= action->completion_len - action->num_backspaces;
@@ -62,6 +73,7 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     cursor->pos.sub_index = 0;
     cursor->pos.segment_len = 1;
     cursor->cache_valid = 255;
+    cursor->seq_ref_index = 0;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
         // This is crazy, but it is theoretically possible that the
         // entire buffer is full of backspaces such that no valid
@@ -94,8 +106,13 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
     st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
-    const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-    return st_cursor_get_seq_ascii(cursor, triecode);
+    uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+    if (triecode > 127) {
+        // const uint8_t nth = triecode - 128;
+        triecode = st_key_buffer_get_seq_ref(cursor->buffer, cursor->seq_ref_index, 0);
+        printf("seq_ref_index: (%d); ascii: %d\n", cursor->seq_ref_index, triecode);
+    }
+    return triecode;
 }
 
 
@@ -166,13 +183,14 @@ uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_at_end(const st_cursor_t *cursor)
 {
-    return cursor->pos.index >= cursor->buffer->size;
+    return cursor->pos.index >= cursor->buffer->size || cursor->seq_ref_index >= cursor->buffer->seq_ref_capacity;
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
 {
     if (!cursor->pos.as_output) {
         ++cursor->pos.index;
+        st_key_buffer_advance_seq_ref_index(cursor->buffer, &cursor->seq_ref_index);
         if (st_cursor_at_end(cursor)) {
             // leave `index` at the End position
             cursor->pos.index = cursor->buffer->size;
@@ -189,6 +207,7 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // This is a normal keypress to consume
         ++cursor->pos.index;
+        st_key_buffer_advance_seq_ref_index(cursor->buffer, &cursor->seq_ref_index);
         cursor->pos.sub_index = 0;
         if (!cursor_advance_to_valid_output(cursor)) {
             cursor->pos.index = cursor->buffer->size;
@@ -201,6 +220,13 @@ bool st_cursor_next(st_cursor_t *cursor)
     // This is a key with an action and completion, increment the sub_index
     // and advance to the next key in the key buffer if we exceeded the completion length
     ++cursor->pos.sub_index;
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
+    const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+    if (triecode > 127) {
+        // This is a seq_ref, increment the seq_ref_index
+        ++cursor->seq_ref_index;
+    }
     if (cursor_advance_to_valid_output(cursor)) {
         ++cursor->pos.segment_len;
         return true;
@@ -264,23 +290,6 @@ bool st_cursor_push_to_stack(st_cursor_t *cursor,
             return false;
         }
         st_key_stack_push(key_stack, triecode);
-    }
-    return true;
-}
-//////////////////////////////////////////////////////////////////
-bool st_cursor_completion_to_stack(st_cursor_t *cursor,
-                                   st_key_stack_t *stack)
-{
-    const st_trie_payload_t *action = st_cursor_get_action(cursor);
-    const uint16_t completion_start = action->completion_index;
-    if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
-        return false;
-    }
-    stack->size = 0;
-    const uint16_t completion_end = completion_start + action->completion_len;
-    for (int i = completion_start; i < completion_end; ++i) {
-        uint8_t triecode = CDATA(cursor->trie, i);
-        st_key_stack_push(stack, st_cursor_get_seq_ascii(cursor, triecode));
     }
     return true;
 }
