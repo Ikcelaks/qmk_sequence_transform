@@ -269,18 +269,18 @@ bool st_cursor_push_to_stack(st_cursor_t *cursor,
 }
 //////////////////////////////////////////////////////////////////
 bool st_cursor_completion_to_stack(st_cursor_t *cursor,
-                                   st_key_stack_t *key_stack)
+                                   st_key_stack_t *stack)
 {
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     const uint16_t completion_start = action->completion_index;
     if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
         return false;
     }
-    key_stack->size = 0;
+    stack->size = 0;
     const uint16_t completion_end = completion_start + action->completion_len;
     for (int i = completion_start; i < completion_end; ++i) {
         uint8_t triecode = CDATA(cursor->trie, i);
-        st_key_stack_push(key_stack, st_cursor_get_seq_ascii(cursor, triecode));
+        st_key_stack_push(stack, st_cursor_get_seq_ascii(cursor, triecode));
     }
     return true;
 }

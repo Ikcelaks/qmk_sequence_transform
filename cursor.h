@@ -19,5 +19,5 @@ st_cursor_pos_t         st_cursor_save(const st_cursor_t *cursor);
 void                    st_cursor_restore(st_cursor_t *cursor, const st_cursor_pos_t *cursor_pos);
 bool                    st_cursor_longer_than(const st_cursor_t *cursor, const st_cursor_pos_t *past_pos);
 bool                    st_cursor_push_to_stack(st_cursor_t *cursor, st_key_stack_t *key_stack, int count);
-bool                    st_cursor_completion_to_stack(st_cursor_t *cursor, st_key_stack_t *key_stack);
+bool                    st_cursor_completion_to_stack(st_cursor_t *cursor, st_key_stack_t *stack);
 void                    st_cursor_print(st_cursor_t *cursor);
