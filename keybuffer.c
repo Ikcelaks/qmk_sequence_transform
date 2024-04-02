@@ -129,6 +129,39 @@ void st_key_buffer_print(const st_key_buffer_t *buf)
     uprintf("| (%d)\n", buf->size);
 #endif
 }
+//////////////////////////////////////////////////////////////////
+void st_key_buffer_push_seq_ref(st_key_buffer_t *buf, uint8_t triecode)
+{
+    // Store all alpha chars as lowercase
+    if (buf->seq_ref_head < buf->seq_ref_capacity) {
+        buf->seq_ref_size++;
+    }
+    if (++buf->seq_ref_head >= buf->seq_ref_capacity) {  // increment cur_pos
+        buf->seq_ref_head = 0;               // wrap to 0
+    }
+    buf->seq_ref_cache[buf->seq_ref_head] = triecode;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_key_buffer_get_seq_ref(const st_key_buffer_t * const buf, int index)
+{
+    if (index >= buf->seq_ref_size) {
+        return '\0';
+    }
+    int i = buf->seq_ref_head - index;
+    if (i < 0) {
+        i += buf->seq_ref_capacity;
+    }
+    return buf->seq_ref_cache[i];
+}
+//////////////////////////////////////////////////////////////////
+bool st_key_buffer_advance_seq_ref_index(const st_key_buffer_t * const buf, int *index)
+{
+    while (st_key_buffer_get_seq_ref(buf, *index) != '\0') {
+        ++*index;
+    }
+    ++*index;
+    return *index < buf->seq_ref_size;
+}
 
 //////////////////////////////////////////////////////////////////////
 // These are (currently) only used by the tester,
@@ -160,47 +193,3 @@ void st_key_buffer_to_ascii_str(const st_key_buffer_t *buf, char *str)
 }
 
 #endif // ST_TESTER
-
-//////////////////////////////////////////////////////////////////
-void st_key_buffer_push_seq_ref(st_key_buffer_t *buf, uint8_t triecode)
-{
-    // Store all alpha chars as lowercase
-    if (buf->seq_ref_head < buf->seq_ref_capacity) {
-        buf->seq_ref_size++;
-    }
-    if (++buf->seq_ref_head >= buf->seq_ref_capacity) {  // increment cur_pos
-        buf->seq_ref_head = 0;               // wrap to 0
-    }
-    buf->seq_ref_cache[buf->seq_ref_head] = triecode;
-}
-//////////////////////////////////////////////////////////////////
-uint8_t st_key_buffer_get_seq_ref(const st_key_buffer_t * const buf, int base, int index)
-{
-    if (base + index >= buf->seq_ref_size) {
-        return '\0';
-    }
-    int i = buf->seq_ref_head - base;
-    if (i < 0) {
-        i += buf->seq_ref_capacity;
-    }
-    while (index > 0) {
-        if (i < 0) {
-            i += buf->seq_ref_capacity;
-        }
-        if (buf->seq_ref_cache[i] == '\0') {
-            --i;
-        }
-        --i;
-        --index;
-    }
-    return buf->seq_ref_cache[i];
-}
-//////////////////////////////////////////////////////////////////
-bool st_key_buffer_advance_seq_ref_index(const st_key_buffer_t * const buf, int *index)
-{
-    while (st_key_buffer_get_seq_ref(buf, *index, 0) != '\0') {
-        ++*index;
-    }
-    ++*index;
-    return *index < buf->seq_ref_size;
-}

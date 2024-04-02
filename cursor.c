@@ -49,10 +49,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
         action = st_cursor_get_action(cursor);
         if (backspaces < action->completion_len) {
             // This action contains the next output key. Find it's sub_pos and return true
-            cursor->pos.sub_index = 0;
-            for (int i = 0; i < backspaces; ++i) {
-                printf("inc sub_pos\n");
-                ++cursor->pos.sub_index;
+            for (cursor->pos.sub_index = 0; cursor->pos.sub_index < backspaces; ++cursor->pos.sub_index) {
                 const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
                 const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
                 if (triecode > 127) {
@@ -108,9 +105,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
     uint8_t triecode = CDATA(cursor->trie, completion_char_index);
     if (triecode > 127) {
-        // const uint8_t nth = triecode - 128;
-        triecode = st_key_buffer_get_seq_ref(cursor->buffer, cursor->seq_ref_index, 0);
-        printf("seq_ref_index: (%d); ascii: %d\n", cursor->seq_ref_index, triecode);
+        return st_key_buffer_get_seq_ref(cursor->buffer, cursor->seq_ref_index);
     }
     return triecode;
 }
@@ -221,11 +216,13 @@ bool st_cursor_next(st_cursor_t *cursor)
     // and advance to the next key in the key buffer if we exceeded the completion length
     ++cursor->pos.sub_index;
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
-    const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
-    const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-    if (triecode > 127) {
-        // This is a seq_ref, increment the seq_ref_index
-        ++cursor->seq_ref_index;
+    if (action->completion_len > cursor->pos.sub_index) {
+        const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
+        const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+        if (triecode > 127) {
+            // This is a seq_ref, increment the seq_ref_index
+            ++cursor->seq_ref_index;
+        }
     }
     if (cursor_advance_to_valid_output(cursor)) {
         ++cursor->pos.segment_len;

@@ -1,0 +1,38 @@
+[rule] ∀👍 ⇒ ∀👍
+[[0;31mfail[0m] st_perform() output: %for
+
+[rule] ∂👍 ⇒ ∂👍
+[[0;31mfail[0m] st_perform() output: 11
+
+[rule] ∂∂👍 ⇒ ∂∂👍
+[[0;31mfail[0m] st_perform() output: 111
+
+[rule] ∂∂👍d ⇒ 2024-03-✪★
+[[0;31mfail[0m] st_perform() output: 2024-03-11
+
+[rule] ⎵nr⎵ ⇒ ⎵there👆
+[[0;31mfail[0m] st_perform() output: ⎵there⎵
+
+[rule] ⎵ns⎵ ⇒ ⎵this👆
+[[0;31mfail[0m] st_perform() output: ⎵this⎵
+
+[rule] ⎵na⎵ ⇒ ⎵than👆
+[[0;31mfail[0m] st_perform() output: ⎵than⎵
+
+[rule] ⎵no⎵ ⇒ ⎵those👆
+[[0;31mfail[0m] st_perform() output: ⎵those⎵
+
+[rule] ⎵t👍⎵ ⇒ ⎵time👆
+[[0;31mfail[0m] st_perform() output: ⎵time⎵
+
+[rule] ⎵s👍⎵ ⇒ ⎵some👆
+[[0;31mfail[0m] st_perform() output: ⎵some⎵
+
+--- TEST SUMMARY ---
+Rules tested: 421
+[0;31m10 tests failed![0m
+Tests performed:
+  #1 st_perform
+  #2 st_virtual_output
+  #3 st_cursor
+  #4 st_handle_backspace

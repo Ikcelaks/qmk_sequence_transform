@@ -35,7 +35,7 @@ void            st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode);
 void            st_key_buffer_pop(st_key_buffer_t *buf);
 void            st_key_buffer_print(const st_key_buffer_t *buf);
 void            st_key_buffer_push_seq_ref(st_key_buffer_t *buf, uint8_t triecode);
-uint8_t         st_key_buffer_get_seq_ref(const st_key_buffer_t * const buf, int base, int index);
+uint8_t         st_key_buffer_get_seq_ref(const st_key_buffer_t * const buf, int index);
 bool            st_key_buffer_advance_seq_ref_index(const st_key_buffer_t * const buf, int *index);
 
 #ifdef ST_TESTER
