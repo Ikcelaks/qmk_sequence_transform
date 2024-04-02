@@ -225,6 +225,7 @@ def make_sequence_trie(
     trie = {'TOKEN': {}, 'CHAIN': [], 'OFFSET': 0}
     rules = []
     completions = set()
+    completions.add("")
     missing_intermediate_rules = {}
     missing_prefix_rules = {}
     is_suffix_of = {}
