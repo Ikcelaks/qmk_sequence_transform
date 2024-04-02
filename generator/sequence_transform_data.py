@@ -234,6 +234,7 @@ def make_sequence_trie(
 ###############################################################################
 def complete_sequence_trie(trie: Dict[str, Any], wordbreak_symbol: str) -> set[str]:
     outputs = set()
+    outputs.add("")
 
     def complete_node(sequence, action):
         nonlocal outputs
