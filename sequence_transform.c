@@ -40,11 +40,17 @@ void schedule_rule_search(void){}
 //////////////////////////////////////////////////////////////////
 // Key history buffer
 #define KEY_BUFFER_CAPACITY MIN(255, SEQUENCE_MAX_LENGTH + COMPLETION_MAX_LENGTH + SEQUENCE_TRANSFORM_EXTRA_BUFFER)
-static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{KC_SPC, ST_DEFAULT_KEY_ACTION}};
+static st_key_action_t key_buffer_data[KEY_BUFFER_CAPACITY] = {{' ', 0, ST_DEFAULT_KEY_ACTION}};
+static uint8_t seq_ref_cache[KEY_BUFFER_CAPACITY*2] = {'\0'};
 static st_key_buffer_t key_buffer = {
     key_buffer_data,
     KEY_BUFFER_CAPACITY,
-    1
+    1,
+    0,
+    seq_ref_cache,
+    KEY_BUFFER_CAPACITY*2,
+    1,
+    0
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +73,7 @@ void sequence_transform_task(void) {
 
 //////////////////////////////////////////////////////////////////
 // Trie key stack used for searches
-#define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES)
+#define ST_STACK_SIZE MAX(SEQUENCE_MAX_LENGTH, MAX_BACKSPACES + TRANSFORM_MAX_LENGTH)
 static uint8_t trie_key_stack_data[ST_STACK_SIZE] = {0};
 static st_key_stack_t trie_stack = {
     trie_key_stack_data,
@@ -201,39 +207,13 @@ bool st_process_check(uint16_t *keycode,
 #endif
     }
     // Disable autocorrect while a mod other than shift is active.
-    if ((*mods & ~MOD_MASK_SHIFT) != 0) {
+    if (((*mods | QK_MODS_GET_MODS(*keycode)) & ~MOD_MASK_SHIFT) != 0) {
         st_debug(ST_DBG_GENERAL, "clearing buffer (mods: 0x%04X)\n", *mods);
         st_key_buffer_reset(&key_buffer);
         return false;
     }
 
     return true;
-}
-//////////////////////////////////////////////////////////////////////////////////////////
-uint8_t search_for_regular_keypress(void)
-{
-    uint8_t triecode = '\0';
-    for (int i = 1; i < key_buffer.size; ++i) {
-        triecode = st_key_buffer_get_triecode(&key_buffer, i);
-        if (!triecode) {
-            return '\0';
-        }
-        if (!st_is_seq_token_triecode(triecode)) {
-            return triecode;
-        }
-    }
-    return '\0';
-}
-//////////////////////////////////////////////////////////////////////////////////////////
-void st_handle_repeat_key(void)
-{
-    const uint8_t last_regular_keypress = search_for_regular_keypress();
-    if (last_regular_keypress) {
-        st_debug(ST_DBG_GENERAL, "repeat keycode: 0x%04X\n", last_regular_keypress);
-        st_key_buffer_get(&key_buffer, 0)->triecode = last_regular_keypress;
-        st_key_buffer_get(&key_buffer, 0)->action_taken = ST_DEFAULT_KEY_ACTION;
-        st_send_key(st_ascii_to_keycode(last_regular_keypress));
-    }
 }
 ///////////////////////////////////////////////////////////////////////////////
 void log_rule(const uint16_t trie_match_index) {
@@ -282,26 +262,47 @@ void st_find_missed_rule(void)
     }
 #endif
 }
+//////////////////////////////////////////////////////////////////
+bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
+{
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    const uint16_t completion_start = action->completion_index;
+    if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
+        return false;
+    }
+    stack->size = 0;
+    const uint16_t completion_end = completion_start + action->completion_len;
+    for (int i = completion_start; i < completion_end; ++i) {
+        uint8_t triecode = CDATA(cursor->trie, i);
+        if (triecode > 127) {
+            triecode = st_cursor_get_seq_ascii(cursor, triecode);
+            st_key_buffer_push_seq_ref(&key_buffer, triecode);
+        }
+        st_send_key(st_ascii_to_keycode(triecode));
+    }
+    return true;
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 void st_handle_result(const st_trie_t *trie,
                       const st_trie_search_result_t *res) {
     // Most recent key in the buffer triggered a match action, record it in the buffer
-    st_key_buffer_get(&key_buffer, 0)->action_taken = res->trie_match.trie_match_index;
+    st_key_action_t *current_key = st_key_buffer_get(&key_buffer, 0);
+    current_key->action_taken = res->trie_match.trie_match_index;
+    current_key->is_anchor_match = !res->trie_match.is_chained_match;
     // fill completion buffer
-    char completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
-    st_completion_to_str(trie, &res->trie_payload, completion_str);
+    // uint8_t completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
+    // st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
     st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
     // Send completion string
-    for (char *c = completion_str; *c; ++c) {
-        st_send_key(st_ascii_to_keycode(*c));
+    st_cursor_init(&trie_cursor, 0, false);
+    st_handle_completion(&trie_cursor, &trie_stack);
+    for (uint8_t i = 0; i < trie_stack.size; ++i) {
+        st_send_key(st_ascii_to_keycode(st_cursor_get_seq_ascii(&trie_cursor, trie_stack.buffer[i])));
     }
     switch (res->trie_payload.func_code) {
-        case 1:  // repeat
-            st_handle_repeat_key();
-            break;
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
             break;
@@ -317,7 +318,7 @@ void st_handle_backspace() {
         // previous key-press didn't trigger a rule action. One total backspace required
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
-        st_key_buffer_pop(&key_buffer, 1);
+        st_key_buffer_pop(&key_buffer);
         return;
     }
     // Undo a rule action
@@ -346,7 +347,7 @@ void st_handle_backspace() {
         // Send backspaces since no resend is needed to complete the undo
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
-    st_key_buffer_pop(&key_buffer, 1);
+    st_key_buffer_pop(&key_buffer);
 }
 #endif
 

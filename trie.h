@@ -25,6 +25,12 @@
 #define TRIE_MATCH_SIZE             4
 #define TRIE_CHAINED_MATCH_SIZE     6
 
+typedef enum {
+    ST_NO_MATCH = 0,
+    ST_MATCH = 1,
+    ST_FINAL_MATCH = 2
+} st_trie_match_type_t;
+
 typedef struct
 {
     int completion_index;   // index to start of completion string in trie_t.completions
@@ -36,8 +42,11 @@ typedef struct
 typedef struct
 {
     bool has_match;             // true if node has a match
-    bool has_branch;            // true if node is a branch or there are longe
-    bool has_unchained_match;   // true if unchained match is present
+    bool has_branch;            // true if node is a branch or there are longer
+    union {                         // the 5th bit is overloaded depending on the context
+        bool has_unchained_match;   // true if unchained match is present
+        bool is_multibranch;        // true if the branch contains metacharacters
+    };
     int  chain_check_count;     // number chained rules that can match here
 } st_trie_node_info_t;
 
@@ -66,6 +75,7 @@ typedef struct
     st_cursor_pos_t               pos;              // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
+    int                           seq_ref_index;
 } st_cursor_t;
 
 typedef struct
@@ -89,11 +99,6 @@ typedef struct
 } st_trie_search_result_t;
 
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
-bool st_trie_do_rule_searches(const st_trie_t *trie,
-                              const st_key_buffer_t *key_buffer,
-                              st_key_stack_t *key_stack,
-                              int word_start_idx,
-                              st_trie_rule_t *rule);
 
 uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
 uint8_t  st_get_trie_data_byte(const st_trie_t *trie, int index);
@@ -115,7 +120,4 @@ typedef struct
 
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
-bool st_trie_rule_search(st_trie_search_t *search, uint16_t offset);
-bool st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
-void st_completion_to_str(const st_trie_t *trie, const st_trie_payload_t *payload, char *str);
-bool st_check_rule_match(const st_trie_payload_t *payload, st_trie_search_t *search);
+st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
