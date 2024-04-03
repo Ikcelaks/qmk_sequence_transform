@@ -367,24 +367,18 @@ bool st_perform() {
 }
 
 /**
- * @return true if keycode should be treated as a wordbreak
+ * @return true if we should reset the buffer and skip sequence matching
  */
-bool st_is_wordbreak_keycode(uint16_t keycode)
+bool st_is_unknown_keycode(uint16_t keycode)
 {
     switch (keycode) {
-        case KC_A ... KC_0:
+        case KC_A ... KC_ENTER:
         case S(KC_1)... S(KC_0):
-        case KC_MINUS ... KC_SLASH:
-            // FIXME: symbols should convert to space if not used in rules!
-            return false;
+        case KC_TAB ... KC_SLASH:
         case S(KC_MINUS)... S(KC_SLASH):
-            // treat " (shifted ') as a word boundary
-            if (keycode == S(KC_QUOTE)) {
-                return true;
-            }
             return false;
     }
-    // set word boundary if some other non-alpha key is pressed
+    // reset for key buffer and don't process this keypress
     return true;
 }
 
@@ -453,8 +447,9 @@ bool process_sequence_transform(uint16_t keycode,
         return true;
     }
     // Convert keycode to KC_SPC if necessary
-    if (!is_seq_tok && st_is_wordbreak_keycode(keycode)) {
-        keycode = KC_SPC;
+    if (!is_seq_tok && st_is_unknown_keycode(keycode)) {
+        st_key_buffer_reset(&key_buffer);
+        return true;
     }
     // Convert to triecode and add it to our buffer
     const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);

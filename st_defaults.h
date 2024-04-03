@@ -40,7 +40,7 @@
 #endif
 
 #ifndef SEQUENCE_TRANSFORM_EXTRA_BUFFER
-#define SEQUENCE_TRANSFORM_EXTRA_BUFFER 0
+#define SEQUENCE_TRANSFORM_EXTRA_BUFFER 10
 #endif
 
 // Disable features that do nothing without print
