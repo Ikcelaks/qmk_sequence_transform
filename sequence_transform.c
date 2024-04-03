@@ -367,19 +367,19 @@ bool st_perform() {
 }
 
 /**
- * @return true if we should reset the buffer and skip sequence matching
+ * @return false if we should reset the buffer and skip sequence matching
  */
-bool st_is_unknown_keycode(uint16_t keycode)
+bool st_is_processable_keycode(uint16_t keycode)
 {
     switch (keycode) {
         case KC_A ... KC_ENTER:
         case S(KC_1)... S(KC_0):
         case KC_TAB ... KC_SLASH:
         case S(KC_MINUS)... S(KC_SLASH):
-            return false;
+            return true;
     }
     // reset for key buffer and don't process this keypress
-    return true;
+    return false;
 }
 
 /**
@@ -446,8 +446,8 @@ bool process_sequence_transform(uint16_t keycode,
         schedule_rule_search();
         return true;
     }
-    // Convert keycode to KC_SPC if necessary
-    if (!is_seq_tok && st_is_unknown_keycode(keycode)) {
+    // if we can't process the keycode, reset the buffer and pass it along to the pipeline
+    if (!is_seq_tok && !st_is_processable_keycode(keycode)) {
         st_key_buffer_reset(&key_buffer);
         return true;
     }

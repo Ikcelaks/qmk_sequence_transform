@@ -12,8 +12,6 @@ Here is a [working example](https://github.com/Ikcelaks/qmk_userspace/tree/main/
 - From a terminal with the current working directory set to your keymap directory (example: `qmk_userspace/keyboard/moonlander/keymaps/ikcelaks`), run this
 command to add the library as a git submodule (no need to create a fork first):<br/>
 `git submodule add https://github.com/ikcelaks/qmk_sequence_transform.git sequence_transform`
-- Wherever you are defining the custom keycodes for your keymap, make sure that your magic / special keys are defined consecutively and add the following define:
-`#define SEQUENCE_TRANSFORM_SPECIAL_KEY_0 {US_SPEC1}` (where `{US_SPEC1}` is whatever name you gave to the first of the consecutive special key keycodes).
 - At the end of your `rules.mk` file, add the following lines:</br>
 ```
         # sequence_transform setup
@@ -28,7 +26,7 @@ command to add the library as a git submodule (no need to create a fork first):<
         # end sequence_transform setup
 ```
 - Define custom keycodes for your Sequence Token keys (commonly referred to as "magic keys") consecutively. Example:
-```
+```c
         enum custom_keycodes {
             US_MAG1 = SAFE_RANGE,
             US_MAG2,
@@ -38,12 +36,17 @@ command to add the library as a git submodule (no need to create a fork first):<
             US_QUOT_S,
         };
 ```
-- Add `#include "sequence_transform/sequence_transform.h"` to the list of includes in your `keymap.c` file.
-- In the `process_record_user` function of your `keymap.c` file, add the following (or equivalent):<br/>
-```if (!process_sequence_transform(keycode, record, US_MAG1)) return false;```<br/>
-(Replace `US_MAG1` with whatever your first Sequence Token key is named)
-- Add this line to your `post_process_record_user` function in `keymap.c`:<br/>
+- Add the following to the list of includes in your `keymap.c` file.
+```c
+        #include "sequence_transform/sequence_transform.h"
 ```
+- In the `process_record_user` function of your `keymap.c` file, add the following (or equivalent) (Replace `US_MAG1` with whatever your first Sequence Token key is named):<br/>
+```c
+        if (!process_sequence_transform(keycode, record, US_MAG1)) return false;
+```
+
+- Add this line to your `post_process_record_user` function in `keymap.c`:<br/>
+```c
         void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
             post_process_sequence_transform();  // Add this line
         }
