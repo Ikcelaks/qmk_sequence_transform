@@ -80,6 +80,11 @@ A full description of each setting is provided in the Wiki (TODO).
 This file contains a list of all the rules that the generator script will encode into the trie structure.
 A full explanation of how rules are constructed, how they manipulate the result of your keypresses, and how they interact with each other is found in the Wiki (TODO).
 
+### Add Sequence Tokens to your keymap
+You should add the custom keys you defined in [step 3](#step-3) of the setup to your keymap. These custom keys will be matched one to one with the `sequence_token_symbols` defined in your `sequence_transform_config.json` file. That is, the custom key that you pass to `process_sequence_transform` in [step 5](#step-5) of the setup will correspond to the first symbol defined in `sequence_token_symbols`, and each following custom key will be matched with the next symbol. (This is why you **must** have the same number of each).
+
+Symbols chosen can be any utf-8 symbol you like. The sample config and dictionary use a pointing finger and thumb emoji to aid in remembering which `Sequence Token key` is being used, which you may find helpful.
+
 ## Building
 No special steps are required to build your firmware while using this library! Your rule set dictionary is automatically built into the 
 required datastructure if necessary everytime you re-compile your firmware. This is accomplished by the lines added to your `rules.mk` file in [step 2](#step-2) of the setup.
