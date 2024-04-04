@@ -9,7 +9,7 @@
     "transform_sequence_reference_symbols": "◯⑴⑵⑶⑷⑸⑹⑺",
     "space_symbol": "⎵",
     "wordbreak_symbol": {
-        "⎵": "^"
+        "‸": "^"
     },
     "digit_symbol": {
         "∂": "D"
@@ -27,7 +27,7 @@
         "‥": "N"
     },
     "punct_symbol": {
-        "•": "D"
+        "•": "P"
     },
     "any_symbol": {
         "∀": "~"
@@ -35,5 +35,5 @@
     "output_func_symbols": "↻⇑",
     "comment_str": "//",
     "separator_str": "⇒",
-    "implicit_transform_leading_wordbreak": true
+    "implicit_transform_leading_wordbreak": false
 }

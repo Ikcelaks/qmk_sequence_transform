@@ -146,7 +146,7 @@ uint16_t st_ascii_to_keycode(uint8_t triecode)
 bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
 {
     if (triecode < TRIECODE_SEQUENCE_METACHAR_0) {
-        // Not a predicate. Do an exact match
+        // Not a MetaCharacter. Do an exact match
         return triecode == key_triecode;
     }
     const uint8_t pred_index = triecode - TRIECODE_SEQUENCE_METACHAR_0;

@@ -59,7 +59,7 @@ uint16_t sequence_transform_past_keycode(int index) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// Add KC_SPC on timeout
+// Reset buffer on timeout
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
 void sequence_transform_task(void) {
@@ -274,7 +274,7 @@ bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
     const uint16_t completion_end = completion_start + action->completion_len;
     for (int i = completion_start; i < completion_end; ++i) {
         uint8_t triecode = CDATA(cursor->trie, i);
-        if (triecode > 127) {
+        if (st_is_trans_seq_ref_triecode(triecode)) {
             triecode = st_cursor_get_seq_ascii(cursor, triecode);
             st_key_buffer_push_seq_ref(&key_buffer, triecode);
         }
@@ -289,9 +289,6 @@ void st_handle_result(const st_trie_t *trie,
     st_key_action_t *current_key = st_key_buffer_get(&key_buffer, 0);
     current_key->action_taken = res->trie_match.trie_match_index;
     current_key->is_anchor_match = !res->trie_match.is_chained_match;
-    // fill completion buffer
-    // uint8_t completion_str[COMPLETION_MAX_LENGTH + 1] = {0};
-    // st_completion_to_str(trie, &res->trie_payload, completion_str);
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
@@ -299,9 +296,6 @@ void st_handle_result(const st_trie_t *trie,
     // Send completion string
     st_cursor_init(&trie_cursor, 0, false);
     st_handle_completion(&trie_cursor, &trie_stack);
-    for (uint8_t i = 0; i < trie_stack.size; ++i) {
-        st_send_key(st_ascii_to_keycode(st_cursor_get_seq_ascii(&trie_cursor, trie_stack.buffer[i])));
-    }
     switch (res->trie_payload.func_code) {
         case 2:  // set one-shot shift
             set_oneshot_mods(MOD_LSFT);
