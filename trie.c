@@ -14,9 +14,6 @@
 #include "cursor.h"
 #include "utils.h"
 
-#define TRIECODE_SEQUENCE_PRED_0 0xA0
-#define TRIECODE_SEQUENCE_PRED_MASK 0x0F
-
 //////////////////////////////////////////////////////////////////////
 uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
 {
