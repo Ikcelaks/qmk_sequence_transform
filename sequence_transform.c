@@ -10,6 +10,7 @@
 #include "st_defaults.h"
 #include "qmk_wrapper.h"
 #include "st_debug.h"
+#include "st_assert.h"
 #include "triecodes.h"
 #include "sequence_transform.h"
 #include "sequence_transform_data.h"
@@ -276,6 +277,7 @@ bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
         uint8_t triecode = CDATA(cursor->trie, i);
         if (st_is_trans_seq_ref_triecode(triecode)) {
             triecode = st_cursor_get_seq_ascii(cursor, triecode);
+            st_assert(triecode, "Unable to retrieve seq ref (%d) needed to produce the completion\n", triecode);
             st_key_buffer_push_seq_ref(&key_buffer, triecode);
         }
         st_send_key(st_ascii_to_keycode(triecode));
@@ -336,6 +338,11 @@ void st_handle_backspace() {
             for (int i = trie_stack.size - 1; i >= 0; --i) {
                 st_send_key(st_ascii_to_keycode(trie_stack.buffer[i]));
             }
+        } else {
+            // The output state is no longer confidently known.
+            // Reset the buffer to prevent unintended matches.
+            st_key_buffer_reset(&key_buffer);
+            return;
         }
     } else {
         // Send backspaces since no resend is needed to complete the undo
