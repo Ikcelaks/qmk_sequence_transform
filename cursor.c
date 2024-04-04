@@ -8,6 +8,7 @@
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
+#include "triecodes.h"
 #include "utils.h"
 #include "cursor.h"
 #include "st_assert.h"
@@ -52,7 +53,7 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
             for (cursor->pos.sub_index = 0; cursor->pos.sub_index < backspaces; ++cursor->pos.sub_index) {
                 const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
                 const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-                if (triecode > 127) {
+                if (st_is_trans_seq_ref_triecode(triecode)) {
                     // This is a seq_ref, increment the seq_ref_index
                     ++cursor->seq_ref_index;
                 }
@@ -103,8 +104,8 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
     st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
-    uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-    if (triecode > 127) {
+    const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
+    if (st_is_trans_seq_ref_triecode(triecode)) {
         return st_key_buffer_get_seq_ref(cursor->buffer, cursor->seq_ref_index);
     }
     return triecode;
@@ -147,10 +148,10 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
 {
-    if (triecode < 128) {
+    if (!st_is_trans_seq_ref_triecode(triecode)) {
         return triecode;
     }
-    int nth = triecode - 128;
+    int nth = st_get_seq_ref_triecode_pos(triecode);
     st_cursor_pos_t original_pos = st_cursor_save(cursor);
     cursor->pos.as_output = false;
     cursor->pos.sub_index = 0;
@@ -219,7 +220,7 @@ bool st_cursor_next(st_cursor_t *cursor)
     if (action->completion_len > cursor->pos.sub_index) {
         const int completion_char_index = action->completion_index + action->completion_len - 1 - cursor->pos.sub_index;
         const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
-        if (triecode > 127) {
+        if (st_is_trans_seq_ref_triecode(triecode)) {
             // This is a seq_ref, increment the seq_ref_index
             ++cursor->seq_ref_index;
         }

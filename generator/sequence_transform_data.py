@@ -108,7 +108,7 @@ def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]
     return {
         **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
         **map_range(TRIECODE_SEQUENCE_METACHAR_0, SEQ_METACHAR_SYMBOLS),
-        # wordbreak_symbol: ord(" "),  # "Word break" symbol.
+        SPACE_SYMBOL: ord(" "),
         **{chr(c): c for c in range(32, 126)}
     }
 
@@ -124,7 +124,7 @@ def quiet_print(*args, **kwargs):
 ###############################################################################
 def generate_transform_symbol_map() -> Dict[str, int]:
     return {
-        SPACE_SYMBOL: ord(" "),  # "Word break" symbol.
+        SPACE_SYMBOL: ord(" "),
         **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS),
         **{chr(c): c for c in range(32, 126)}
     }
@@ -754,21 +754,24 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     # token symbols stored as utf8 strings
     seq_sym_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_TOKEN_SYMBOLS))
     seq_metachar_array_str = ", ".join(map(lambda c: f'"{c}"', SEQ_METACHAR_SYMBOLS))
+    trans_seq_ref_array_str = ", ".join(map(lambda c: f'"{c}"', TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS))
     st_seq_tokens = f'static const char *st_seq_tokens[] = {{ {seq_sym_array_str} }};'
     st_seq_metachars = f'static const char *st_seq_metachars[] = {{ {seq_metachar_array_str} }};'
-    st_wordbreak_token = f'static const char *st_wordbreak_token = "{WORDBREAK_SYMBOL}";'
+    st_trans_seq_ref_tokens = f'static const char *st_trans_seq_ref_tokens[] = {{ {trans_seq_ref_array_str} }};'
+    st_space_token = f'static const char *st_space_token = "{SPACE_SYMBOL}";'
     # ascii versions
     seq_token_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
     seq_metachar_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_METACHAR_ASCII_CHARS))
     st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {seq_token_char_array_str} }};'
     st_seq_metachar_ascii_chars = f'static const char st_seq_metachar_ascii_chars[] = {{ {seq_metachar_char_array_str} }};'
-    st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
+    # st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
 
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
         '',
         f'#define TRIECODE_SEQUENCE_TOKEN_0 {uint16_to_hex(TRIECODE_SEQUENCE_TOKEN_0)}',
         f'#define TRIECODE_SEQUENCE_METACHAR_0 {uint16_to_hex(TRIECODE_SEQUENCE_METACHAR_0)}',
+        f'#define TRIECODE_SEQUENCE_REF_TOKEN_0 {uint16_to_hex(TRIECODE_TRANSFORM_SEQUENCE_REF_0)}',
         f'#define SEQUENCE_MIN_LENGTH {len(min_sequence)} // "{min_sequence}"',
         f'#define SEQUENCE_MAX_LENGTH {len(max_sequence)} // "{max_sequence}"',
         f'#define TRANSFORM_MAX_LENGTH {len(max_transform)} // "{max_transform}"',
@@ -778,16 +781,18 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define COMPLETIONS_SIZE {len(completions_data)}',
         f'#define SEQUENCE_TOKEN_COUNT {len(SEQ_TOKEN_SYMBOLS)}',
         f'#define SEQUENCE_METACHAR_COUNT {len(SEQ_METACHAR_SYMBOLS)}',
+        f'#define SEQUENCE_REF_TOKEN_COUNT {len(TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS)}',
         '',
         st_seq_token_ascii_chars,
         st_seq_metachar_ascii_chars,
-        st_wordbreak_ascii,
+        # st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
         '#ifdef ST_TESTER',
         st_seq_tokens,
         st_seq_metachars,
-        st_wordbreak_token,
+        st_trans_seq_ref_tokens,
+        st_space_token,
         '#endif'
     ]
 

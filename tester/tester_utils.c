@@ -24,6 +24,21 @@ void st_triecodes_to_utf8_str(const uint8_t *triecodes, char *str)
 }
 //////////////////////////////////////////////////////////////////
 // expects triecodes to be null terminated
+void st_triecodes_transform_to_utf8_str(const uint8_t *triecodes, char *str)
+{
+    for (uint8_t code = *triecodes; code; code = *++triecodes) {
+        const char *token = st_get_trans_token_utf8(code);
+        if (token) {
+            while ((*str++ = *token++));
+            str--;
+        } else {
+            *str++ = (char)code;
+        }
+    }
+    *str = 0;
+}
+//////////////////////////////////////////////////////////////////
+// expects triecodes to be null terminated
 void st_triecodes_to_ascii_str(const uint8_t *triecodes, char *str)
 {
     for (uint8_t code = *triecodes; code; code = *++triecodes) {

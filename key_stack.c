@@ -101,7 +101,7 @@ void st_key_stack_to_utf8(const st_key_stack_t *s, char *str)
 {
     for (int i = 0; i < s->size; ++i) {
         const uint8_t code = s->buffer[i];
-        const char *token = st_get_seq_token_utf8(code);
+        const char *token = st_get_trans_token_utf8(code);
         if (token) {
             while ((*str++ = *token++));
             str--;
