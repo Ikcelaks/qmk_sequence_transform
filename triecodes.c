@@ -6,7 +6,6 @@
 #include "qmk_wrapper.h"
 #include "triecodes.h"
 #include "sequence_transform_data.h"
-#include "utils.h"
 #include "st_assert.h"
 #include "predicates.h"
 

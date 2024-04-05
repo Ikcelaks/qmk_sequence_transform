@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "qmk_wrapper.h"
-#include "sequence_transform_data.h"
-#include "utils.h"
 #include "st_assert.h"
 #include "st_debug.h"
 #include "predicates.h"

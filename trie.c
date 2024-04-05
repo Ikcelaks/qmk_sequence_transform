@@ -12,7 +12,6 @@
 #include "key_stack.h"
 #include "trie.h"
 #include "cursor.h"
-#include "utils.h"
 
 //////////////////////////////////////////////////////////////////////
 uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
