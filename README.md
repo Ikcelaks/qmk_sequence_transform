@@ -16,6 +16,7 @@ command to add the library as a git submodule (no need to create a fork first):<
 
 ### Step 2
 At the end of your `rules.mk` file, add the following lines:</br>
+**IMPORTANT!** The tab infront of `python3 ...` *MUST* be an actual tab character. Replacing with spaces will break things.
 ```mk
 # sequence_transform setup
 mkfile_dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
@@ -63,6 +64,15 @@ void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
 ```
 
 ### Step 7
+Add this line to your `` function in `keymap.c`:<br/>
+```c
+void matrix_scan_user(void)
+{
+    sequence_transform_task();  // Add this line
+}
+```
+
+### Step 8
 Copy the `sequence_transform_config_sample.json` and `sequence_transform_dict_sample.txt` files from the `./sequence_transform/generator` directory
 into the base directory of your keymap (which should contain the `sequence_transform` directory as a direct subdirectory).<br/>
 **Rename both files to remove the `_sample`**. They should now be named `sequence_transform_config.json` and `sequence_transform_dict.txt` respectively.
