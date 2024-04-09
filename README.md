@@ -64,7 +64,7 @@ void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
 ```
 
 ### Step 7
-Add this line to your `` function in `keymap.c`:<br/>
+Add this line to your `matrix_scan_user` function in `keymap.c`:<br/>
 ```c
 void matrix_scan_user(void)
 {
