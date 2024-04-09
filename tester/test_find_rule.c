@@ -1,40 +1,18 @@
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
+#include "st_defaults.h"
 #include "qmk_wrapper.h"
-#include "keybuffer.h"
-#include "key_stack.h"
-#include "trie.h"
 #include "utils.h"
 #include "sequence_transform.h"
-#include "sequence_transform_data.h"
-#include "sequence_transform_test.h"
-#include "sim_output_buffer.h"
+#include "triecodes.h"
 #include "tester_utils.h"
 #include "tester.h"
 
-#define KEY_AT(i) st_key_buffer_get_keycode(buf, (i))
+#define TRIECODE_AT(i) st_key_buffer_get_triecode(buf, (i))
 
-//////////////////////////////////////////////////////////////////
-// Converts keys from buffer to null terminated ascii string
-// KC_SPACE -> ' ' (instead of st_wordbreak_ascii)
-void key_buffer_to_space_str(const st_key_buffer_t *buf, char *str)
-{
-    const int len = buf->context_len;
-    for (int i = 0; i < len; ++i) {
-        const uint16_t key = KEY_AT(len - i - 1);
-        *str++ = key == KC_SPACE ? ' ' : st_keycode_to_char(key);
-    }
-    *str = 0;
-}
-//////////////////////////////////////////////////////////////////////
-bool buf_needs_expanding(st_key_buffer_t *buf)
-{
-    for (int i = 1; i < buf->context_len; ++i) {
-        const uint16_t key = KEY_AT(i);
-        if (st_is_seq_token_keycode(key)) {
-            return true;
-        }
-    }
-    return false;
-}
 //////////////////////////////////////////////////////////////////////
 // Setup input buffer from rule transform so that
 // it's ready for the st_find_missed_rule call.
@@ -42,24 +20,22 @@ bool buf_needs_expanding(st_key_buffer_t *buf)
 // that will be tested.
 // returns false if rule is untestable, true otherwise
 bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transform)
-{    
+{
     st_key_buffer_t *buf = st_get_key_buffer();
     // send input rule seq so we can get output transform to test
-    sim_st_perform(rule->seq_keycodes);
+    sim_st_perform(rule->sequence);
 
     // Check if sequence contains an unexpanded token
-    if (!buf_needs_expanding(buf)) {
+    if (!st_key_buffer_has_unexpanded_seq(buf)) {
         // 'normal' rule, so we can use the transform as is
-        chained_transform[0] = 0;
-        strncat(chained_transform, rule->transform_str, 255);        
+        st_triecodes_to_ascii_str(rule->transform, chained_transform);
         // send the output into input buffer
         // to simulate user typing it directly
-        buf->context_len = 0;
-        char *output = sim_output_get(false);
-        for (char c = *output; c; c = *++output) {
-            const uint16_t key = ascii_to_keycode(c);
-            st_key_buffer_push(buf, key);
-        }        
+        buf->size = 0;
+        for (int i = 0; i < sim_output.size; ++i) {
+            const uint8_t code = sim_output.buffer[i];
+            st_key_buffer_push(buf, code);
+        }
         return true;
     }
     // Rule contains a sequence token before the end so
@@ -72,37 +48,39 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     // chained_transform: ^d@er
 
     // find seq_prefix/trans_prefix by backspacing non seq tokens
-    uint16_t key = 0;
+    uint8_t key = 0;
     do {
         tap_code16(KC_BSPC);
         st_handle_backspace();
-        key = KEY_AT(0);
-    } while (key && !st_is_seq_token_keycode(key));
+        key = TRIECODE_AT(0);
+    } while (key && !st_is_seq_token_triecode(key));
     if (!key) {
         //printf("empty seq_prefix!\n");
         return false;
     }
-    char *trans_prefix = sim_output_get(true);
-    int   out_len = strlen(trans_prefix);
-    int   rule_trans_len = strlen(rule->transform_str);
-    //printf("trans_prefix: %s\n", trans_prefix);
-    if (!strstr(rule->transform_str, trans_prefix)) {
-        // If trans_prefix is not in transform_str,
-        // this is an untestable rule. 
+    // input now contains seq_prefix (^d@)
+    // output now contains trans_prefix (develop)
+    sim_output.buffer[sim_output.size] = 0;
+    const uint8_t *trans_prefix = &sim_output.buffer[0];
+    if (!strstr((char*)rule->transform, (char*)trans_prefix)) {
+        // If trans_prefix is not in rule->transform,
+        // this is an untestable rule.
+        //char trans_prefix_str[128] = {0};
+        //st_triecodes_to_ascii_str(trans_prefix, trans_prefix_str);
+        //printf("trans_prefix %s is not in rule->transform!\n", trans_prefix_str);
         return false;
     }
-    // output now contains trans_prefix (develop)
-    // input now contains seq_prefix (^d@)
     // add removed chars (er) to new end of sequence in input buffer
+    const int out_len = strlen((char*)trans_prefix);
+    const int rule_trans_len = strlen((char*)rule->transform);
     for (int i = out_len; i < rule_trans_len; ++i) {
-        const char     c   = rule->transform_str[i];
-        const uint16_t key = ascii_to_keycode(c);
-        st_key_buffer_push(buf, key);
+        const uint8_t code = rule->transform[i];
+        st_key_buffer_push(buf, code);
     }
     // input should now contain ^d@er and is ready for searching
-    key_buffer_to_space_str(buf, chained_transform);
+    st_key_buffer_to_ascii_str(buf, chained_transform);
     //printf("chained_transform: %s\n", chained_transform);
-    if (!strcmp(ltrim_str(chained_transform), rule->transform_str)) {
+    if (!strcmp(chained_transform, (char*)rule->transform)) {
         // transform already a chained expression,
         // so nothing to test!
         //printf("transform already a chained expression!\n");
@@ -117,12 +95,15 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
     char chained_transform[256] = {0};
     // rule search starts looking from the last space in the buffer
     // so if there is a space in the rule transform,
-    // this rule is untestable (except if space is at the end)
-    char *space = strchr(rule->transform_str, ' ');
-    int transform_len = strlen(rule->transform_str);
-    if (space && space - rule->transform_str < transform_len - 1) {
-        RES_WARN("untestable rule (space in transform)!");
-        return;
+    // this rule is untestable (except if space is at the start or end)
+    char *space = strchr((char*)rule->transform, ' ');
+    if (space) {
+        const int transform_len = strlen((char*)rule->transform);
+        const int space_idx = space - (char*)rule->transform;
+        if (space_idx && space_idx < transform_len - 1) {
+            RES_WARN("untestable rule (space in transform)!");
+            return;
+        }
     }
     // setup input buffer from rule transform so that
     // it's ready for the st_find_missed_rule call
@@ -130,16 +111,12 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
         RES_WARN("untestable rule!");
         return;
     }
-    // currently the rule transform string doesn't have leading spaces
-    // so we must remove them from our computed chained_transform
-    // before comparisons.
-    char *transform = ltrim_str(chained_transform);
     // from this new input buffer, find missed rule
     missed_rule_seq[0] = 0;
     missed_rule_transform[0] = 0;
-    st_find_missed_rule();    
+    st_find_missed_rule();
     // Check if found rule matches ours
-    keycodes_to_ascii_str(rule->seq_keycodes, seq_ascii);
+    st_triecodes_to_ascii_str(rule->sequence, seq_ascii);
     const int missed_rule_seq_len = strlen(missed_rule_seq);
     const int seq_ascii_len = strlen(seq_ascii);
     if (!missed_rule_seq_len) {
@@ -147,7 +124,7 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
         return;
     }
     const int seq_dif = strcmp(missed_rule_seq, seq_ascii);
-    const int trans_dif = strcmp(missed_rule_transform, transform);
+    const int trans_dif = strcmp(missed_rule_transform, chained_transform);
     if (!trans_dif && missed_rule_seq_len < seq_ascii_len) {
         RES_WARN("found shorter sequence rule: %s ⇒ %s",
                  missed_rule_seq, missed_rule_transform);
@@ -159,7 +136,7 @@ void test_find_rule(const st_test_rule_t *rule, st_test_result_t *res)
         return;
     }
     if (seq_dif || trans_dif) {
-        //printf("(%s -> %s)\n", seq_ascii, transform);
+        //printf("(%s -> %s)\n", seq_ascii, chained_transform);
         RES_FAIL("found: %s ⇒ %s",
                  missed_rule_seq, missed_rule_transform);
         return;

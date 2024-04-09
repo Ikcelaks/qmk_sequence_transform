@@ -8,6 +8,7 @@
 // Original source/inspiration: https://getreuer.info/posts/keyboards/autocorrection
 #pragma once
 
+#include "st_defaults.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "action.h"
@@ -19,7 +20,7 @@
 //////////////////////////////////////////////////////////////////
 // Public API
 
-bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t special_key_start);
+bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start);
 void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule);
 void post_process_sequence_transform(void);
 uint16_t sequence_transform_past_keycode(int index);
@@ -33,16 +34,15 @@ static inline void sequence_transform_task(void) {}
 //////////////////////////////////////////////////////////////////
 // Internal
 
-bool st_process_check(uint16_t *keycode, keyrecord_t *record, uint8_t *mods);
+bool st_process_check(uint16_t *keycode, const keyrecord_t *record, uint8_t *mods);
 void st_handle_repeat_key(void);
-void st_handle_result(st_trie_t *trie, st_trie_search_result_t *res);
+void st_handle_result(const st_trie_t *trie, const st_trie_search_result_t *res);
 bool st_perform(void);
 void st_find_missed_rule(void);
 void st_handle_backspace(void);
-uint8_t st_get_virtual_output(char *buf, uint8_t count);
 
 #ifdef ST_TESTER
-st_trie_t       *st_get_trie(void);
+const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
-st_cursor_t *st_get_cursor(void);
+st_cursor_t     *st_get_cursor(void);
 #endif

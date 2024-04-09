@@ -90,7 +90,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS;SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;SEQUENCE_TRANSFORM_RULE_SEARCH=1;SEQUENCE_TRANSFORM_FALLBACK_BUFFER=1;SEQUENCE_TRANSFORM_DEBUG=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -107,7 +107,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS;SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;SEQUENCE_TRANSFORM_RULE_SEARCH=1;SEQUENCE_TRANSFORM_FALLBACK_BUFFER=1;SEQUENCE_TRANSFORM_DEBUG=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -124,7 +124,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS;SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_RULE_SEARCH=1;SEQUENCE_TRANSFORM_FALLBACK_BUFFER=1;SEQUENCE_TRANSFORM_DEBUG=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -141,7 +141,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_MISSED_RULES;_CRT_SECURE_NO_WARNINGS;SEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);NO_PRINT;ST_TESTER;WIN32;SEQUENCE_TRANSFORM_RULE_SEARCH=1;SEQUENCE_TRANSFORM_FALLBACK_BUFFER=1;SEQUENCE_TRANSFORM_DEBUG=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(QMKPATH)\platforms;$(QMKPATH)\quantum;$(QMKPATH)\quantum\sequencer;$(QMKPATH)\quantum\logging;$(QMKPATH)\quantum\keymap_extras;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -159,10 +159,11 @@
     <ClCompile Include="..\keybuffer.c" />
     <ClCompile Include="..\key_stack.c" />
     <ClCompile Include="..\sequence_transform.c" />
+    <ClCompile Include="..\st_debug.c" />
+    <ClCompile Include="..\triecodes.c" />
     <ClCompile Include="..\trie.c" />
     <ClCompile Include="..\utils.c" />
     <ClCompile Include="qmk_wrapper.c" />
-    <ClCompile Include="sim_output_buffer.c" />
     <ClCompile Include="tester.c" />
     <ClCompile Include="tester_utils.c" />
     <ClCompile Include="test_all_rules.c" />
@@ -176,13 +177,17 @@
   <ItemGroup>
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\keybuffer.h" />
+    <ClInclude Include="..\key_stack.h" />
     <ClInclude Include="..\qmk_wrapper.h" />
     <ClInclude Include="..\sequence_transform.h" />
     <ClInclude Include="..\sequence_transform_data.h" />
     <ClInclude Include="..\sequence_transform_test.h" />
+    <ClInclude Include="..\st_assert.h" />
+    <ClInclude Include="..\st_debug.h" />
+    <ClInclude Include="..\st_defaults.h" />
+    <ClInclude Include="..\triecodes.h" />
     <ClInclude Include="..\trie.h" />
     <ClInclude Include="..\utils.h" />
-    <ClInclude Include="sim_output_buffer.h" />
     <ClInclude Include="tester.h" />
     <ClInclude Include="tester_utils.h" />
   </ItemGroup>

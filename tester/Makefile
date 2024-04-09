@@ -11,7 +11,7 @@ LIB_DIR			:= ../
 TESTER_DIR		:= ./
 LIB_SOURCES		:= $(wildcard $(LIB_DIR)/*.c)
 LIB_OBJECTS		:= $(LIB_SOURCES:$(LIB_DIR)/%.c=$(ODIR)/%.o)
-TESTER_SOURCES	:= $(wildcard $(TESTER_DIR)/*.c) 
+TESTER_SOURCES	:= $(wildcard $(TESTER_DIR)/*.c)
 TESTER_OBJECTS	:= $(TESTER_SOURCES:$(TESTER_DIR)/%.c=$(ODIR)/%.o) $(LIB_OBJECTS)
 DEPENDS			:= $(TESTER_OBJECTS:%.o=%.d)
 
@@ -22,7 +22,7 @@ ifeq ($(OS),Windows_NT)
 	OSFLAG += -D WIN32
 endif
 
-CFLAGS := -Werror \
+CFLAGS := -Werror -Wundef \
 	-I. \
 	-I$(QMKPATH)/platforms \
 	-I$(QMKPATH)/quantum \
@@ -31,9 +31,10 @@ CFLAGS := -Werror \
 	-I$(QMKPATH)/quantum/keymap_extras \
 	-I.. \
 	-DST_TESTER \
-	-DSEQUENCE_TRANSFORM_MISSED_RULES \
-	-DSEQUENCE_TRANSFORM_ENABLE_FALLBACK_BUFFER \
-	-DNO_PRINT \
+	-DSEQUENCE_TRANSFORM_DEBUG=1 \
+	-DSEQUENCE_TRANSFORM_ENHANCED_BACKSPACE=1 \
+	-DSEQUENCE_TRANSFORM_RULE_SEARCH=0 \
+	-DSEQUENCE_TRANSFORM_FALLBACK_BUFFER=1 \
 	-D_CONSOLE \
 	$(OSFLAG)
 
@@ -46,7 +47,7 @@ $(ST_GEN_OUT): $(ST_GEN_IN)
 	@echo Running generator
 	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
 
-gen: $(ST_GEN_OUT) 
+gen: $(ST_GEN_OUT)
 
 tester: $(TESTER_OBJECTS)
 	@$(CC) -o $@ $^ $(CFLAGS)
@@ -58,7 +59,7 @@ $(ODIR)/%.o: %.c | $(ODIR)
 	@echo Compiling $<
 	@$(CC) -MMD -c -o $@ $< $(CFLAGS)
 
-$(ODIR): 
+$(ODIR):
 	@mkdir -p $@
 
 .PHONY: clean

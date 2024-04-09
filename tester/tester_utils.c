@@ -1,60 +1,48 @@
+// Copyright 2024 Guillaume Stordeur <guillaume.stordeur@gmail.com>
+// Copyright 2024 Matt Skalecki <ikcelaks@gmail.com>
+// Copyright 2024 QKekos <q.kekos.q@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
 #include "qmk_wrapper.h"
 #include "tester_utils.h"
-#include "sequence_transform_data.h"
-#include "sequence_transform_test.h"
-#include "utils.h"
+#include "triecodes.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// if keycode is a token that can be translated back to its user symbol,
-// returns pointer to it, otherwise returns 0
-const char *st_get_seq_token_symbol(uint16_t keycode)
-{
-    if (SPECIAL_KEY_TRIECODE_0 <= keycode && keycode < SPECIAL_KEY_TRIECODE_0 + SEQUENCE_TRANSFORM_COUNT) {
-        return st_seq_tokens[keycode - SPECIAL_KEY_TRIECODE_0];        
-    } else if (keycode == KC_SPACE) {
-        return st_wordbreak_token;
-    }
-    return 0;
-}
 //////////////////////////////////////////////////////////////////
-void keycodes_to_utf8_str(const uint16_t *keycodes, char *str)
+// expects triecodes to be null terminated
+void st_triecodes_to_utf8_str(const uint8_t *triecodes, char *str)
 {
-    for (uint16_t key = *keycodes; key; key = *++keycodes) {
-        const char *token = st_get_seq_token_symbol(key);
+    for (uint8_t code = *triecodes; code; code = *++triecodes) {
+        const char *token = st_get_seq_token_utf8(code);
         if (token) {
             while ((*str++ = *token++));
             str--;
         } else {
-            *str++ = st_keycode_to_char(key);
+            *str++ = (char)code;
         }
     }
     *str = 0;
 }
 //////////////////////////////////////////////////////////////////
-void keycodes_to_ascii_str(const uint16_t *keycodes, char *str)
+// expects triecodes to be null terminated
+void st_triecodes_transform_to_utf8_str(const uint8_t *triecodes, char *str)
 {
-    for (uint16_t key = *keycodes; key; key = *++keycodes) {
-        *str++ = st_keycode_to_char(key);
+    for (uint8_t code = *triecodes; code; code = *++triecodes) {
+        const char *token = st_get_trans_token_utf8(code);
+        if (token) {
+            while ((*str++ = *token++));
+            str--;
+        } else {
+            *str++ = (char)code;
+        }
     }
     *str = 0;
 }
 //////////////////////////////////////////////////////////////////
-uint16_t ascii_to_keycode(char c)
+// expects triecodes to be null terminated
+void st_triecodes_to_ascii_str(const uint8_t *triecodes, char *str)
 {
-    for (int i = 0; i < sizeof(st_seq_tokens_ascii); ++i) {
-        if (c == st_seq_tokens_ascii[i]) {
-            return SPECIAL_KEY_TRIECODE_0 + i;
-        }
+    for (uint8_t code = *triecodes; code; code = *++triecodes) {
+        *str++ = st_triecode_to_ascii(code);
     }
-    if (c == st_wordbreak_ascii) {
-        return KC_SPACE;
-    }
-    return st_char_to_keycode(c);
-}
-//////////////////////////////////////////////////////////////////
-// returns a pointer to the first non-space char in string
-char *ltrim_str(char *str)
-{
-    while (*str++ == ' ');
-    return --str;
+    *str = 0;
 }
