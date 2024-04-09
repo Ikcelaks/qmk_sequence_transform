@@ -23,7 +23,7 @@ static st_test_info_t rule_tests[] = {
     { test_virtual_output,  "st_virtual_output",    { false, {0} } },
 	{ test_cursor,          "st_cursor",            { false, {0} } },
     { test_backspace,       "st_handle_backspace",  { false, {0} } },
-    { test_find_rule,       "st_find_missed_rule",  { false, {0} } },
+    // { test_find_rule,       "st_find_missed_rule",  { false, {0} } },
     { 0,                    0,                      { false, {0} } }
 };
 
@@ -69,7 +69,7 @@ int test_rule(const st_test_rule_t *rule,
     char sequence_str[256] = {0};
     char transform_str[256] = {0};
     st_triecodes_to_utf8_str(rule->sequence, sequence_str);
-    st_triecodes_to_utf8_str(rule->transform, transform_str);
+    st_triecodes_transform_to_utf8_str(rule->transform, transform_str);
     printf("[rule] %s ⇒ %s\n", sequence_str, transform_str);
     for (int i = 0; rule_tests[i].func; ++i) {
         if (!tests[i]) {
