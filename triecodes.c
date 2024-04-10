@@ -6,8 +6,8 @@
 #include "qmk_wrapper.h"
 #include "triecodes.h"
 #include "sequence_transform_data.h"
-#include "utils.h"
 #include "st_assert.h"
+#include "predicates.h"
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
@@ -63,6 +63,20 @@ bool st_is_seq_token_triecode(uint8_t triecode)
     const uint8_t tok_last = tok_first + SEQUENCE_TOKEN_COUNT;
     return (tok_first <= triecode && triecode < tok_last);
 }
+//////////////////////////////////////////////////////////////////////
+bool st_is_seq_metachar_triecode(uint8_t triecode)
+{
+    const uint8_t pred_first = TRIECODE_SEQUENCE_METACHAR_0;
+    const uint8_t pred_last = pred_first + SEQUENCE_METACHAR_COUNT;
+    return (pred_first <= triecode && triecode < pred_last);
+}
+//////////////////////////////////////////////////////////////////////
+bool st_is_trans_seq_ref_triecode(uint8_t triecode)
+{
+    const uint8_t tok_first = TRIECODE_SEQUENCE_REF_TOKEN_0;
+    const uint8_t tok_last = tok_first + SEQUENCE_REF_TOKEN_COUNT;
+    return (tok_first <= triecode && triecode < tok_last);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // if triecode is a token that can be translated back to its user symbol,
 // returns its ascii code, otherwise returns 0
@@ -70,8 +84,16 @@ char st_get_seq_token_ascii(uint8_t triecode)
 {
     if (st_is_seq_token_triecode(triecode)) {
         return st_seq_token_ascii_chars[triecode - TRIECODE_SEQUENCE_TOKEN_0];
-    } else if (triecode == ' ') {
-        return st_wordbreak_ascii;
+    }
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+// if triecode is a predicate that can be translated back to its user symbol,
+// returns its ascii code, otherwise returns 0
+char st_get_seq_metachar_ascii(uint8_t triecode)
+{
+    if (st_is_seq_metachar_triecode(triecode)) {
+        return st_seq_metachar_ascii_chars[triecode - TRIECODE_SEQUENCE_METACHAR_0];
     }
     return 0;
 }
@@ -119,12 +141,54 @@ uint16_t st_ascii_to_keycode(uint8_t triecode)
         k = S(k);
     return k;
 }
+////////////////////////////////////////////////////////////////////////////////
+bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
+{
+    if (triecode < TRIECODE_SEQUENCE_METACHAR_0) {
+        // Not a MetaCharacter. Do an exact match
+        return triecode == key_triecode;
+    }
+    const uint8_t pred_index = triecode - TRIECODE_SEQUENCE_METACHAR_0;
+    return st_predicate_test_triecode(pred_index, key_triecode);
+}
+////////////////////////////////////////////////////////////////////////////////
+int st_get_seq_ref_triecode_pos(uint8_t triecode)
+{
+    st_assert(st_is_trans_seq_ref_triecode(triecode), "triecode (%d) not a valid seq ref", triecode);
+    const uint8_t seq_ref_index = triecode - TRIECODE_SEQUENCE_REF_TOKEN_0;
+    return seq_ref_index;
+}
 
 //////////////////////////////////////////////////////////////////////
 // These are (currently) only used by the tester,
 // so let's not compile them into the firmware.
 #ifdef ST_TESTER
-
+////////////////////////////////////////////////////////////////////////////////
+uint8_t st_get_metachar_example_triecode(uint8_t triecode)
+{
+    if (!st_is_seq_metachar_triecode(triecode)) {
+        return triecode;
+    }
+    // TODO: get these from the generator
+    switch (triecode) {
+        case 0xA0:
+            return 'A';
+        case 0xA1:
+            return 'a';
+        case 0xA2:
+            return '1';
+        case 0xA3:
+            return '.';
+        case 0xA4:
+            return ',';
+        case 0xA5:
+            return '!';
+        case 0xA6:
+            return ' ';
+        case 0xA7:
+            return '%';
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////
 uint16_t st_triecode_to_keycode(uint8_t triecode, uint16_t kc_seq_token_0)
 {
@@ -140,8 +204,24 @@ const char *st_get_seq_token_utf8(uint8_t triecode)
 {
     if (st_is_seq_token_triecode(triecode)) {
         return st_seq_tokens[triecode - TRIECODE_SEQUENCE_TOKEN_0];
+    } if (st_is_seq_metachar_triecode(triecode)) {
+        return st_seq_metachars[triecode - TRIECODE_SEQUENCE_METACHAR_0];
     } else if (triecode == ' ') {
-        return st_wordbreak_token;
+        return st_space_token;
+    }
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+// if triecode is a token that can be translated back to its user symbol,
+// returns pointer to its utf8 string, otherwise returns 0
+const char *st_get_trans_token_utf8(uint8_t triecode)
+{
+    if (st_is_trans_seq_ref_triecode(triecode)) {
+        return st_trans_seq_ref_tokens[triecode - TRIECODE_SEQUENCE_REF_TOKEN_0];
+    } if (st_is_seq_metachar_triecode(triecode)) {
+        return st_seq_metachars[triecode - TRIECODE_SEQUENCE_METACHAR_0];
+    } else if (triecode == ' ') {
+        return st_space_token;
     }
     return 0;
 }
@@ -152,9 +232,6 @@ uint16_t st_test_ascii_to_keycode(char c)
         if (c == st_seq_token_ascii_chars[i]) {
             return TEST_KC_SEQ_TOKEN_0 + i;
         }
-    }
-    if (c == st_wordbreak_ascii) {
-        return KC_SPACE;
     }
     return st_ascii_to_keycode(c);
 }

@@ -5,5 +5,6 @@
 #pragma once
 
 void    st_triecodes_to_utf8_str(const uint8_t *triecodes, char *str);
+void    st_triecodes_transform_to_utf8_str(const uint8_t *triecodes, char *str);
 void    st_triecodes_to_ascii_str(const uint8_t *triecodes, char *str);
 

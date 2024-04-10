@@ -75,7 +75,7 @@ int st_key_stack_cmp(const st_key_stack_t *s1,
 int st_key_stack_cmp_buf(const st_key_stack_t *stack, const uint8_t *buf)
 {
     for (int i = 0; i < stack->size; ++i) {
-        if (stack->buffer[i] != buf[i]) {
+        if (stack->buffer[i] != st_get_metachar_example_triecode(buf[i])) {
             return 1;
         }
     }
@@ -101,7 +101,7 @@ void st_key_stack_to_utf8(const st_key_stack_t *s, char *str)
 {
     for (int i = 0; i < s->size; ++i) {
         const uint8_t code = s->buffer[i];
-        const char *token = st_get_seq_token_utf8(code);
+        const char *token = st_get_trans_token_utf8(code);
         if (token) {
             while ((*str++ = *token++));
             str--;
