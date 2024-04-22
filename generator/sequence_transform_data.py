@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_1"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_2"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -877,7 +877,7 @@ if __name__ == '__main__':
         NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
         TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
         ANY_SYMBOL = list(config['any_symbol'].keys())[0]
-        OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
+        OUTPUT_FUNC_SYMBOLS = config['output_funcs'].values()
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']

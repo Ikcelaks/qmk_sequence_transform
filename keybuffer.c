@@ -9,7 +9,6 @@
 #include "triecodes.h"
 #include "keybuffer.h"
 #include "utils.h"
-#include <ctype.h>
 
 #define TRIECODE_AT(i) st_key_buffer_get_triecode(buf, (i))
 
@@ -60,10 +59,10 @@ void st_key_buffer_reset(st_key_buffer_t *buf)
 {
     buf->size = 0;
     buf->seq_ref_size = 0;
-    st_key_buffer_push(buf, ' ');
+    st_key_buffer_push(buf, ' ', 0);
 }
 //////////////////////////////////////////////////////////////////
-void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
+void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode, uint8_t key_flags)
 {
     // Store all alpha chars as lowercase
     if (buf->size < buf->capacity) {
@@ -72,7 +71,8 @@ void st_key_buffer_push(st_key_buffer_t *buf, uint8_t triecode)
     if (++buf->head >= buf->capacity) {  // increment cur_pos
         buf->head = 0;               // wrap to 0
     }
-    buf->data[buf->head].triecode = tolower(triecode);
+    buf->data[buf->head].triecode = triecode;
+    buf->data[buf->head].key_flags = key_flags;
     buf->data[buf->head].action_taken = ST_DEFAULT_KEY_ACTION;
     st_key_buffer_push_seq_ref(buf, '\0');
 }

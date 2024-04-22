@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "cursor.h"
 #include "st_assert.h"
+#include <ctype.h>
 
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
@@ -100,18 +101,21 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     // This is an output cursor focused on rule matching keypress
     // get the character at the sub_indax of the transform completion
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
-    int completion_char_index = action->completion_index;
-    completion_char_index += action->completion_len - 1 - cursor->pos.sub_index;
+    const int completion_char_index_delta = action->completion_len - 1 - cursor->pos.sub_index;
+    const int completion_char_index = action->completion_index + completion_char_index_delta;
     st_assert(completion_char_index >= 0, "Invalid completion_char_index: %d at Cursor Pos: %d, %d; %d",
                 completion_char_index, cursor->pos.index, cursor->pos.sub_index, cursor->buffer->size);
     const uint8_t triecode = CDATA(cursor->trie, completion_char_index);
     if (st_is_trans_seq_ref_triecode(triecode)) {
         return st_key_buffer_get_seq_ref(cursor->buffer, cursor->seq_ref_index);
     }
+    if ((keyaction->key_flags & ST_KEY_FLAG_IS_FULL_SHIFT) ||
+            (completion_char_index_delta == 0 && (keyaction->key_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT))) {
+        return toupper(triecode);
+    }
     return triecode;
 }
-
-
+//////////////////////////////////////////////////////////////////
 uint16_t st_cursor_get_matched_rule(st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);
@@ -146,6 +150,26 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     return action;
 }
 //////////////////////////////////////////////////////////////////
+uint8_t st_cursor_get_shift_of_nth(st_cursor_t *cursor, int nth)
+{
+    st_cursor_pos_t original_pos = st_cursor_save(cursor);
+    st_cursor_init(cursor, 1, true);
+    for (int i = 0; i < nth - 1; ++i) {
+        if (!st_cursor_next(cursor)) {
+            st_cursor_restore(cursor, &original_pos);
+            return 0;
+        }
+    }
+    const st_trie_payload_t *action = st_cursor_get_action(cursor);
+    uint8_t key_flags = st_key_buffer_get(cursor->buffer, cursor->pos.index)->key_flags;
+    key_flags &= ~ST_KEY_FLAG_IS_ANCHOR_MATCH;
+    if (action->completion_len > cursor->pos.sub_index + 1) {
+        key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
+    }
+    st_cursor_restore(cursor, &original_pos);
+    return key_flags;
+}
+//////////////////////////////////////////////////////////////////
 uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
 {
     if (!st_is_trans_seq_ref_triecode(triecode)) {
@@ -162,7 +186,7 @@ uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
             return 0;
         }
         --nth;
-        if (!cursor->pos.as_output && st_key_buffer_get(cursor->buffer, cursor->pos.index)->is_anchor_match) {
+        if (!cursor->pos.as_output && (st_key_buffer_get(cursor->buffer, cursor->pos.index)->key_flags & ST_KEY_FLAG_IS_ANCHOR_MATCH)) {
             // reached the anchor of the sequence, move past the match
             // and get the rest of the sequence from the virtual output
             st_cursor_next(cursor);

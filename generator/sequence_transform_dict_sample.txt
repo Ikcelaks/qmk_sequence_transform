@@ -17,15 +17,7 @@ gh👍   ⇒ ghly
 ‸s👍qo      ⇒ ‸sequence_transform
 ‸s👍q-      ⇒ ‸sequence-transform
 ‸s👍q⎵o‸    ⇒ ‸sequence⎵transform◯
-‸t👍o       ⇒ ‸transform
 ‸s👍l       ⇒ ‸symbol
-
-
-‸k👍        ⇒ ‸know
-‸k👍r       ⇒ ‸keypress
-‸k👍b       ⇒ ‸key_buffer
-
-
 
 ‸qa      ⇒ ‸qua
 qa      ⇒ qua
@@ -42,21 +34,21 @@ qm👆    ⇒ qmk
 ‸qua👆         ⇒ ‸quali
 ‸qa👆t         ⇒ ‸quality
 
-d★     ⇒ develop
-d★t    ⇒ development
-d★r    ⇒ developer
-d★d    ⇒ developed
-
 judge👆     ⇒ judgment
 
 sim👆       ⇒ simultaneously
 sim👆👆       ⇒ simultaneous
+
+‸ie         ⇒ ‸if
+‸ie👆       ⇒ ‸ie
+‸if         ⇒ ‸ie
 
 ‸i👍        ⇒ ‸i
 ‸i👍‸       ⇒ ‸I◯
 ‸i👍m       ⇒ ‸I'm
 ‸i👍d       ⇒ ‸I'd
 ‸i👍l       ⇒ ‸I'll
+‸i👍lb      ⇒ ‸I'll⎵be
 ‸i👍v       ⇒ ‸I've
 ‸i👍t       ⇒ ‸isn't
 ‸i👍ts      ⇒ ‸it's
@@ -67,6 +59,10 @@ sim👆👆       ⇒ simultaneous
 ‸i👍r       ⇒ ‸interest
 ‸i👍rg      ⇒ ‸interesting
 ‸i👍rd      ⇒ ‸interested
+‸i👍j       ⇒ ‸inject
+‸i👍jg      ⇒ ‸injecting
+‸i👍ji      ⇒ ‸injection
+‸i👍jd      ⇒ ‸injected
 
 
 ‸c👍        ⇒ ‸come
@@ -75,9 +71,11 @@ sim👆👆       ⇒ simultaneous
 ‸c👍t       ⇒ ‸can't
 ‸c👍v       ⇒ ‸cover
 ‸c👍o       ⇒ ‸course
+‸c👍oi      ⇒ ‸coursing
 ‸c👍a       ⇒ ‸change
 ‸c👍ai      ⇒ ‸changing
 ‸c👍e       ⇒ ‸cause
+‸c👍ei      ⇒ ‸causing
 ‸c👍n       ⇒ ‸consider
 ‸c👍ni      ⇒ ‸considering
 ‸c👍m       ⇒ ‸complete
@@ -99,15 +97,20 @@ sim👆👆       ⇒ simultaneous
 ‸s👍uv        ⇒ ‸should've
 
 
-‸r👍        ⇒ ‸right
+‸r👍        ⇒ ‸r
+‸r👍‸        ⇒ ‸really◯
+‸r👍i       ⇒ ‸right
 ‸r👍d       ⇒ ‸round
 ‸r👍y       ⇒ ‸ready
-‸r👍i       ⇒ ‸river
+‸r👍v       ⇒ ‸river
+‸r👍a       ⇒ ‸rather
 ‸r👍e       ⇒ ‸real
 ‸r👍ey      ⇒ ‸really
 ‸r👍m       ⇒ ‸remember
 ‸r👍c       ⇒ ‸record
 ‸r👍h       ⇒ ‸reach
+‸r👍q       ⇒ ‸require
+‸r👍s       ⇒ ‸research
 ‸r👍st      ⇒ ‸restaurant
 
 ‸l👍        ⇒ ‸like
@@ -120,74 +123,107 @@ sim👆👆       ⇒ simultaneous
 ‸l👍t       ⇒ ‸last
 ‸l👍n       ⇒ ‸line
 ‸l👍v       ⇒ ‸leave
+‸l👍vi      ⇒ ‸leaving
 
 ‸m👍        ⇒ ‸make
 ‸m👍g       ⇒ ‸making
 ‸m👍i       ⇒ ‸might
+‸m👍y       ⇒ ‸many
 ‸m👍o       ⇒ ‸most
 ‸m👍e       ⇒ ‸more
 ‸m👍u       ⇒ ‸must
 ‸m👍c       ⇒ ‸much
 ‸m👍v       ⇒ ‸move
+‸m👍vi      ⇒ ‸moving
 ‸m👍n       ⇒ ‸mean
 ‸m👍r       ⇒ ‸mother
 
-‸n       ⇒ ‸th
-‸n∀        ⇒ ‸the◯
+‸n       ⇒ ‸th∁
+‸n∀      ⇒ ‸the◯
 ‸ne      ⇒ ‸the
 ‸n👆     ⇒ ‸then
-‸nr     ⇒ ‸th
+‸nr      ⇒ ‸th
 ‸nrm     ⇒ ‸therm
 ‸nr∀     ⇒ ‸thr◯
-‸nr‸     ⇒ ‸there◯
+‸nr‸      ⇒ ‸there◯
+‸nrn      ⇒ ‸therein
+‸nrb      ⇒ ‸thereby
+‸nrf      ⇒ ‸therefore
 ‸nrs      ⇒ ‸there's
-‸ni      ⇒ ‸their
-‸nin      ⇒ ‸thin
-‸ng      ⇒ ‸thing
-‸nk      ⇒ ‸think
-‸ny      ⇒ ‸they
+‸ni       ⇒ ‸thi
+‸ni‸      ⇒ ‸their◯
+‸ng       ⇒ ‸thing
+‸nk       ⇒ ‸think
+‸ny       ⇒ ‸they
 ‸nyr      ⇒ ‸they're
 ‸nyl      ⇒ ‸they'll
-‸nd      ⇒ ‸they'd
-‸ns      ⇒ ‸th
-‸ns‸     ⇒ ‸this◯
-‸nse     ⇒ ‸these
-‸nt      ⇒ ‸that
-‸nts     ⇒ ‸that's
-‸na      ⇒ ‸tha
-‸na‸     ⇒ ‸than◯
-‸nak     ⇒ ‸thank
-‸no      ⇒ ‸tho
-‸no‸     ⇒ ‸those◯
-‸nou     ⇒ ‸though
-‸not     ⇒ ‸thought
-‸nor     ⇒ ‸thorough
-‸n👍     ⇒ ‸through
+‸nylb     ⇒ ‸they'll⎵be
+‸nd       ⇒ ‸they'd
+‸ns       ⇒ ‸th
+‸ns‸      ⇒ ‸this◯
+‸nse      ⇒ ‸these
+‸nt       ⇒ ‸that
+‸nts      ⇒ ‸that's
+‸na       ⇒ ‸tha
+‸na‸      ⇒ ‸than◯
+‸nak      ⇒ ‸thank
+‸nx       ⇒ ‸thanks
+‸no       ⇒ ‸tho
+‸no‸      ⇒ ‸those◯
+‸nog      ⇒ ‸though
+‸not      ⇒ ‸thought
+‸nor      ⇒ ‸thor
+‸nor‸      ⇒ ‸thorough◯
+‸nory      ⇒ ‸thoroughly
+‸nu       ⇒ ‸thu
+‸n👍      ⇒ ‸through
 
 ‸t👍        ⇒ ‸t
-‸t👍‸       ⇒ ‸time◯
-‸t👍g       ⇒ ‸though
-‸t👍t       ⇒ ‸thought
-‸t👍r       ⇒ ‸through
+‸t👍∀       ⇒ ‸time◯
+‸t👍i       ⇒ ‸timing
+‸t👍s       ⇒ ‸times
+‸t👍o       ⇒ ‸timeout
+‸t👍g       ⇒ ‸together
+‸t👍t       ⇒ ‸tight
+‸t👍r       ⇒ ‸train
+‸t👍ri      ⇒ ‸training
 ‸t👍n       ⇒ ‸techn
 ‸t👍ny      ⇒ ‸technology
 ‸t👍nl      ⇒ ‸technical
 ‸t👍nly     ⇒ ‸technically
 ‸t👍nu      ⇒ ‸technique
-‸t👍w       ⇒ ‸throw
-‸t👍a       ⇒ ‸take
-‸t👍ag      ⇒ ‸taking
+‸t👍f       ⇒ ‸transform
 
 ‸t👆        ⇒ ‸tell
 
-k👍d        ⇒ knowledge
-k👍di       ⇒ knowledging
-k👍dd       ⇒ knowledged
+‸k👍        ⇒ ‸know
+‸k👍e       ⇒ ‸knew
+‸k👍g       ⇒ ‸knowing
+‸k👍r       ⇒ ‸keypress
+‸k👍b       ⇒ ‸key_buffer
 ‸k👍d        ⇒ ‸knowledge
 ‸k👍di       ⇒ ‸knowledging
 ‸k👍dd       ⇒ ‸knowledged
 
+k👍d        ⇒ knowledge
+k👍di       ⇒ knowledging
+k👍dd       ⇒ knowledged
+
 ‸k👆        ⇒ ‸keep
+‸k👆p       ⇒ ‸kept
+‸k👆r       ⇒ ‸keeper
+‸k👆g       ⇒ ‸keeping
+
+‸ae         ⇒ ‸of
+‸ae👆       ⇒ ‸ae
+‸aen        ⇒ ‸often
+‸aer        ⇒ ‸offer
+‸aec        ⇒ ‸office
+‸aecl       ⇒ ‸official
+‸aecl👆     ⇒ ‸officially
+‸ael        ⇒ ‸offline
+‸aee        ⇒ ‸offset
+‸aet‸        ⇒ ‸of⎵the◯
 
 ‸o👍        ⇒ ‸one
 ‸o👍x       ⇒ ‸oxygen
@@ -201,6 +237,8 @@ k👍dd       ⇒ knowledged
 ‸o👍f       ⇒ ‸offer
 ‸o👍d       ⇒ ‸order
 ‸o👍di      ⇒ ‸ordering
+‸o👍u       ⇒ ‸obvious
+‸o👍uy      ⇒ ‸obviously
 
 ou👍       ⇒ ough
 au👍       ⇒ augh
@@ -208,67 +246,202 @@ au👍       ⇒ augh
 st👍       ⇒ sts
 rs👍       ⇒ rst
 
-‸b👍        ⇒ ‸be
+‸b👍         ⇒ ‸b
+‸b👍∀        ⇒ ‸but◯
 ‸b👍o        ⇒ ‸both
-‸b👍s        ⇒ ‸because
-‸b👍c        ⇒ ‸become
+‸b👍a        ⇒ ‸because
+‸b👍m        ⇒ ‸become
+‸b👍mi       ⇒ ‸becoming
 ‸b👍t        ⇒ ‸between
-‸b👍k        ⇒ ‸back
-‸b👍ka       ⇒ ‸backspace
+‸b👍c        ⇒ ‸back
+‸b👍ca       ⇒ ‸backspace
+‸b👍cag      ⇒ ‸backspacing
 ‸b👍g        ⇒ ‸begin
 ‸b👍l        ⇒ ‸believe
-‸b👍e        ⇒ ‸been
+‸b👍li       ⇒ ‸believing
+‸b👍n        ⇒ ‸been
+‸b👍e        ⇒ ‸best
 ‸b👍r        ⇒ ‸brother
 ‸b👍u        ⇒ ‸buffer
+‸bu👍        ⇒ ‸business
 
-‸f👍        ⇒ ‸from
+‸x👍      ⇒ ‸just
+‸x👍d     ⇒ ‸justed
+‸x👍f     ⇒ ‸justify
+‸x👍fd    ⇒ ‸justified
+‸x👍y     ⇒ ‸justly
+‸x👍t     ⇒ ‸justment
+x👍      ⇒ just
+x👍d     ⇒ justed
+x👍f     ⇒ justify
+x👍fd    ⇒ justified
+x👍y     ⇒ justly
+x👍t     ⇒ justment
+
+‸x        ⇒ ‸be∁
+‸xx       ⇒ ‸x
+‸xe       ⇒ ‸be
+‸xex      ⇒ ‸xerox
+‸xu       ⇒ ‸beu
+‸xu‸      ⇒ ‸but◯
+‸xur      ⇒ ‸butter
+‸xo       ⇒ ‸beo
+‸xo‸       ⇒ ‸become◯
+‸xos      ⇒ ‸becomes
+‸xod      ⇒ ‸became
+‸xog      ⇒ ‸becoming
+‸xa       ⇒ ‸bea
+‸xa‸       ⇒ ‸because◯
+‸xn       ⇒ ‸ben
+‸xn‸       ⇒ ‸been◯
+‸xt       ⇒ ‸between
+‸xtr      ⇒ ‸better
+‸xv       ⇒ ‸believe
+‸xv👆     ⇒ ‸believes
+‸xvi      ⇒ ‸believing
+‸x👆      ⇒ ‸best
+‸xf       ⇒ ‸before
+‸xi       ⇒ ‸bei
+‸xi‸       ⇒ ‸begin◯
+‸xk        ⇒ ‸by
+‸xka       ⇒ ‸bypass
+
+‸b👆         ⇒ ‸before
+
+‸f👍         ⇒ ‸from
+‸f👍j        ⇒ ‸few
+‸f👍s        ⇒ ‸first
 ‸f👍l        ⇒ ‸follow
 ‸f👍l👆      ⇒ ‸follower
 ‸f👍ld       ⇒ ‸followed
+‸f👍li       ⇒ ‸following
 ‸f👍r        ⇒ ‸friend
 ‸f👍d        ⇒ ‸find
 ‸f👍e        ⇒ ‸feel
 ‸f👍c        ⇒ ‸face
+‸f👍ci       ⇒ ‸facing
 ‸f👍t        ⇒ ‸fact
+‸f👍i        ⇒ ‸fix
+‸f👍a        ⇒ ‸fax
+‸f👍o        ⇒ ‸fox
 
-‸👆           ⇒ ‸n
-‸👆👍         ⇒ ‸not
+f👆         ⇒ for
+
+‸👆           ⇒ ‸n∁
+‸👆👍         ⇒ ‸n
+‸👆👍‸        ⇒ ‸now◯
 ‸👆👍v        ⇒ ‸never
 ‸👆👍t        ⇒ ‸nation
+‸👆👍x        ⇒ ‸next
 ‸👆👍d        ⇒ ‸need
 ‸👆👍w        ⇒ ‸nowhere
 ‸👆👍g        ⇒ ‸nothing
-‸👆👍m        ⇒ ‸number
+‸👆👍i        ⇒ ‸night
+‸👆👍m        ⇒ ‸num
+‸👆👍m∀       ⇒ ‸number◯
+‸👆👍ml       ⇒ ‸numeral
 ‸👆👍r        ⇒ ‸neighbor
 
 ‸e👍        ⇒ ‸each
 ‸e👍g       ⇒ ‸enough
-‸e👍n       ⇒ ‸even
+‸e👍v       ⇒ ‸even
+‸e👍vg      ⇒ ‸evening
 ‸e👍y       ⇒ ‸every
 ‸e👍ym      ⇒ ‸everytime
 ‸e👍yt      ⇒ ‸everything
+‸e👍yr      ⇒ ‸everywhere
+‸e👍yo      ⇒ ‸everyone
 ‸e👍r       ⇒ ‸early
-‸e👍x       ⇒ ‸example
+‸e👍re      ⇒ ‸earlier
 ‸e👍c       ⇒ ‸exercise
+‸e👍ci      ⇒ ‸exercising
 ‸e👍p       ⇒ ‸expert
 ‸e👍q       ⇒ ‸equal
 ‸e👍qt      ⇒ ‸equate
+‸e👍qn      ⇒ ‸equation
+‸e👍x       ⇒ ‸example
+‸e👍x👍     ⇒ ‸examples
+‸e👍xt      ⇒ ‸expert
+‸e👍xt👍    ⇒ ‸experts
+‸e👍xn      ⇒ ‸explain
+‸e👍xo      ⇒ ‸export
+‸e👍xo👍    ⇒ ‸exports
 
-‸w👍        ⇒ ‸why
-‸w👍i       ⇒ ‸which
-‸w👍n       ⇒ ‸when
-‸w👍h       ⇒ ‸while
-‸w👍e       ⇒ ‸where
-‸w👍a       ⇒ ‸what
-‸w👍t       ⇒ ‸won't
+‸eo        ⇒ ‸for
+‸eoo       ⇒ ‸eo
+‸eos       ⇒ ‸eos
+
+‸👍        ⇒ ‸w∁
+‸👍∀       ⇒ ‸why◯
+‸👍i       ⇒ ‸whi
+‸👍i‸       ⇒ ‸which◯
+‸👍e       ⇒ ‸whe
+‸👍e‸      ⇒ ‸where◯
+‸👍es      ⇒ ‸where's
+‸👍a       ⇒ ‸wha
+‸👍a‸       ⇒ ‸what◯
+‸👍as      ⇒ ‸what's
+‸👍u       ⇒ ‸whu
+‸👍u‸       ⇒ ‸would◯
+‸👍ut      ⇒ ‸wouldn't
+‸👍uv      ⇒ ‸would've
+‸👍utv      ⇒ ‸wouldn't've
+‸👍n       ⇒ ‸when
+‸👍h       ⇒ ‸while
+‸👍o       ⇒ ‸who
+‸👍o👆     ⇒ ‸whose
+‸👍os      ⇒ ‸who's
+‸👍od      ⇒ ‸who'd
+‸👍ol      ⇒ ‸who'll
+‸👍olb     ⇒ ‸who'll⎵be
+‸👍oe       ⇒ ‸whole
+‸👍oey      ⇒ ‸wholly
+‸👍l       ⇒ ‸will
+‸👍lb      ⇒ ‸will⎵be
+‸👍t       ⇒ ‸with
+‸👍td      ⇒ ‸withdraw
+‸👍to      ⇒ ‸without
+‸👍th      ⇒ ‸withhold
+‸👍s       ⇒ ‸was
+‸👍st      ⇒ ‸wasn't
+‸👍-       ⇒ ‸w
+‸👍-‸       ⇒ ‸we◯
+‸👍-d       ⇒ ‸we'd
+‸👍-r       ⇒ ‸we're
+‸👍-l       ⇒ ‸we'll
+‸👍-lb      ⇒ ‸we'll⎵be
+‸👍-v       ⇒ ‸we've
+‸👍-t       ⇒ ‸won't
+‸👍d        ⇒ ‸w
+‸👍d‸       ⇒ ‸we◯
+‸👍r        ⇒ ‸w
+‸👍r‸       ⇒ ‸were◯
+‸👍rt      ⇒ ‸weren't
+‸👍ri       ⇒ ‸write
+‸👍rin      ⇒ ‸written
+‸👍rig      ⇒ ‸writing
+‸👍rie      ⇒ ‸wrote
+‸👍rd       ⇒ ‸word
+‸👍rde      ⇒ ‸wordbreak
+‸👍dl       ⇒ ‸well
+‸👍do       ⇒ ‸world
+‸👍de       ⇒ ‸went
+‸👍dn       ⇒ ‸win
+‸👍di       ⇒ ‸wind
+‸👍did      ⇒ ‸willed
+‸👍di👍     ⇒ ‸willing
+‸👍dk       ⇒ ‸work
+‸👍dkd      ⇒ ‸worked
+‸👍dki      ⇒ ‸working
+‸👍da       ⇒ ‸want
+‸👍dai      ⇒ ‸wanting
+‸👍dad      ⇒ ‸wanted
+
+‸w👍        ⇒ ‸w
 ‸w👍o       ⇒ ‸world
-‸w👍k       ⇒ ‸work
-‸w👍ts      ⇒ ‸what's
-‸w👍r       ⇒ ‸we're
+‸w👍r       ⇒ ‸were
 ‸w👍rt      ⇒ ‸weren't
-‸w👍d       ⇒ ‸we'd
-‸w👍l       ⇒ ‸we'll
-‸w👍v       ⇒ ‸we've
+‸w👍e       ⇒ ‸well
 
 ‸w👆        ⇒ ‸way
 ‸w👆👆      ⇒ ‸wayn
@@ -288,8 +461,25 @@ rs👍       ⇒ rst
 ‸v👍d       ⇒ ‸viewed
 ‸v👍i       ⇒ ‸vision
 ‸v👍n       ⇒ ‸version
+‸v👍t       ⇒ ‸visit
 
-‸a👆       ⇒ ‸abo
+rev👍        ⇒ review
+rev👍g       ⇒ reviewing
+rev👍r       ⇒ reviewer
+rev👍d       ⇒ reviewed
+rev👍i       ⇒ revision
+rev👍n       ⇒ reversion
+rev👍t       ⇒ revisit
+
+‸a👆       ⇒ ‸a
+‸a👆‸       ⇒ ‸any◯
+‸a👆m       ⇒ ‸anytime
+‸a👆g       ⇒ ‸anything
+‸a👆r       ⇒ ‸anywhere
+‸a👆w       ⇒ ‸anyhow
+‸a👆b       ⇒ ‸anybody
+‸a👆👆     ⇒ ‸anyone
+‸a👆y       ⇒ ‸anyway
 ‸a👆t      ⇒ ‸about
 ‸a👆v      ⇒ ‸above
 ‸a👆d      ⇒ ‸aboard
@@ -305,6 +495,7 @@ rs👍       ⇒ rst
 ‸a👍t        ⇒ ‸against
 ‸a👍s        ⇒ ‸answer
 ‸a👍p        ⇒ ‸appear
+‸a👍pi       ⇒ ‸appearing
 ‸a👍w        ⇒ ‸always
 ‸a👍y        ⇒ ‸already
 ‸a👍l        ⇒ ‸alright
@@ -314,7 +505,8 @@ rs👍       ⇒ rst
 ‸s👍t        ⇒ ‸sometimes
 ‸s👍g        ⇒ ‸something
 ‸s👍h        ⇒ ‸somehow
-‸s👍w        ⇒ ‸somewhere
+‸s👍r        ⇒ ‸somewhere
+‸s👍w        ⇒ ‸somewhat
 ‸s👍o        ⇒ ‸someone
 ‸s👍y        ⇒ ‸system
 ‸s👍d        ⇒ ‸sound
@@ -327,8 +519,12 @@ rs👍       ⇒ rst
 ‸s👍es       ⇒ ‸she's
 ‸s👍ed       ⇒ ‸she'd
 ‸s👍el       ⇒ ‸she'll
+‸s👍elb      ⇒ ‸she'll⎵be
 ‸s👍i        ⇒ ‸still
 ‸s👍n        ⇒ ‸since
+
+su👍        ⇒ sub
+bu👍        ⇒ bus
 
 ‸s👆        ⇒ ‸sk
 ‸s👆c       ⇒ ‸such
@@ -337,11 +533,15 @@ s👆l        ⇒ school
 
 ‸p👍        ⇒ ‸pro
 ‸p👍b       ⇒ ‸problem
+‸p👍b👆     ⇒ ‸problems
 ‸p👍m       ⇒ ‸program
 ‸p👍r       ⇒ ‸present
 ‸p👍e       ⇒ ‸people
 ‸p👍a       ⇒ ‸play
 ‸p👍s       ⇒ ‸possible
+‸p👍sy      ⇒ ‸possibly
+‸p👍si      ⇒ ‸possibility
+‸p👍sis     ⇒ ‸possibilities
 ‸p👍n       ⇒ ‸person
 ‸p👍o       ⇒ ‸power
 ‸p👍u       ⇒ ‸public
@@ -353,6 +553,7 @@ s👆l        ⇒ school
 ‸p👆👆      ⇒ ‸pyn
 ‸p👆a       ⇒ ‸probable
 ‸p👆ay      ⇒ ‸probably
+‸p👆al      ⇒ ‸probability
 
 ‸d👍        ⇒ ‸do
 ‸d👍t       ⇒ ‸don't
@@ -361,12 +562,14 @@ s👆l        ⇒ school
 ‸d👍s       ⇒ ‸does
 ‸d👍st      ⇒ ‸doesn't
 ‸d👍f       ⇒ ‸differ
+‸d👍fc      ⇒ ‸difference
 ‸d👍ft      ⇒ ‸different
 ‸d👍u       ⇒ ‸difficult
 ‸d👍r       ⇒ ‸during
 ‸d👍n       ⇒ ‸down
 ‸d👍d       ⇒ ‸decide
 ‸d👍l       ⇒ ‸develop
+‸d👍li       ⇒ ‸developing
 ‸d👍lm       ⇒ ‸development
 ‸d👍ld       ⇒ ‸developed
 ‸d👍l👆      ⇒ ‸developer
@@ -381,14 +584,18 @@ s👆l        ⇒ school
 
 ‸h👍         ⇒ ‸have
 ‸h👍g        ⇒ ‸having
+‸h👍i        ⇒ ‸high
 ‸h👍e        ⇒ ‸he
 ‸h👍es       ⇒ ‸he's
 ‸h👍el       ⇒ ‸he'll
+‸h👍elb      ⇒ ‸he'll⎵be
 ‸h👍ed       ⇒ ‸he'd
 ‸h👍r        ⇒ ‸here
 ‸h👍s        ⇒ ‸house
 ‸h👍st       ⇒ ‸hasn't
 ‸h👍t        ⇒ ‸haven't
+‸h👍p        ⇒ ‸happen
+‸h👍y        ⇒ ‸happy
 ‸h👍l        ⇒ ‸help
 ‸h👍d        ⇒ ‸had
 ‸h👍dt       ⇒ ‸hadn't
@@ -403,11 +610,13 @@ s👆l        ⇒ school
 ‸g👍t        ⇒ ‸great
 ‸g👍o        ⇒ ‸good
 ‸g👍u        ⇒ ‸guage
+‸g👍ug       ⇒ ‸guaging
 ‸g👍a        ⇒ ‸guarantee
 
 ‸y👍       ⇒ ‸you
 ‸y👍e      ⇒ ‸you're
 ‸y👍l      ⇒ ‸you'll
+‸y👍lb     ⇒ ‸you'll⎵be
 ‸y👍v      ⇒ ‸you've
 ‸y👍d      ⇒ ‸you'd
 ‸y👍y      ⇒ ‸yesterday
@@ -438,12 +647,13 @@ lli👆   ⇒ llion
 r👆      ⇒ rl
 r👆👆    ⇒ rln
 
-j👆      ⇒ just
-j👆👆      ⇒ justment
 ‸j👍       ⇒ ‸join
 ‸j👍d       ⇒ ‸judge
+‸j👍di       ⇒ ‸judging
 ‸j👍dt       ⇒ ‸judgment
 ‸j👍dta       ⇒ ‸judgmental
+
+z👍       ⇒ ze
 
 c👆      ⇒ cy
 c👆👆      ⇒ cyn
@@ -464,8 +674,8 @@ q👆      ⇒ quest
 q👆👆      ⇒ question
 q👆d      ⇒ quested
 
-b👆      ⇒ before
-f👆      ⇒ first
+b👆      ⇒ bs
+ba👆      ⇒ bas
 z👆      ⇒ zone
 n👆      ⇒ nion
 h👆      ⇒ however
@@ -480,13 +690,14 @@ a👆      ⇒ ao
 
 ,👆      ⇒ ,⎵but
 i👆      ⇒ ion
-.👆      ⇒ .\
--👆      ⇒ ->
-=👆      ⇒ =>
+.👆      ⇒ .n∁
+.n      ⇒ .\
+-👆      ⇒ -n∁
+-n      ⇒ ->
+=👆      ⇒ =n∁
+=n      ⇒ =>
 
-‸👍      ⇒ ‸for
 a👍      ⇒ and
-x👍      ⇒ xer
 k👍      ⇒ know
 i👍      ⇒ ing
 y👍      ⇒ you
