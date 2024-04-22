@@ -105,7 +105,7 @@ bool find_branch_offset(const st_trie_t *trie, st_cursor_t * cursor, uint16_t *o
     }
     for (uint8_t code = TDATA(trie, *offset); code; *offset += 3, code = TDATA(trie, *offset)) {
         st_debug(ST_DBG_SEQ_MATCH, " B Offset: %d; Code: %#04X; Key: %#04X\n", *offset, code, key_triecode);
-        if (code == key_triecode) {
+        if (st_match_triecode(code, key_triecode)) {
             // 16bit offset to child node is built from next uint16_t
             *offset = st_get_trie_data_word(trie, *offset + 1);
             return true;
