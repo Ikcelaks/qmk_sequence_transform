@@ -305,12 +305,12 @@ void st_handle_result(const st_trie_t *trie,
     // Send completion string
     st_cursor_init(&trie_cursor, 0, false);
     const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&trie_cursor, num_backspaces) : 0;
-    if (replaced_shift_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT) {
-        current_key->key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
-    }
     if (res->trie_payload.func_code != 2) {
         clear_oneshot_mods();
         current_key->key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
+    }
+    if (replaced_shift_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT) {
+        current_key->key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
     }
     st_handle_completion(&trie_cursor, current_key->key_flags);
     switch (res->trie_payload.func_code) {
