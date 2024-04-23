@@ -364,6 +364,12 @@ void st_handle_backspace() {
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
     st_key_buffer_pop(&key_buffer);
+    // Check if the new last key press triggered the OSS with an output function
+    st_cursor_init(&trie_cursor, 0, false);
+    action = st_cursor_get_action(&trie_cursor);
+    if (action->func_code == 1) {
+        set_oneshot_mods(MOD_LSFT);
+    }
 }
 #endif
 
