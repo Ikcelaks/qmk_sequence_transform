@@ -264,6 +264,16 @@ void st_find_missed_rule(void)
 #endif
 }
 //////////////////////////////////////////////////////////////////
+bool st_handle_oneshot_shift(const st_trie_payload_t *action)
+{
+    // Check if the new last key press triggered the OSS with an output function
+    if (action && action->func_code == 1) {
+        set_oneshot_mods(MOD_LSFT);
+        return true;
+    }
+    return false;
+}
+//////////////////////////////////////////////////////////////////
 bool st_handle_completion(st_cursor_t *cursor, uint8_t shift_flags)
 {
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
@@ -313,11 +323,7 @@ void st_handle_result(const st_trie_t *trie,
         current_key->key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
     }
     st_handle_completion(&trie_cursor, current_key->key_flags);
-    switch (res->trie_payload.func_code) {
-        case 1:  // set one-shot shift
-            set_oneshot_mods(MOD_LSFT);
-            break;
-    }
+    st_handle_oneshot_shift(&res->trie_payload);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 #if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
@@ -330,6 +336,9 @@ void st_handle_backspace() {
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
         st_key_buffer_pop(&key_buffer);
+        // Check if the new last key press triggered the OSS with an output function
+        st_cursor_init(&trie_cursor, 0, false);
+        st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
         return;
     }
     // Undo a rule action
@@ -366,10 +375,7 @@ void st_handle_backspace() {
     st_key_buffer_pop(&key_buffer);
     // Check if the new last key press triggered the OSS with an output function
     st_cursor_init(&trie_cursor, 0, false);
-    action = st_cursor_get_action(&trie_cursor);
-    if (action->func_code == 1) {
-        set_oneshot_mods(MOD_LSFT);
-    }
+    st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
 }
 #endif
 
