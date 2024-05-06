@@ -34,7 +34,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
         buf->size = 0;
         for (int i = 0; i < sim_output.size; ++i) {
             const uint8_t code = sim_output.buffer[i];
-            st_key_buffer_push(buf, code);
+            st_key_buffer_push(buf, code, 0);
         }
         return true;
     }
@@ -75,7 +75,7 @@ bool setup_input_from_transform(const st_test_rule_t *rule, char *chained_transf
     const int rule_trans_len = strlen((char*)rule->transform);
     for (int i = out_len; i < rule_trans_len; ++i) {
         const uint8_t code = rule->transform[i];
-        st_key_buffer_push(buf, code);
+        st_key_buffer_push(buf, code, 0);
     }
     // input should now contain ^d@er and is ready for searching
     st_key_buffer_to_ascii_str(buf, chained_transform);

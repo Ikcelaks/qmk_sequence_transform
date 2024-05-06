@@ -23,7 +23,7 @@ void sim_st_perform(const uint8_t *sequence)
     buf->size = 0;
     for (uint8_t triecode = *sequence; triecode; triecode = *++sequence) {
         triecode = st_get_metachar_example_triecode(triecode);
-        st_key_buffer_push(buf, triecode);
+        st_key_buffer_push(buf, triecode, 0);
         // If st_perform doesn't do anything special with this key,
         // add it to our virtual output buffer
         if (!st_perform()) {

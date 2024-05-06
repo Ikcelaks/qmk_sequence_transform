@@ -32,7 +32,10 @@
     "any_symbol": {
         "∀": "~"
     },
-    "output_func_symbols": "↻⇑",
+    "output_funcs": {
+        "one_shot_shift_symbol": "⇑",
+        "capitalize_first_character_symbol": "∁"
+    },
     "comment_str": "//",
     "separator_str": "⇒",
     "implicit_transform_leading_wordbreak": false

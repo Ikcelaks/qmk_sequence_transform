@@ -39,7 +39,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 
-ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_1"
+ST_GENERATOR_VERSION = "SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_2"
 
 GPL2_HEADER_C_LIKE = f'''\
 // Copyright {date.today().year} QMK
@@ -106,10 +106,10 @@ def map_ascii(symbols: str) -> dict[str, int]:
 ###############################################################################
 def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]:
     return {
+        **{chr(c): c for c in range(32, 126)},
+        SPACE_SYMBOL: ord(" "),
         **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
         **map_range(TRIECODE_SEQUENCE_METACHAR_0, SEQ_METACHAR_SYMBOLS),
-        SPACE_SYMBOL: ord(" "),
-        **{chr(c): c for c in range(32, 126)}
     }
 
 
@@ -124,9 +124,9 @@ def quiet_print(*args, **kwargs):
 ###############################################################################
 def generate_transform_symbol_map() -> Dict[str, int]:
     return {
+        **{chr(c): c for c in range(32, 126)},
         SPACE_SYMBOL: ord(" "),
         **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS),
-        **{chr(c): c for c in range(32, 126)}
     }
 
 
@@ -242,6 +242,10 @@ def make_sequence_trie(
         if len(transform) > 0 and transform[-1] in output_func_symbol_map:
             output_func = output_func_symbol_map[transform[-1]]
             transform = transform[:len(transform)-1]
+
+        elif TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS[0] not in transform \
+            and (sequence[-1].isalpha() or sequence[-1] in SEQ_TOKEN_SYMBOLS):
+            output_func = 2
 
         else:
             output_func = 0
@@ -877,7 +881,8 @@ if __name__ == '__main__':
         NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
         TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
         ANY_SYMBOL = list(config['any_symbol'].keys())[0]
-        OUTPUT_FUNC_SYMBOLS = config['output_func_symbols']
+        ONE_SHOT_SHIFT_SYMBOL = config['output_funcs']['one_shot_shift_symbol']
+        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_funcs']['capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
@@ -897,6 +902,7 @@ if __name__ == '__main__':
     ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
     SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
+    OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug

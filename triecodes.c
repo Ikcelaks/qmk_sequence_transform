@@ -8,6 +8,7 @@
 #include "sequence_transform_data.h"
 #include "st_assert.h"
 #include "predicates.h"
+#include <ctype.h>
 
 // Note: we bit-pack in "reverse" order to optimize loading
 #define PGM_LOADBIT(mem, pos) ((pgm_read_byte(&((mem)[(pos) / 8])) >> ((pos) % 8)) & 0x01)
@@ -146,7 +147,7 @@ bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
 {
     if (triecode < TRIECODE_SEQUENCE_METACHAR_0) {
         // Not a MetaCharacter. Do an exact match
-        return triecode == key_triecode;
+        return triecode == tolower(key_triecode);
     }
     const uint8_t pred_index = triecode - TRIECODE_SEQUENCE_METACHAR_0;
     return st_predicate_test_triecode(pred_index, key_triecode);
