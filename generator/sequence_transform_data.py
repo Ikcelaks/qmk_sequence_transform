@@ -106,10 +106,10 @@ def map_ascii(symbols: str) -> dict[str, int]:
 ###############################################################################
 def generate_sequence_symbol_map(seq_tokens, wordbreak_symbol) -> Dict[str, int]:
     return {
+        **{chr(c): c for c in range(32, 126)},
+        SPACE_SYMBOL: ord(" "),
         **map_range(TRIECODE_SEQUENCE_TOKEN_0, seq_tokens),
         **map_range(TRIECODE_SEQUENCE_METACHAR_0, SEQ_METACHAR_SYMBOLS),
-        SPACE_SYMBOL: ord(" "),
-        **{chr(c): c for c in range(32, 126)}
     }
 
 
@@ -124,9 +124,9 @@ def quiet_print(*args, **kwargs):
 ###############################################################################
 def generate_transform_symbol_map() -> Dict[str, int]:
     return {
+        **{chr(c): c for c in range(32, 126)},
         SPACE_SYMBOL: ord(" "),
         **map_range(TRIECODE_TRANSFORM_SEQUENCE_REF_0, TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS),
-        **{chr(c): c for c in range(32, 126)}
     }
 
 
