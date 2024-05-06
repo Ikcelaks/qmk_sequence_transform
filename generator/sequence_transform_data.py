@@ -243,6 +243,10 @@ def make_sequence_trie(
             output_func = output_func_symbol_map[transform[-1]]
             transform = transform[:len(transform)-1]
 
+        elif TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS[0] not in transform \
+            and (sequence[-1].isalpha() or sequence[-1] in SEQ_TOKEN_SYMBOLS):
+            output_func = 2
+
         else:
             output_func = 0
 
