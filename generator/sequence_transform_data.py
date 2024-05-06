@@ -881,7 +881,8 @@ if __name__ == '__main__':
         NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
         TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
         ANY_SYMBOL = list(config['any_symbol'].keys())[0]
-        OUTPUT_FUNC_SYMBOLS = config['output_funcs'].values()
+        ONE_SHOT_SHIFT_SYMBOL = config['output_funcs']['one_shot_shift_symbol']
+        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_funcs']['capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
@@ -901,6 +902,7 @@ if __name__ == '__main__':
     ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
     SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
+    OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug
