@@ -1,0 +1,126 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/ikcelaks/qmk_sequence_transform/tree/main/generator/sequence_transform_config.schema.json",
+    "title": "Sequence Transform Config",
+    "description": "Configuration for a Sequence Transform rules files",
+    "type": "object",
+    "properties": {
+        "rules_file_names": {
+            "type": "array",
+            "description": "List of filenames of rules files to include",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "sequence_token_symbols": {
+            "type": "array",
+            "description": "List of UTF-8 Sequence Token symbols and their ascii aliases",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1
+                    },
+                    "ascii": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1
+                    }
+                },
+                "required": ["symbol", "ascii"]
+            },
+            "uniqueItems": true
+        },
+        "transform_sequence_reference_symbols": {
+            "type": "string",
+            "description": "String of UTF-8 symbols used in transforms to reference characters from the sequence. The first symbol in this string is used to refer to the last character in the sequence. Each additional symbol in this string refers to the next sequence character to the left of the end",
+            "minLength": 1
+        },
+        "space_symbol": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the space character",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "wordbreak": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the wordbreak metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "digit": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the numerical digit metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "vowel_alpha": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the vowel alpha metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "consonant_alpha": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the consonant alpha metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "terminating_punct": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the terminating punctuation metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "nonterminating_punct": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the non-terminating punctuation metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "punctuation": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the punctuation metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "any": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the 'any' metacharacter",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "output_func_symbols": {
+            "oneshot_shift": {
+                "type": "string",
+                "description": "UTF-8 symbol to represent the space character",
+                "minLength": 1,
+                "maxLength": 1
+            },
+            "capitalize_first_character": {
+                "type": "string",
+                "description": "UTF-8 symbol to represent the space character",
+                "minLength": 1,
+                "maxLength": 1
+            }
+        },
+        "comment_str": {
+            "type": "string",
+            "description": "String of UTF-8 characters that mark a line as a comment",
+            "minLength": 1
+        },
+        "separator_str": {
+            "type": "string",
+            "description": "String of UTF-8 characters that separates the sequence from the transform in a rule",
+            "minLength": 1
+        },
+        "implicit_transform_leading_wordbreak": {
+            "type": "boolean",
+            "description": "True if leading wordbreak symbols will be ommitted from the transform.",
+        }
+    }
+}

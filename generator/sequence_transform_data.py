@@ -765,10 +765,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     st_space_token = f'static const char *st_space_token = "{SPACE_SYMBOL}";'
     # ascii versions
     seq_token_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
-    seq_metachar_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_METACHAR_ASCII_CHARS))
     st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {seq_token_char_array_str} }};'
-    st_seq_metachar_ascii_chars = f'static const char st_seq_metachar_ascii_chars[] = {{ {seq_metachar_char_array_str} }};'
-    # st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
 
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
@@ -788,8 +785,6 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SEQUENCE_REF_TOKEN_COUNT {len(TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS)}',
         '',
         st_seq_token_ascii_chars,
-        st_seq_metachar_ascii_chars,
-        # st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
         '#ifdef ST_TESTER',
@@ -901,7 +896,6 @@ if __name__ == '__main__':
     TERMINATING_PUNCT_ASCII = config['terminating_punct_symbol'][TERMINATING_PUNCT_SYMBOL]
     ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
-    SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
     OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 

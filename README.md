@@ -16,16 +16,9 @@ command to add the library as a git submodule (no need to create a fork first):<
 
 ### Step 2
 At the end of your `rules.mk` file, add the following lines:</br>
-**IMPORTANT!** The tab infront of `python3 ...` *MUST* be an actual tab character. Replacing with spaces will break things.
-```mk
+```makefile
 # sequence_transform setup
 mkfile_dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-
-all: st_build
-
-st_build:
-	python3 $(mkfile_dir)/sequence_transform/generator/sequence_transform_data.py
-
 include $(mkfile_dir)/sequence_transform/rules.mk
 # end sequence_transform setup
 ```
