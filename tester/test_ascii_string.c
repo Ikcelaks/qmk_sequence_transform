@@ -56,14 +56,6 @@ int test_ascii_string(const st_test_options_t *options)
         st_cursor_t *cursor = st_get_cursor();
         st_cursor_init(cursor, 0, true);
         st_cursor_print(cursor);
-        // check for missed rule
-        missed_rule_seq[0] = 0;
-        missed_rule_transform[0] = 0;
-        st_find_missed_rule();
-        if (strlen(missed_rule_seq)) {
-            printf("Missed rule: %s ⇒ %s\n",
-                    missed_rule_seq, missed_rule_transform);
-        }
     }
     return 0;
 }
