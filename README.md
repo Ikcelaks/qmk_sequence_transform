@@ -90,7 +90,8 @@ A full explanation of how rules are constructed, how they manipulate the result 
 
 The symbols that you will need to use when constructing your rules are included at the top of rules dictionary file when it's created (see [step 8](#step-8)).
 
-For ideas on what rules you can write, take a look at the [sample dictionary](generator/sequence_transform_dict_sample.txt).
+> [!TIP]
+> For ideas on what rules you can write, take a look at the [sample dictionary](generator/sequence_transform_dict_sample.txt).
 
 ### Add Sequence Tokens to your keymap
 You should add the custom keys you defined in [step 3](#step-3) of the setup to your keymap. These custom keys will be matched one to one with the `sequence_token_symbols` defined in your `sequence_transform_config.json` file. That is, the custom key that you pass to `process_sequence_transform` in [step 5](#step-5) of the setup will correspond to the first symbol defined in `sequence_token_symbols`, and each following custom key will be matched with the next symbol. (This is why you **must** have the same number of each).
