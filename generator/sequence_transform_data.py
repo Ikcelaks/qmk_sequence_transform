@@ -195,6 +195,16 @@ def parse_file(
     return rules
 
 ###############################################################################
+def parse_files(
+    file_names: List[str], symbol_map: Dict[str, int],
+    separator: str, comment: str
+) -> List[Tuple[str, str]]:
+    rules = []
+    for file_name in file_names:
+        rules.extend(parse_file(file_name, symbol_map, separator, comment))
+    return rules
+
+###############################################################################
 def add_default_rules(
     trie: Dict[str, tuple[str, dict]]
 ):
@@ -701,7 +711,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
-    seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
+    seq_tranform_list = parse_files(RULES_FILES, symbol_map, SEP_STR, COMMENT_STR)
     trie, outputs, missing_intermediate_rules, missing_prefix_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
 
     for missing_rule, affected_rules in missing_intermediate_rules.items():
@@ -862,39 +872,35 @@ if __name__ == '__main__':
 
     data_header_file = THIS_FOLDER / "../sequence_transform_data.h"
     test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
-    config_file = THIS_FOLDER / cli_args.config
-    config = json.load(open(config_file, 'rt', encoding="utf-8"))
+    default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
+    user_config_file = THIS_FOLDER / cli_args.config
+    config = json.load(open(default_config_file, 'rt', encoding="utf-8"))
+    if user_config_file.is_file():
+        user_config = json.load(open(user_config_file, 'rt', encoding="utf-8"))
+        config.update(user_config)
 
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
         SPACE_SYMBOL = config['space_symbol']
-        WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
-        DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
-        ALPHA_SYMBOL = list(config['alpha_symbol'].keys())[0]
-        UPPER_ALPHA_SYMBOL = list(config['upper_alpha_symbol'].keys())[0]
-        PUNCT_SYMBOL = list(config['punct_symbol'].keys())[0]
-        NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
-        TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
-        ANY_SYMBOL = list(config['any_symbol'].keys())[0]
-        ONE_SHOT_SHIFT_SYMBOL = config['output_funcs']['one_shot_shift_symbol']
-        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_funcs']['capitalize_first_character_symbol']
+        WORDBREAK_SYMBOL = config['wordbreak_symbol']
+        DIGIT_SYMBOL = config['digit_symbol']
+        ALPHA_SYMBOL = config['alpha_symbol']
+        UPPER_ALPHA_SYMBOL = config['upper_alpha_symbol']
+        PUNCT_SYMBOL = config['punct_symbol']
+        NONTERMINATING_PUNCT_SYMBOL = config['nonterminating_punct_symbol']
+        TERMINATING_PUNCT_SYMBOL = config['terminating_punct_symbol']
+        ANY_SYMBOL = config['any_symbol']
+        ONE_SHOT_SHIFT_SYMBOL = config['output_func_one_shot_shift_symbol']
+        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_func_capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
-        RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
+        RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
-    WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
-    DIGIT_ASCII = config['digit_symbol'][DIGIT_SYMBOL]
-    ALPHA_ASCII = config['alpha_symbol'][ALPHA_SYMBOL]
-    UPPER_ALPHA_ASCII = config['upper_alpha_symbol'][UPPER_ALPHA_SYMBOL]
-    PUNCT_ASCII = config['punct_symbol'][PUNCT_SYMBOL]
-    NONTERMINATING_PUNCT_ASCII = config['nonterminating_punct_symbol'][NONTERMINATING_PUNCT_SYMBOL]
-    TERMINATING_PUNCT_ASCII = config['terminating_punct_symbol'][TERMINATING_PUNCT_SYMBOL]
-    ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
     OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()

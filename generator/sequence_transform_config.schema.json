@@ -46,67 +46,65 @@
             "minLength": 1,
             "maxLength": 1
         },
-        "wordbreak": {
+        "wordbreak_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the wordbreak metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "digit": {
+        "digit_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the numerical digit metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "vowel_alpha": {
+        "vowel_alpha_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the vowel alpha metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "consonant_alpha": {
+        "consonant_alpha_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the consonant alpha metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "terminating_punct": {
+        "terminating_punct_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the terminating punctuation metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "nonterminating_punct": {
+        "nonterminating_punct_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the non-terminating punctuation metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "punctuation": {
+        "punctuation_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the punctuation metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "any": {
+        "any_symbol": {
             "type": "string",
             "description": "UTF-8 symbol to represent the 'any' metacharacter",
             "minLength": 1,
             "maxLength": 1
         },
-        "output_func_symbols": {
-            "oneshot_shift": {
-                "type": "string",
-                "description": "UTF-8 symbol to represent the space character",
-                "minLength": 1,
-                "maxLength": 1
-            },
-            "capitalize_first_character": {
-                "type": "string",
-                "description": "UTF-8 symbol to represent the space character",
-                "minLength": 1,
-                "maxLength": 1
-            }
+        "output_func_oneshot_shift_symbol": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the space character",
+            "minLength": 1,
+            "maxLength": 1
+        },
+        "output_func_capitalize_first_character_symbol": {
+            "type": "string",
+            "description": "UTF-8 symbol to represent the space character",
+            "minLength": 1,
+            "maxLength": 1
         },
         "comment_str": {
             "type": "string",
