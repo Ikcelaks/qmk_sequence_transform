@@ -147,6 +147,32 @@ def generate_output_func_symbol_map(output_func_symbols) -> Dict[str, int]:
 
 
 ###############################################################################
+def create_rules_dict_template_if_missing(
+    file_name: Path
+):
+    if not file_name.is_file():
+        with open(file_name, mode="a", encoding="utf-8") as rf:
+            rf.write(f'{COMMENT_STR} Sequence Transform Rule File: {file_name.name}\n')
+            rf.write(f'{COMMENT_STR}  Sequence Tokens:\n')
+            for st in SEQ_TOKEN_SYMBOLS:
+                rf.write(f'{COMMENT_STR}   {st}\n')
+            rf.write(f'{COMMENT_STR}  Transform Sequence Reference Symbols:\n')
+            for tsrs in TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS:
+                rf.write(f'{COMMENT_STR}   {tsrs}\n')
+            rf.write(f'{COMMENT_STR}  Space Symbol: {SPACE_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Wordbreak MetaCharacter Symbol: {WORDBREAK_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Digit MetaCharacter Symbol: {DIGIT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Alpha MetaCharacter Symbol: {ALPHA_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Upper-Alpha MetaCharacter Symbol: {UPPER_ALPHA_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Terminating Punctuation MetaCharacter Symbol: {TERMINATING_PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Non-terminating Punctuation MetaCharacter Symbol: {NONTERMINATING_PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Punctuation MetaCharacter Symbol: {PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Any MetaCharacter Symbol: {ANY_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Output Func OneShot Shift Symbol: {ONE_SHOT_SHIFT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Separator String: {SEP_STR}\n')
+
+
+###############################################################################
 def parse_file(
     file_name: str, symbol_map: Dict[str, int],
     separator: str, comment: str
@@ -201,6 +227,7 @@ def parse_files(
 ) -> List[Tuple[str, str]]:
     rules = []
     for file_name in file_names:
+        create_rules_dict_template_if_missing(file_name)
         rules.extend(parse_file(file_name, symbol_map, separator, comment))
     return rules
 
@@ -878,6 +905,9 @@ if __name__ == '__main__':
     if user_config_file.is_file():
         user_config = json.load(open(user_config_file, 'rt', encoding="utf-8"))
         config.update(user_config)
+    else:
+        with open(file=user_config_file, mode="a") as cf:
+            json.dump({}, cf)
 
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())

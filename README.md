@@ -15,13 +15,15 @@ command to add the library as a git submodule (no need to create a fork first):<
 `git submodule add https://github.com/ikcelaks/qmk_sequence_transform.git sequence_transform`
 
 ### Step 2
-At the end of your `rules.mk` file, add the following lines:</br>
+At the end of the `rules.mk` file in your keymap folder, add the following lines:</br>
 ```makefile
 # sequence_transform setup
 mkfile_dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-include $(mkfile_dir)/sequence_transform/rules.mk
+include $(mkfile_dir)/sequence_transform/rules_auto_generate.mk
 # end sequence_transform setup
 ```
+> [!CAUTION]
+> If your keymap folder doesn't already contain a `rules.mk` file, create an new `rules.mk` file there that just has the snippet from above. DO NOT instead past the snippet into a `rules.mk` file at another location, because the paths won't be correct.
 
 ### Step 3
 Define custom keycodes for your Sequence Token keys (commonly referred to as "magic keys") consecutively. Example:
@@ -66,9 +68,11 @@ void matrix_scan_user(void)
 ```
 
 ### Step 8
-Copy the `sequence_transform_config_sample.json` and `sequence_transform_dict_sample.txt` files from the `./sequence_transform/generator` directory
-into the base directory of your keymap (which should contain the `sequence_transform` directory as a direct subdirectory).<br/>
-**Rename both files to remove the `_sample`**. They should now be named `sequence_transform_config.json` and `sequence_transform_dict.txt` respectively.
+Compile your keymap as usual. The first time you do this, an empty `sequence_transform_config.json` and `sequence_transform_dict.txt` file will be automatically generated in the correct locations (the root of your keymap folder).
+Example:
+```bash
+qmk compile -kb moonlander -km ikcelaks
+```
 
 ## Configuration
 All configuration is done by modifying the `sequence_transform_config.json` and `sequence_transform_dict.txt` files that you copied
@@ -90,7 +94,7 @@ Symbols chosen can be any utf-8 symbol you like. The sample config and dictionar
 
 ## Building
 No special steps are required to build your firmware while using this library! Your rule set dictionary is automatically built into the 
-required datastructure if necessary everytime you re-compile your firmware. This is accomplished by the lines added to your `rules.mk` file in [step 2](#step-2) of the setup.
+required datastructure if necessary everytime you re-compile your firmware. This is accomplished by the lines added to your `rules_auto_generate.mk` file in [step 2](#step-2) of the setup.
 
 ## Testing
 Sequence Transform provides an offline `tester` utility that will allow you to test changes to your rules without needing to flash a new firmware to your keyboard. This tool was instrumental during the development process, but we think you will enjoy it too as you explore new and increasingly complex rules to add to your arsenal. We have tried very hard to minimize the complexities of writing and understanding rules, but even the developers sometimes write rules that work differently than envisioned.
