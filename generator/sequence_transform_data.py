@@ -377,7 +377,7 @@ def make_sequence_trie(
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
-    valid_tokens = f"[\w{SEQ_TOKEN_SYMBOLS}{WORDBREAK_SYMBOL}]"
+    valid_tokens = f"[\w{''.join(SEQ_TOKEN_SYMBOLS)}{SPACE_SYMBOL}{''.join(SEQ_METACHAR_SYMBOLS)}]"
 
     square_brackets_group = re.findall(fr"\[({valid_tokens}+)]", pattern)
     if square_brackets_group:
@@ -414,7 +414,7 @@ def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, st
 
     if parse_regex:
         for token, sequence in generate_matches(full_sequence):
-            yield sequence, transform.replace(r"\1", token)
+            yield sequence.replace(r"\1", token), transform.replace(r"\1", token)
     else:
         yield full_sequence, transform
 
@@ -884,6 +884,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
 
 ###############################################################################
+def get_symbol_config(config, key: str) -> str:
+    item = config[key]
+    return ''.join(item.keys()) if isinstance(item, dict) else item
+
+###############################################################################
 if __name__ == '__main__':
     parser = ArgumentParser()
 
@@ -911,21 +916,24 @@ if __name__ == '__main__':
 
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
-        SPACE_SYMBOL = config['space_symbol']
-        WORDBREAK_SYMBOL = config['wordbreak_symbol']
-        DIGIT_SYMBOL = config['digit_symbol']
-        ALPHA_SYMBOL = config['alpha_symbol']
-        UPPER_ALPHA_SYMBOL = config['upper_alpha_symbol']
-        PUNCT_SYMBOL = config['punct_symbol']
-        NONTERMINATING_PUNCT_SYMBOL = config['nonterminating_punct_symbol']
-        TERMINATING_PUNCT_SYMBOL = config['terminating_punct_symbol']
-        ANY_SYMBOL = config['any_symbol']
+        SPACE_SYMBOL = get_symbol_config(config, 'space_symbol')
+        WORDBREAK_SYMBOL = get_symbol_config(config, 'wordbreak_symbol')
+        DIGIT_SYMBOL = get_symbol_config(config, 'digit_symbol')
+        ALPHA_SYMBOL = get_symbol_config(config, 'alpha_symbol')
+        UPPER_ALPHA_SYMBOL = get_symbol_config(config, 'upper_alpha_symbol')
+        PUNCT_SYMBOL = get_symbol_config(config, 'punct_symbol')
+        NONTERMINATING_PUNCT_SYMBOL = get_symbol_config(config, 'nonterminating_punct_symbol')
+        TERMINATING_PUNCT_SYMBOL = get_symbol_config(config, 'terminating_punct_symbol')
+        ANY_SYMBOL = get_symbol_config(config, 'any_symbol')
         ONE_SHOT_SHIFT_SYMBOL = config['output_func_one_shot_shift_symbol']
         CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_func_capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
-        RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
+        if 'rules_file_name' in config:
+            RULES_FILES = [config['rules_file_name']]
+        else:
+            RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
