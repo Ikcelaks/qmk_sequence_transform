@@ -40,7 +40,11 @@ int test_ascii_string(const st_test_options_t *options)
             continue;
         }
         // send they key to the input buffer
-        st_key_buffer_push(buf, st_keycode_to_triecode(key, TEST_KC_SEQ_TOKEN_0));
+        const uint8_t triecode = st_keycode_to_triecode(key, TEST_KC_SEQ_TOKEN_0);
+        const bool is_upper = c >= 'A' && c <= 'Z';
+        const uint8_t key_flags = is_upper ? ST_KEY_FLAG_IS_ONE_SHOT_SHIFT : 0;
+        printf("%c is_upper: %d; key_flags: %d\n", c, is_upper, key_flags);
+        st_key_buffer_push(buf, triecode, key_flags);
         st_key_buffer_print(buf);
         // let sequence transform do its thing!
         if (!st_perform()) {
@@ -52,14 +56,6 @@ int test_ascii_string(const st_test_options_t *options)
         st_cursor_t *cursor = st_get_cursor();
         st_cursor_init(cursor, 0, true);
         st_cursor_print(cursor);
-        // check for missed rule
-        missed_rule_seq[0] = 0;
-        missed_rule_transform[0] = 0;
-        st_find_missed_rule();
-        if (strlen(missed_rule_seq)) {
-            printf("Missed rule: %s ⇒ %s\n",
-                    missed_rule_seq, missed_rule_transform);
-        }
     }
     return 0;
 }

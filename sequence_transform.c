@@ -16,7 +16,7 @@
 #include "sequence_transform_data.h"
 #include "utils.h"
 
-#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_1
+#ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_2
 #  error "sequence_transform_data.h was generated with an incompatible version of the generator script"
 #endif
 
@@ -153,7 +153,7 @@ bool st_process_check(uint16_t *keycode,
             } else {
                 *mods |= MOD_RSFT;
             }
-            *keycode = QK_MODS_GET_BASIC_KEYCODE(*keycode); // Get the basic keycode.
+            // *keycode = QK_MODS_GET_BASIC_KEYCODE(*keycode); // Get the basic keycode.
             break;
 #ifndef NO_ACTION_TAPPING
         // Exclude tap-hold keys when they are held down
@@ -229,49 +229,24 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
     uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
 #endif
 }
-//////////////////////////////////////////////////////////////////////
-void st_find_missed_rule(void)
+//////////////////////////////////////////////////////////////////
+bool st_handle_oneshot_shift(const st_trie_payload_t *action)
 {
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
-    char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
-    // find buffer index for the space before the last word,
-    // first skipping past trailing spaces
-    // (in case a rule has spaces at the end of its completion)
-    int word_start_idx = 0;
-    while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) == ' ') {
-        ++word_start_idx;
+    // Check if the new last key press triggered the OSS with an output function
+    if (action && action->func_code == 1) {
+        set_oneshot_mods(MOD_LSFT);
+        return true;
     }
-    // if we reached the end of the buffer here,
-    // it means it's filled wish spaces, so bail.
-    if (word_start_idx == key_buffer.size) {
-        return;
-    }
-    // we've skipped trailing spaces, so now find the next space
-    while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) != ' ') {
-        ++word_start_idx;
-    }
-    st_trie_rule_t result = {{0}, sequence_str, transform_str};
-    if (st_trie_do_rule_searches(&trie,
-                                 &key_buffer,
-                                 &trie_stack,
-                                 word_start_idx,
-                                 &result)) {
-        sequence_transform_on_missed_rule_user(&result);
-    }
-#endif
+    return false;
 }
 //////////////////////////////////////////////////////////////////
-bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
+bool st_handle_completion(st_cursor_t *cursor, uint8_t shift_flags)
 {
     const st_trie_payload_t *action = st_cursor_get_action(cursor);
     const uint16_t completion_start = action->completion_index;
     if (!action || completion_start == ST_DEFAULT_KEY_ACTION) {
         return false;
     }
-    stack->size = 0;
     const uint16_t completion_end = completion_start + action->completion_len;
     for (int i = completion_start; i < completion_end; ++i) {
         uint8_t triecode = CDATA(cursor->trie, i);
@@ -280,7 +255,14 @@ bool st_handle_completion(st_cursor_t *cursor, st_key_stack_t *stack)
             st_assert(triecode, "Unable to retrieve seq ref (%d) needed to produce the completion\n", triecode);
             st_key_buffer_push_seq_ref(&key_buffer, triecode);
         }
-        st_send_key(st_ascii_to_keycode(triecode));
+        uint16_t keycode = st_ascii_to_keycode(triecode);
+        if (shift_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT) {
+            shift_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
+            keycode = S(keycode);
+        } else if (shift_flags & ST_KEY_FLAG_IS_FULL_SHIFT) {
+            keycode = S(keycode);
+        }
+        st_send_key(keycode);
     }
     return true;
 }
@@ -290,19 +272,24 @@ void st_handle_result(const st_trie_t *trie,
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_action_t *current_key = st_key_buffer_get(&key_buffer, 0);
     current_key->action_taken = res->trie_match.trie_match_index;
-    current_key->is_anchor_match = !res->trie_match.is_chained_match;
+    current_key->key_flags |= res->trie_match.is_chained_match ? 0 : ST_KEY_FLAG_IS_ANCHOR_MATCH;
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
-    st_multi_tap(KC_BSPC, res->trie_payload.num_backspaces);
+    const uint8_t num_backspaces = res->trie_payload.num_backspaces;
+    st_multi_tap(KC_BSPC, num_backspaces);
     // Send completion string
     st_cursor_init(&trie_cursor, 0, false);
-    st_handle_completion(&trie_cursor, &trie_stack);
-    switch (res->trie_payload.func_code) {
-        case 2:  // set one-shot shift
-            set_oneshot_mods(MOD_LSFT);
-            break;
+    const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&trie_cursor, num_backspaces) : 0;
+    if (res->trie_payload.func_code != 2) {
+        clear_oneshot_mods();
+        current_key->key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
     }
+    if (replaced_shift_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT) {
+        current_key->key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
+    }
+    st_handle_completion(&trie_cursor, current_key->key_flags);
+    st_handle_oneshot_shift(&res->trie_payload);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 #if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
@@ -315,6 +302,9 @@ void st_handle_backspace() {
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
         st_key_buffer_pop(&key_buffer);
+        // Check if the new last key press triggered the OSS with an output function
+        st_cursor_init(&trie_cursor, 0, false);
+        st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
         return;
     }
     // Undo a rule action
@@ -349,6 +339,9 @@ void st_handle_backspace() {
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
     st_key_buffer_pop(&key_buffer);
+    // Check if the new last key press triggered the OSS with an output function
+    st_cursor_init(&trie_cursor, 0, false);
+    st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
 }
 #endif
 
@@ -374,7 +367,7 @@ bool st_is_processable_keycode(uint16_t keycode)
 {
     switch (keycode) {
         case KC_A ... KC_ENTER:
-        case S(KC_1)... S(KC_0):
+        case S(KC_A)... S(KC_0):
         case KC_TAB ... KC_SLASH:
         case S(KC_MINUS)... S(KC_SLASH):
             return true;
@@ -424,10 +417,19 @@ bool process_sequence_transform(uint16_t keycode,
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
     sequence_timer = timer_read32();
 #endif
+
     uint8_t mods = get_mods();
+    uint8_t key_flags = (mods & MOD_MASK_SHIFT) ? ST_KEY_FLAG_IS_FULL_SHIFT : 0;
 #ifndef NO_ACTION_ONESHOT
-    mods |= get_oneshot_mods();
+    const uint8_t one_shot_mods = get_oneshot_mods();
+    mods |= one_shot_mods;
+    if (one_shot_mods & MOD_MASK_SHIFT) {
+        key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
+    }
 #endif
+    if (mods & MOD_MASK_SHIFT) {
+        keycode = S(keycode);
+    }
 
     st_debug(ST_DBG_GENERAL, "pst keycode: 0x%04X, mods: 0x%02X, pressed: %d\n",
         keycode, mods, record->event.pressed);
@@ -456,7 +458,7 @@ bool process_sequence_transform(uint16_t keycode,
     const uint8_t triecode = st_keycode_to_triecode(keycode, sequence_token_start);
     st_debug(ST_DBG_GENERAL, "  translated keycode: 0x%04X (%c)\n",
         keycode, st_triecode_to_ascii(triecode));
-    st_key_buffer_push(&key_buffer, triecode);
+    st_key_buffer_push(&key_buffer, triecode, key_flags);
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(&key_buffer);
     }
@@ -483,12 +485,6 @@ void post_process_sequence_transform()
         //   and undo the action of that key
         st_log_time(st_handle_backspace());
         post_process_do_enhanced_backspace = false;
-    }
-#endif
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    if (post_process_do_rule_search) {
-        st_log_time(st_find_missed_rule());
-        post_process_do_rule_search = false;
     }
 #endif
 }

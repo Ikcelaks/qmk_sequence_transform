@@ -11,6 +11,7 @@ bool                    st_cursor_init(st_cursor_t *cursor, int history, uint8_t
 uint8_t                 st_cursor_get_triecode(st_cursor_t *cursor);
 uint16_t                st_cursor_get_matched_rule(st_cursor_t *cursor);
 const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor);
+uint8_t                 st_cursor_get_shift_of_nth(st_cursor_t *cursor, int nth);
 uint8_t                 st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode);
 bool                    st_cursor_at_end(const st_cursor_t *cursor);
 bool                    st_cursor_next(st_cursor_t *cursor);
