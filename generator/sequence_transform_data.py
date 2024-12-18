@@ -147,6 +147,32 @@ def generate_output_func_symbol_map(output_func_symbols) -> Dict[str, int]:
 
 
 ###############################################################################
+def create_rules_dict_template_if_missing(
+    file_name: Path
+):
+    if not file_name.is_file():
+        with open(file_name, mode="a", encoding="utf-8") as rf:
+            rf.write(f'{COMMENT_STR} Sequence Transform Rule File: {file_name.name}\n')
+            rf.write(f'{COMMENT_STR}  Sequence Tokens:\n')
+            for st in SEQ_TOKEN_SYMBOLS:
+                rf.write(f'{COMMENT_STR}   {st}\n')
+            rf.write(f'{COMMENT_STR}  Transform Sequence Reference Symbols:\n')
+            for tsrs in TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS:
+                rf.write(f'{COMMENT_STR}   {tsrs}\n')
+            rf.write(f'{COMMENT_STR}  Space Symbol: {SPACE_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Wordbreak MetaCharacter Symbol: {WORDBREAK_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Digit MetaCharacter Symbol: {DIGIT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Alpha MetaCharacter Symbol: {ALPHA_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Upper-Alpha MetaCharacter Symbol: {UPPER_ALPHA_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Terminating Punctuation MetaCharacter Symbol: {TERMINATING_PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Non-terminating Punctuation MetaCharacter Symbol: {NONTERMINATING_PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Punctuation MetaCharacter Symbol: {PUNCT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Any MetaCharacter Symbol: {ANY_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Output Func OneShot Shift Symbol: {ONE_SHOT_SHIFT_SYMBOL}\n')
+            rf.write(f'{COMMENT_STR}  Separator String: {SEP_STR}\n')
+
+
+###############################################################################
 def parse_file(
     file_name: str, symbol_map: Dict[str, int],
     separator: str, comment: str
@@ -192,6 +218,17 @@ def parse_file(
     if duplicated_rules:
         raise SystemExit("\n".join(duplicated_rules))
 
+    return rules
+
+###############################################################################
+def parse_files(
+    file_names: List[str], symbol_map: Dict[str, int],
+    separator: str, comment: str
+) -> List[Tuple[str, str]]:
+    rules = []
+    for file_name in file_names:
+        create_rules_dict_template_if_missing(file_name)
+        rules.extend(parse_file(file_name, symbol_map, separator, comment))
     return rules
 
 ###############################################################################
@@ -340,7 +377,7 @@ def make_sequence_trie(
 
 ###############################################################################
 def generate_matches(pattern) -> list[tuple[str, str]]:
-    valid_tokens = f"[\w{SEQ_TOKEN_SYMBOLS}{WORDBREAK_SYMBOL}]"
+    valid_tokens = f"[\w{''.join(SEQ_TOKEN_SYMBOLS)}{SPACE_SYMBOL}{''.join(SEQ_METACHAR_SYMBOLS)}]"
 
     square_brackets_group = re.findall(fr"\[({valid_tokens}+)]", pattern)
     if square_brackets_group:
@@ -377,7 +414,7 @@ def parse_tokens(tokens: List[str], parse_regex: bool) -> Iterator[Tuple[int, st
 
     if parse_regex:
         for token, sequence in generate_matches(full_sequence):
-            yield sequence, transform.replace(r"\1", token)
+            yield sequence.replace(r"\1", token), transform.replace(r"\1", token)
     else:
         yield full_sequence, transform
 
@@ -701,7 +738,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
-    seq_tranform_list = parse_file(RULES_FILE, symbol_map, SEP_STR, COMMENT_STR)
+    seq_tranform_list = parse_files(RULES_FILES, symbol_map, SEP_STR, COMMENT_STR)
     trie, outputs, missing_intermediate_rules, missing_prefix_rules = make_sequence_trie(seq_tranform_list, output_func_symbol_map)
 
     for missing_rule, affected_rules in missing_intermediate_rules.items():
@@ -765,10 +802,7 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     st_space_token = f'static const char *st_space_token = "{SPACE_SYMBOL}";'
     # ascii versions
     seq_token_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_TOKEN_ASCII_CHARS))
-    seq_metachar_char_array_str = ", ".join(map(lambda c: f"'{c}'", SEQ_METACHAR_ASCII_CHARS))
     st_seq_token_ascii_chars = f'static const char st_seq_token_ascii_chars[] = {{ {seq_token_char_array_str} }};'
-    st_seq_metachar_ascii_chars = f'static const char st_seq_metachar_ascii_chars[] = {{ {seq_metachar_char_array_str} }};'
-    # st_wordbreak_ascii = f"static const char st_wordbreak_ascii = '{WORDBREAK_ASCII}';"
 
     trie_stats_lines = [
         f'#define {ST_GENERATOR_VERSION}',
@@ -788,8 +822,6 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
         f'#define SEQUENCE_REF_TOKEN_COUNT {len(TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS)}',
         '',
         st_seq_token_ascii_chars,
-        st_seq_metachar_ascii_chars,
-        # st_wordbreak_ascii,
         # qmk build checks for unused vars,
         # so we must use an ifdef here
         '#ifdef ST_TESTER',
@@ -852,6 +884,11 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
 
 
 ###############################################################################
+def get_symbol_config(config, key: str) -> str:
+    item = config[key]
+    return ''.join(item.keys()) if isinstance(item, dict) else item
+
+###############################################################################
 if __name__ == '__main__':
     parser = ArgumentParser()
 
@@ -867,41 +904,42 @@ if __name__ == '__main__':
 
     data_header_file = THIS_FOLDER / "../sequence_transform_data.h"
     test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
-    config_file = THIS_FOLDER / cli_args.config
-    config = json.load(open(config_file, 'rt', encoding="utf-8"))
+    default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
+    user_config_file = THIS_FOLDER / cli_args.config
+    config = json.load(open(default_config_file, 'rt', encoding="utf-8"))
+    if user_config_file.is_file():
+        user_config = json.load(open(user_config_file, 'rt', encoding="utf-8"))
+        config.update(user_config)
+    else:
+        with open(file=user_config_file, mode="a") as cf:
+            json.dump({}, cf)
 
     try:
         SEQ_TOKEN_SYMBOLS = list(config['sequence_token_symbols'].keys())
-        SPACE_SYMBOL = config['space_symbol']
-        WORDBREAK_SYMBOL = list(config['wordbreak_symbol'].keys())[0]
-        DIGIT_SYMBOL = list(config['digit_symbol'].keys())[0]
-        ALPHA_SYMBOL = list(config['alpha_symbol'].keys())[0]
-        UPPER_ALPHA_SYMBOL = list(config['upper_alpha_symbol'].keys())[0]
-        PUNCT_SYMBOL = list(config['punct_symbol'].keys())[0]
-        NONTERMINATING_PUNCT_SYMBOL = list(config['nonterminating_punct_symbol'].keys())[0]
-        TERMINATING_PUNCT_SYMBOL = list(config['terminating_punct_symbol'].keys())[0]
-        ANY_SYMBOL = list(config['any_symbol'].keys())[0]
-        ONE_SHOT_SHIFT_SYMBOL = config['output_funcs']['one_shot_shift_symbol']
-        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_funcs']['capitalize_first_character_symbol']
+        SPACE_SYMBOL = get_symbol_config(config, 'space_symbol')
+        WORDBREAK_SYMBOL = get_symbol_config(config, 'wordbreak_symbol')
+        DIGIT_SYMBOL = get_symbol_config(config, 'digit_symbol')
+        ALPHA_SYMBOL = get_symbol_config(config, 'alpha_symbol')
+        UPPER_ALPHA_SYMBOL = get_symbol_config(config, 'upper_alpha_symbol')
+        PUNCT_SYMBOL = get_symbol_config(config, 'punct_symbol')
+        NONTERMINATING_PUNCT_SYMBOL = get_symbol_config(config, 'nonterminating_punct_symbol')
+        TERMINATING_PUNCT_SYMBOL = get_symbol_config(config, 'terminating_punct_symbol')
+        ANY_SYMBOL = get_symbol_config(config, 'any_symbol')
+        ONE_SHOT_SHIFT_SYMBOL = config['output_func_one_shot_shift_symbol']
+        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_func_capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
-        RULES_FILE = THIS_FOLDER / "../../" / config['rules_file_name']
+        if 'rules_file_name' in config:
+            RULES_FILES = [config['rules_file_name']]
+        else:
+            RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
-    WORDBREAK_ASCII = config['wordbreak_symbol'][WORDBREAK_SYMBOL]
-    DIGIT_ASCII = config['digit_symbol'][DIGIT_SYMBOL]
-    ALPHA_ASCII = config['alpha_symbol'][ALPHA_SYMBOL]
-    UPPER_ALPHA_ASCII = config['upper_alpha_symbol'][UPPER_ALPHA_SYMBOL]
-    PUNCT_ASCII = config['punct_symbol'][PUNCT_SYMBOL]
-    NONTERMINATING_PUNCT_ASCII = config['nonterminating_punct_symbol'][NONTERMINATING_PUNCT_SYMBOL]
-    TERMINATING_PUNCT_ASCII = config['terminating_punct_symbol'][TERMINATING_PUNCT_SYMBOL]
-    ANY_ASCII = config['any_symbol'][ANY_SYMBOL]
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
-    SEQ_METACHAR_ASCII_CHARS = [UPPER_ALPHA_ASCII, ALPHA_ASCII, DIGIT_ASCII, TERMINATING_PUNCT_ASCII, NONTERMINATING_PUNCT_ASCII, PUNCT_ASCII, WORDBREAK_ASCII, ANY_ASCII]
     OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 

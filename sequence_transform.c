@@ -229,40 +229,6 @@ __attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_
     uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
 #endif
 }
-//////////////////////////////////////////////////////////////////////
-void st_find_missed_rule(void)
-{
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    char sequence_str[SEQUENCE_MAX_LENGTH + 1] = {0};
-    char transform_str[TRANSFORM_MAX_LENGTH + 1] = {0};
-    // find buffer index for the space before the last word,
-    // first skipping past trailing spaces
-    // (in case a rule has spaces at the end of its completion)
-    int word_start_idx = 0;
-    while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) == ' ') {
-        ++word_start_idx;
-    }
-    // if we reached the end of the buffer here,
-    // it means it's filled wish spaces, so bail.
-    if (word_start_idx == key_buffer.size) {
-        return;
-    }
-    // we've skipped trailing spaces, so now find the next space
-    while (word_start_idx < key_buffer.size &&
-           KEY_AT(word_start_idx) != ' ') {
-        ++word_start_idx;
-    }
-    st_trie_rule_t result = {{0}, sequence_str, transform_str};
-    if (st_trie_do_rule_searches(&trie,
-                                 &key_buffer,
-                                 &trie_stack,
-                                 word_start_idx,
-                                 &result)) {
-        sequence_transform_on_missed_rule_user(&result);
-    }
-#endif
-}
 //////////////////////////////////////////////////////////////////
 bool st_handle_oneshot_shift(const st_trie_payload_t *action)
 {
@@ -519,12 +485,6 @@ void post_process_sequence_transform()
         //   and undo the action of that key
         st_log_time(st_handle_backspace());
         post_process_do_enhanced_backspace = false;
-    }
-#endif
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-    if (post_process_do_rule_search) {
-        st_log_time(st_find_missed_rule());
-        post_process_do_rule_search = false;
     }
 #endif
 }

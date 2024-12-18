@@ -89,16 +89,6 @@ char st_get_seq_token_ascii(uint8_t triecode)
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
-// if triecode is a predicate that can be translated back to its user symbol,
-// returns its ascii code, otherwise returns 0
-char st_get_seq_metachar_ascii(uint8_t triecode)
-{
-    if (st_is_seq_metachar_triecode(triecode)) {
-        return st_seq_metachar_ascii_chars[triecode - TRIECODE_SEQUENCE_METACHAR_0];
-    }
-    return 0;
-}
-////////////////////////////////////////////////////////////////////////////////
 // converts a triecode to a printable ascii char
 char st_triecode_to_ascii(uint8_t triecode)
 {

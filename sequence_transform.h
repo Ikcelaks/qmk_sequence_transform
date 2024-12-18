@@ -38,7 +38,6 @@ bool st_process_check(uint16_t *keycode, const keyrecord_t *record, uint8_t *mod
 void st_handle_repeat_key(void);
 void st_handle_result(const st_trie_t *trie, const st_trie_search_result_t *res);
 bool st_perform(void);
-void st_find_missed_rule(void);
 void st_handle_backspace(void);
 
 #ifdef ST_TESTER
