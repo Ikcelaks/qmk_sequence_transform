@@ -23,7 +23,7 @@ include $(mkfile_dir)/sequence_transform/rules_auto_generate.mk
 # end sequence_transform setup
 ```
 > [!CAUTION]
-> If your keymap folder doesn't already contain a `rules.mk` file, create an new `rules.mk` file there that just has the snippet from above. DO NOT instead past the snippet into a `rules.mk` file at another location, because the paths won't be correct.
+> If your keymap folder doesn't already contain a `rules.mk` file, create an new `rules.mk` file there that just has the snippet from above. DO NOT instead paste the snippet into a `rules.mk` file at another location, because the paths won't be correct.
 
 ### Step 3
 Define custom keycodes for your Sequence Token keys (commonly referred to as "magic keys") consecutively. Example:
@@ -99,8 +99,23 @@ You should add the custom keys you defined in [step 3](#step-3) of the setup to 
 Symbols chosen can be any utf-8 symbol you like. The sample config and dictionary use a pointing finger and thumb emoji to aid in remembering which `Sequence Token key` is being used, which you may find helpful.
 
 ## Building
-No special steps are required to build your firmware while using this library! Your rule set dictionary is automatically built into the 
-required datastructure if necessary everytime you re-compile your firmware. This is accomplished by the lines added to your keymap's `rules.mk` file in [step 2](#step-2) of the setup.
+No special steps are required to build your firmware while using this library! Your rule set dictionary is automatically built into the required datastructure if necessary everytime you re-compile your firmware. This is accomplished by the lines added to your keymap's `rules.mk` file in [step 2](#step-2) of the setup.
+
+## Multiple Rule Sets
+You can split your rule sets into multiple files. The rules in all files are merged together before being processed, 
+so they must use the same symbols. The main use case is to split out rules with private or personal information into a 
+file that is ignored by Git.
+
+Follow these steps to create a second private rules file and add it to the `.gitignore`:
+- Add `"sequence_transform_dict_private.txt"` to the `rules_file_name_list` in your `sequence_transform_config.json` file. The final result should look something like this:
+    ```json
+    "rules_file_name_list": [
+        "sequence_transform_dict.txt",
+        "sequence_transform_dict_private.txt"
+    ]
+    ```
+- Build your firmware as normal, which will automatically generate a new rule set file named `sequence_transform_dict_private.txt`.
+- Add `*_private.txt` to the `.gitignore` file of the repo you store your layout in. This is NOT the `.gitignore` file contained in the `sequence_transform` folder (that only manages files in the Sequence Transform library). The `.gitignore` file you want to change is probably at the root of your fork of the `qmk_userspace` or `qmk_firmware` repo.
 
 ## Testing
 Sequence Transform provides an offline `tester` utility that will allow you to test changes to your rules without needing to flash a new firmware to your keyboard. This tool was instrumental during the development process, but we think you will enjoy it too as you explore new and increasingly complex rules to add to your arsenal. We have tried very hard to minimize the complexities of writing and understanding rules, but even the developers sometimes write rules that work differently than envisioned.
