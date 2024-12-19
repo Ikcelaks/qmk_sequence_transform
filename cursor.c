@@ -70,7 +70,6 @@ bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
     cursor->pos.index = history;
     cursor->pos.as_output = as_output;
     cursor->pos.sub_index = 0;
-    cursor->pos.segment_len = 1;
     cursor->cache_valid = 255;
     cursor->pos.seq_ref_index = 0;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
@@ -216,7 +215,6 @@ bool st_cursor_next(st_cursor_t *cursor)
             cursor->pos.index = cursor->buffer->size;
             return false;
         }
-        ++cursor->pos.segment_len;
         return true;
     }
     // Continue processing if simulating output buffer
@@ -234,7 +232,6 @@ bool st_cursor_next(st_cursor_t *cursor)
             cursor->pos.sub_index = 0;
             return false;
         }
-        ++cursor->pos.segment_len;
         return true;
     }
     // This is a key with an action and completion, increment the sub_index
@@ -250,7 +247,6 @@ bool st_cursor_next(st_cursor_t *cursor)
         }
     }
     if (cursor_advance_to_valid_output(cursor)) {
-        ++cursor->pos.segment_len;
         return true;
     }
     cursor->pos.index = cursor->buffer->size;
@@ -296,7 +292,7 @@ void st_cursor_print(st_cursor_t *cursor)
         uprintf("%c", st_triecode_to_ascii(code));
         st_cursor_next(cursor);
     }
-    uprintf("| (%d:%d)\n", cursor->buffer->size, cursor->pos.segment_len);
+    uprintf("| (%d)\n", cursor->buffer->size);
     st_cursor_restore(cursor, &cursor_pos);
 #endif
 }

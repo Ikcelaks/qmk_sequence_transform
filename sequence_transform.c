@@ -26,16 +26,6 @@ static bool post_process_do_enhanced_backspace = false;
 static uint32_t backspace_timer = 0;
 #endif
 
-#if SEQUENCE_TRANSFORM_RULE_SEARCH
-static bool post_process_do_rule_search = false;
-void schedule_rule_search(void)
-{
-    post_process_do_rule_search = true;
-}
-#else
-void schedule_rule_search(void){}
-#endif
-
 #define KEY_AT(i) st_key_buffer_get_triecode(&key_buffer, (i))
 
 //////////////////////////////////////////////////////////////////
@@ -98,7 +88,12 @@ static const st_trie_t trie = {
 static st_cursor_t trie_cursor = {
     &key_buffer,
     &trie,
-    {0, 255,0, false},
+    {
+        0,
+        255,
+        false,
+        0
+    },
     {0},
     false,
 };
@@ -272,7 +267,7 @@ void st_handle_result(const st_trie_t *trie,
     // Most recent key in the buffer triggered a match action, record it in the buffer
     st_key_action_t *current_key = st_key_buffer_get(&key_buffer, 0);
     current_key->action_taken = res->trie_match.trie_match_index;
-    current_key->key_flags |= res->trie_match.is_chained_match ? 0 : ST_KEY_FLAG_IS_ANCHOR_MATCH;
+    current_key->key_flags |= res->trie_match.match_type == ST_ANCHOR_MATCH ? ST_KEY_FLAG_IS_ANCHOR_MATCH : 0;
     // Log newly added rule match
     log_rule(res->trie_match.trie_match_index);
     // Send backspaces
@@ -352,7 +347,24 @@ void st_handle_backspace() {
  */
 bool st_perform() {
     // Get completion string from trie for our current key buffer.
-    st_trie_search_result_t res = {{0,  {0, 0, 0}, 0}, {0,  0,  0, 0}};
+    st_trie_search_result_t res = {
+        {
+            0,
+            {
+                0,
+                0,
+                false,
+                0
+            },
+            ST_NO_MATCH
+        },
+        {
+            0,
+            0,
+            0,
+            0
+        }
+    };
     if (st_trie_get_completion(&trie_cursor, &res)) {
         st_handle_result(&trie, &res);
         return true;
@@ -446,7 +458,6 @@ bool process_sequence_transform(uint16_t keycode,
     }
     // Don't process on key up
     if (!record->event.pressed) {
-        schedule_rule_search();
         return true;
     }
     // if we can't process the keycode, reset the buffer and pass it along to the pipeline

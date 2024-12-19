@@ -27,8 +27,8 @@
 
 typedef enum {
     ST_NO_MATCH = 0,
-    ST_MATCH = 1,
-    ST_FINAL_MATCH = 2
+    ST_ANCHOR_MATCH = 1,
+    ST_SUB_MATCH = 2
 } st_trie_match_type_t;
 
 typedef struct
@@ -54,7 +54,6 @@ typedef struct
 {
     int     index;          // buffer index of cursor position
     int     sub_index;      // Sub-position within the current buffer position
-    int     segment_len;    // Number of elements traversed
     uint8_t as_output;      // True if buffer traversing the simulated output
     int     seq_ref_index;
 } st_cursor_pos_t;
@@ -87,9 +86,9 @@ typedef struct
 
 typedef struct
 {
-    uint16_t            trie_match_index;
-    st_cursor_pos_t     seq_match_pos;
-    bool                is_chained_match;
+    uint16_t             trie_match_index;
+    st_cursor_pos_t      seq_match_pos;
+    st_trie_match_type_t match_type;
 } st_trie_match_t;
 
 typedef struct
