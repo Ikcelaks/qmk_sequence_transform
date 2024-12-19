@@ -56,6 +56,7 @@ typedef struct
     int     sub_index;      // Sub-position within the current buffer position
     int     segment_len;    // Number of elements traversed
     uint8_t as_output;      // True if buffer traversing the simulated output
+    int     seq_ref_index;
 } st_cursor_pos_t;
 
 typedef struct
@@ -75,7 +76,6 @@ typedef struct
     st_cursor_pos_t               pos;              // Contains all position info for the cursor
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
-    int                           seq_ref_index;
 } st_cursor_t;
 
 typedef struct
