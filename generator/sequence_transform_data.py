@@ -734,7 +734,7 @@ def create_triecode_array_c_string(
 
 
 ###############################################################################
-def generate_sequence_transform_data(data_header_file, test_header_file):
+def generate_sequence_transform_data(data_header_file, metadata_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
@@ -856,14 +856,21 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     sequence_transform_data_h_lines = [
         *header_lines,
         '',
-        *trie_stats_lines,
-        '',
         *tranforms_lines,
         '',
         *trie_data_lines,
     ]
     with open(data_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
+
+    # Write metadata header file
+    st_gen_metadata_h_lines = [
+        *header_lines,
+        '',
+        *trie_stats_lines,
+    ]
+    with open(metadata_header_file, "w", encoding="utf-8") as file:
+        file.write("\n".join(st_gen_metadata_h_lines))
 
     # Write test header file
     sequence_transform_test_h_lines = [
@@ -903,6 +910,7 @@ if __name__ == '__main__':
     THIS_FOLDER = Path(__file__).parent
 
     data_header_file = THIS_FOLDER / "../sequence_transform_data.h"
+    metadata_header_file = THIS_FOLDER / "../st_gen_metadata.h"
     test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
     default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
     user_config_file = THIS_FOLDER / cli_args.config
@@ -944,4 +952,4 @@ if __name__ == '__main__':
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug
-    generate_sequence_transform_data(data_header_file, test_header_file)
+    generate_sequence_transform_data(data_header_file, metadata_header_file, test_header_file)

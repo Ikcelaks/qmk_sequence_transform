@@ -13,6 +13,7 @@
 #include "st_assert.h"
 #include "triecodes.h"
 #include "sequence_transform.h"
+#include "st_gen_metadata.h"
 #include "sequence_transform_data.h"
 #include "utils.h"
 
@@ -46,7 +47,7 @@ static st_key_buffer_t key_buffer = {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 uint16_t sequence_transform_past_keycode(int index) {
-    return st_key_buffer_get_triecode(&key_buffer, index);
+    return KEY_AT(index);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

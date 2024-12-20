@@ -5,7 +5,7 @@
 
 #include "qmk_wrapper.h"
 #include "triecodes.h"
-#include "sequence_transform_data.h"
+#include "st_gen_metadata.h"
 #include "st_assert.h"
 #include "predicates.h"
 #include <ctype.h>
@@ -25,7 +25,7 @@ static const char unshifted_keycode_to_ascii_lut[53] PROGMEM = {
 //  KC_3    KC_4    KC_5    KC_6    KC_7    KC_8    KC_9    KC_0
     '3',    '4',    '5',    '6',    '7',    '8',    '9',    '0',
 //  KC_ENTR KC_ESC  KC_BSPC KC_TAB  KC_SPC  KC_MINS KC_EQL  KC_LBRC
-    ' ',    ' ',    ' ',    ' ',    ' ',    '-',    '=',    '[',
+    '\n',    ' ',    ' ',    '\t',    ' ',    '-',    '=',    '[',
 //  KC_RBRC KC_BSLS KC_NUHS KC_SCLN KC_QUOT KC_GRV  KC_COMM KC_DOT
     ']',    '\\',   ' ',    ';',    '\'',   '`',    ',',    '.',
 //  KC_SLSH
@@ -135,6 +135,9 @@ uint16_t st_ascii_to_keycode(uint8_t triecode)
 ////////////////////////////////////////////////////////////////////////////////
 bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
 {
+    if (!key_triecode) {
+        return false;
+    }
     if (triecode < TRIECODE_SEQUENCE_METACHAR_0) {
         // Not a MetaCharacter. Do an exact match
         return triecode == tolower(key_triecode);

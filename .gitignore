@@ -52,6 +52,7 @@ Mkfile.old
 dkms.conf
 /.vs
 /sequence_transform_data.h
+/st_gen*
 /rule_usage/rule_usage_log.csv
 /tester/.vs/
 /tester/build/

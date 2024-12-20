@@ -19,9 +19,10 @@
 
 #define TRIE_MATCH_BIT              0x80
 #define TRIE_BRANCH_BIT             0x40
-#define TRIE_UNCHAINED_MATCH_BIT    0x20
+#define TRIE_MULTI_BRANCH_BIT       0x20
+#define TRIE_ANCHOR_MATCH_BIT       0x20
 #define TRIE_EXTENDED_HEADER_BIT    0x10
-#define TRIE_CHAIN_CHECK_COUNT_MASK 0x0F
+#define TRIE_SUP_RULE_COUNT_MASK    0x0F
 #define TRIE_MATCH_SIZE             4
 #define TRIE_CHAINED_MATCH_SIZE     6
 
@@ -31,6 +32,12 @@ typedef enum {
     ST_SUB_MATCH = 2
 } st_trie_match_type_t;
 
+typedef enum {
+    ST_FAILED = 0,
+    ST_CONTINUE = 1,
+    ST_SUCCESS = 2
+} st_trie_progress_t;
+
 typedef struct
 {
     int completion_index;   // index to start of completion string in trie_t.completions
@@ -39,16 +46,7 @@ typedef struct
     int func_code;          // special function code
 } st_trie_payload_t;
 
-typedef struct
-{
-    bool has_match;             // true if node has a match
-    bool has_branch;            // true if node is a branch or there are longer
-    union {                         // the 5th bit is overloaded depending on the context
-        bool has_anchor_match;   // true if unchained match is present
-        bool is_multibranch;        // true if the branch contains metacharacters
-    };
-    int  sup_rule_count;     // number chained rules that can match here
-} st_trie_node_info_t;
+typedef uint8_t st_trie_node_type_t;
 
 typedef struct
 {
