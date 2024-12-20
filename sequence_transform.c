@@ -217,13 +217,6 @@ void log_rule(const uint16_t trie_match_index) {
     uprintf("st_rule,%d\n", trie_match_index);
 #endif
 }
-//////////////////////////////////////////////////////////////////////
-__attribute__((weak)) void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
-{
-#ifndef NO_PRINT
-    uprintf("Missed rule! %s -> %s\n", rule->sequence, rule->transform);
-#endif
-}
 //////////////////////////////////////////////////////////////////
 bool st_handle_oneshot_shift(const st_trie_payload_t *action)
 {
