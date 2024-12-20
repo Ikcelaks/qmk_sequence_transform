@@ -274,7 +274,7 @@ void st_handle_result(const st_trie_t *trie,
     const uint8_t num_backspaces = res->trie_payload.num_backspaces;
     st_multi_tap(KC_BSPC, num_backspaces);
     // Send completion string
-    st_cursor_init(&trie_cursor, 0, false);
+    st_cursor_init(&trie_cursor, false);
     const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&trie_cursor, num_backspaces) : 0;
     if (res->trie_payload.func_code != 2) {
         clear_oneshot_mods();
@@ -290,15 +290,15 @@ void st_handle_result(const st_trie_t *trie,
 #if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
 void st_handle_backspace() {
     // initialize cursor as input cursor, so that `st_cursor_get_action` is stable
-    st_cursor_init(&trie_cursor, 0, false);
+    st_cursor_init(&trie_cursor, false);
     const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
+    st_key_buffer_pop(&key_buffer);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
-        st_key_buffer_pop(&key_buffer);
         // Check if the new last key press triggered the OSS with an output function
-        st_cursor_init(&trie_cursor, 0, false);
+        st_cursor_init(&trie_cursor, false);
         st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
         return;
     }
@@ -315,7 +315,7 @@ void st_handle_backspace() {
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
         // reinitialize cursor as output cursor one keystroke before the previous action
-        if (st_cursor_init(&trie_cursor, 1, true) &&
+        if (st_cursor_init(&trie_cursor, true) &&
             st_cursor_push_to_stack(&trie_cursor, &trie_stack, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
@@ -333,9 +333,8 @@ void st_handle_backspace() {
         // Send backspaces since no resend is needed to complete the undo
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
-    st_key_buffer_pop(&key_buffer);
     // Check if the new last key press triggered the OSS with an output function
-    st_cursor_init(&trie_cursor, 0, false);
+    st_cursor_init(&trie_cursor, false);
     st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
 }
 #endif

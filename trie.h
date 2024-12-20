@@ -106,17 +106,6 @@ uint8_t  st_get_trie_completion_byte(const st_trie_t *trie, int index);
 //////////////////////////////////////////////////////////////////
 // Internal
 
-typedef struct
-{
-    const st_trie_t * const         trie;               // trie to search in
-    const st_key_buffer_t * const   key_buffer;         // key buffer to search with
-    st_key_stack_t * const          key_stack;          // stack for recording visited sequences
-    int                             search_end_ridx;    // reverse index to end of search window
-    int                             search_max_seq_len; // length of longest matching sequence
-    int                             skip_levels;	    // number of trie levels to 'skip' when searching
-    st_trie_rule_t * const          result;             // pointer to result to be filled with best match
-} st_trie_search_t;
-
 void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
 st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);

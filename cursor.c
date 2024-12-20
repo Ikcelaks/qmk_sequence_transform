@@ -65,9 +65,9 @@ bool cursor_advance_to_valid_output(st_cursor_t *cursor)
     }
 }
 //////////////////////////////////////////////////////////////////
-bool st_cursor_init(st_cursor_t *cursor, int history, uint8_t as_output)
+bool st_cursor_init(st_cursor_t *cursor, uint8_t as_output)
 {
-    cursor->pos.index = history;
+    cursor->pos.index = 0;
     cursor->pos.as_output = as_output;
     cursor->pos.sub_index = 0;
     cursor->cache_valid = 255;
@@ -152,7 +152,8 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 uint8_t st_cursor_get_shift_of_nth(st_cursor_t *cursor, int nth)
 {
     st_cursor_pos_t original_pos = st_cursor_save(cursor);
-    st_cursor_init(cursor, 1, true);
+    st_cursor_init(cursor, true);
+    st_cursor_next_key(cursor);
     for (int i = 0; i < nth - 1; ++i) {
         if (!st_cursor_next(cursor)) {
             st_cursor_restore(cursor, &original_pos);
@@ -205,17 +206,22 @@ bool st_cursor_at_end(const st_cursor_t *cursor)
     return cursor->pos.index >= cursor->buffer->size || cursor->pos.seq_ref_index >= cursor->buffer->seq_ref_capacity;
 }
 //////////////////////////////////////////////////////////////////
+bool st_cursor_next_key(st_cursor_t *cursor)
+{
+    ++cursor->pos.index;
+    st_key_buffer_advance_seq_ref_index(cursor->buffer, &cursor->pos.seq_ref_index);
+    if (st_cursor_at_end(cursor)) {
+        // leave `index` at the End position
+        cursor->pos.index = cursor->buffer->size;
+        return false;
+    }
+    return true;
+}
+//////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
 {
     if (!cursor->pos.as_output) {
-        ++cursor->pos.index;
-        st_key_buffer_advance_seq_ref_index(cursor->buffer, &cursor->pos.seq_ref_index);
-        if (st_cursor_at_end(cursor)) {
-            // leave `index` at the End position
-            cursor->pos.index = cursor->buffer->size;
-            return false;
-        }
-        return true;
+        return st_cursor_next_key(cursor);
     }
     // Continue processing if simulating output buffer
     const st_key_action_t *keyaction = st_key_buffer_get(cursor->buffer, cursor->pos.index);

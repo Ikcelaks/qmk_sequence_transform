@@ -40,7 +40,7 @@ uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
 //////////////////////////////////////////////////////////////////
 bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
 {
-    st_cursor_init(cursor, 0, false);
+    st_cursor_init(cursor, false);
     st_trie_match_type_t match_type;
     st_log_time_with_result(st_find_longest_chain(cursor, &res->trie_match, 0), &match_type);
     if (match_type == ST_NO_MATCH) {

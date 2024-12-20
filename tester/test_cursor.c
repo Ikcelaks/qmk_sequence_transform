@@ -13,7 +13,7 @@ void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
 {
     sim_st_perform(rule->sequence);
     st_cursor_t *cursor = st_get_cursor();
-    st_cursor_init(cursor, 0, false);
+    st_cursor_init(cursor, false);
     for (int i = 0; i < 200; ++i) {
         st_cursor_next(cursor);
     }
@@ -22,7 +22,7 @@ void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
                  cursor->pos.index, cursor->buffer->size);
         return;
     }
-    if (st_cursor_init(cursor, 0, true)) {
+    if (st_cursor_init(cursor, true)) {
         for (int i = 0; i < 200; ++i) {
             st_cursor_next(cursor);
         }
