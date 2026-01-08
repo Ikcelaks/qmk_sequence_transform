@@ -79,9 +79,7 @@ static const st_trie_t trie = {
     SEQUENCE_TRIE_SIZE,
     sequence_transform_trie,
     COMPLETIONS_SIZE,
-    sequence_transform_completions_data,
-    COMPLETION_MAX_LENGTH,
-    MAX_BACKSPACES
+    sequence_transform_completions_data
 };
 
 //////////////////////////////////////////////////////////////////

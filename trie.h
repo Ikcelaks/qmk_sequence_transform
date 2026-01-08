@@ -62,8 +62,6 @@ typedef struct
     const uint8_t  *data;              // serialized trie node data
     int            completions_size;   // size in bytes of completions data buffer
     const uint8_t  *completions;       // packed completions strings buffer
-    int            completion_max_len; // max len of all completion strings
-    int            max_backspaces;     // max backspaces for all completions
 } st_trie_t;
 
 typedef struct
@@ -74,13 +72,6 @@ typedef struct
     st_trie_payload_t             cached_action;
     uint8_t                       cache_valid;
 } st_cursor_t;
-
-typedef struct
-{
-    st_trie_payload_t payload;
-    char * const      sequence;
-    char * const      transform;
-} st_trie_rule_t;
 
 typedef struct
 {
