@@ -24,6 +24,8 @@ int test_ascii_string(const st_test_options_t *options)
     // we don't nec want a space at the start of the buffer
     st_key_buffer_t *buf = st_get_key_buffer();
     buf->size = 0;
+    const st_trie_t * trie = st_get_trie();
+    st_cursor_configure(trie, buf);
     for (int i = 0; i < len; ++i) {
         const char c = options->user_str[i];
         printf("--- str[%d]: %c ---\n", i, c);
@@ -34,9 +36,9 @@ int test_ascii_string(const st_test_options_t *options)
             st_handle_backspace();
             st_key_buffer_print(buf);
             st_key_stack_print(&sim_output);
-            st_cursor_t *cursor = st_get_cursor();
-            st_cursor_init(cursor, true);
-            st_cursor_print(cursor);
+            st_cursor_t cursor;
+            st_cursor_init(&cursor, true);
+            st_cursor_print(&cursor);
             continue;
         }
         // send they key to the input buffer
@@ -53,9 +55,9 @@ int test_ascii_string(const st_test_options_t *options)
             tap_code16(key);
         }
         st_key_stack_print(&sim_output);
-        st_cursor_t *cursor = st_get_cursor();
-        st_cursor_init(cursor, true);
-        st_cursor_print(cursor);
+        st_cursor_t cursor;
+        st_cursor_init(&cursor, true);
+        st_cursor_print(&cursor);
     }
     return 0;
 }

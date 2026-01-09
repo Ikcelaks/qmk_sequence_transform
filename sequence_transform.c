@@ -84,24 +84,21 @@ static const st_trie_t trie = {
 
 //////////////////////////////////////////////////////////////////
 // Trie cursor
-static st_cursor_t trie_cursor = {
-    &key_buffer,
-    &trie,
-    {
-        0,
-        255,
-        false,
-        0
-    },
-    {0},
-    false,
-};
+// static st_cursor_t trie_cursor = {
+//     &key_buffer,
+//     &trie,
+//     {
+//         0,
+//         255,
+//         false,
+//         0
+//     },
+// };
 
 //////////////////////////////////////////////////////////////////
 #ifdef ST_TESTER
 const st_trie_t *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
-st_cursor_t     *st_get_cursor(void) { return &trie_cursor; }
 #endif
 
 /**
@@ -236,7 +233,7 @@ bool st_handle_completion(st_cursor_t *cursor, uint8_t shift_flags)
     }
     const uint16_t completion_end = completion_start + action->completion_len;
     for (int i = completion_start; i < completion_end; ++i) {
-        uint8_t triecode = CDATA(cursor->trie, i);
+        uint8_t triecode = CDATA(&trie, i);
         if (st_is_trans_seq_ref_triecode(triecode)) {
             triecode = st_cursor_get_seq_ascii(cursor, triecode);
             st_assert(triecode, "Unable to retrieve seq ref (%d) needed to produce the completion\n", triecode);
@@ -266,8 +263,9 @@ void st_handle_result(const st_trie_t *trie,
     const uint8_t num_backspaces = res->trie_payload.num_backspaces;
     st_multi_tap(KC_BSPC, num_backspaces);
     // Send completion string
-    st_cursor_init(&trie_cursor, false);
-    const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&trie_cursor, num_backspaces) : 0;
+    st_cursor_t cursor;
+    st_cursor_init(&cursor, false);
+    const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&cursor, num_backspaces) : 0;
     if (res->trie_payload.func_code != 2) {
         clear_oneshot_mods();
         current_key->key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
@@ -275,23 +273,24 @@ void st_handle_result(const st_trie_t *trie,
     if (replaced_shift_flags & ST_KEY_FLAG_IS_ONE_SHOT_SHIFT) {
         current_key->key_flags |= ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
     }
-    st_handle_completion(&trie_cursor, current_key->key_flags);
+    st_handle_completion(&cursor, current_key->key_flags);
     st_handle_oneshot_shift(&res->trie_payload);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 #if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
 void st_handle_backspace() {
     // initialize cursor as input cursor, so that `st_cursor_get_action` is stable
-    st_cursor_init(&trie_cursor, false);
-    const st_trie_payload_t *action = st_cursor_get_action(&trie_cursor);
+    st_cursor_t cursor;
+    st_cursor_init(&cursor, false);
+    const st_trie_payload_t *action = st_cursor_get_action(&cursor);
     st_key_buffer_pop(&key_buffer);
     if (action->completion_index == ST_DEFAULT_KEY_ACTION) {
         // previous key-press didn't trigger a rule action. One total backspace required
         st_debug(ST_DBG_BACKSPACE, "Undoing backspace after non-matching keypress\n");
         // backspace was already sent on keydown
         // Check if the new last key press triggered the OSS with an output function
-        st_cursor_init(&trie_cursor, false);
-        st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
+        st_cursor_init(&cursor, false);
+        st_handle_oneshot_shift(st_cursor_get_action(&cursor));
         return;
     }
     // Undo a rule action
@@ -307,8 +306,8 @@ void st_handle_backspace() {
     // If previous action used backspaces, restore the deleted output from earlier actions
     if (resend_count > 0) {
         // reinitialize cursor as output cursor one keystroke before the previous action
-        if (st_cursor_init(&trie_cursor, true) &&
-            st_cursor_push_to_stack(&trie_cursor, &trie_stack, resend_count)) {
+        if (st_cursor_init(&cursor, true) &&
+            st_cursor_push_to_stack(&cursor, &trie_stack, resend_count)) {
             // Send backspaces now that we know we can do the full undo
             st_multi_tap(KC_BSPC, backspaces_needed_count);
             // Send saved keys in original order
@@ -326,8 +325,8 @@ void st_handle_backspace() {
         st_multi_tap(KC_BSPC, backspaces_needed_count);
     }
     // Check if the new last key press triggered the OSS with an output function
-    st_cursor_init(&trie_cursor, false);
-    st_handle_oneshot_shift(st_cursor_get_action(&trie_cursor));
+    st_cursor_init(&cursor, false);
+    st_handle_oneshot_shift(st_cursor_get_action(&cursor));
 }
 #endif
 
@@ -356,7 +355,7 @@ bool st_perform() {
             0
         }
     };
-    if (st_trie_get_completion(&trie_cursor, &res)) {
+    if (st_trie_get_completion(&trie, &res)) {
         st_handle_result(&trie, &res);
         return true;
     }
@@ -464,6 +463,8 @@ bool process_sequence_transform(uint16_t keycode,
     if (st_debug_check(ST_DBG_GENERAL)) {
         st_key_buffer_print(&key_buffer);
     }
+    // Configure Cursor for current trie and key_buffer
+    st_cursor_configure(&trie, &key_buffer);
     // Try to perform a sequence transform!
     bool st_perform_res;
     st_log_time_with_result(st_perform(), &st_perform_res);

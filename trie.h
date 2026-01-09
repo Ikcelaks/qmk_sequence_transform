@@ -54,7 +54,7 @@ typedef struct
     int     sub_index;      // Sub-position within the current buffer position
     uint8_t as_output;      // True if buffer traversing the simulated output
     int     seq_ref_index;
-} st_cursor_pos_t;
+} st_cursor_t;
 
 typedef struct
 {
@@ -66,17 +66,8 @@ typedef struct
 
 typedef struct
 {
-    const st_key_buffer_t * const buffer;           // input buffer this cursor traverses
-    const st_trie_t * const       trie;             // trie used for traversing virtual output buffer
-    st_cursor_pos_t               pos;              // Contains all position info for the cursor
-    st_trie_payload_t             cached_action;
-    uint8_t                       cache_valid;
-} st_cursor_t;
-
-typedef struct
-{
     uint16_t             trie_match_index;
-    st_cursor_pos_t      seq_match_pos;
+    st_cursor_t          seq_match_pos;
     st_trie_match_type_t match_type;
 } st_trie_match_t;
 
@@ -86,15 +77,15 @@ typedef struct
     st_trie_payload_t   trie_payload;
 } st_trie_search_result_t;
 
-bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res);
+bool st_trie_get_completion(const st_trie_t * const trie, st_trie_search_result_t *res);
 
-uint16_t st_get_trie_data_word(const st_trie_t *trie, int index);
-uint8_t  st_get_trie_data_byte(const st_trie_t *trie, int index);
-uint8_t  st_get_trie_completion_byte(const st_trie_t *trie, int index);
+uint16_t st_get_trie_data_word(const st_trie_t * const trie, int index);
+uint8_t  st_get_trie_data_byte(const st_trie_t * const trie, int index);
+uint8_t  st_get_trie_completion_byte(const st_trie_t * const trie, int index);
 
 //////////////////////////////////////////////////////////////////
 // Internal
 
-void st_get_payload_from_match_index(const st_trie_t *trie, st_trie_payload_t *payload, uint16_t trie_match_index);
+void st_get_payload_from_match_index(const st_trie_t * const trie, st_trie_payload_t *payload, uint16_t trie_match_index);
 void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, uint8_t code_byte2, uint16_t completion_index);
-st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);
+st_trie_match_type_t st_find_longest_chain(const st_trie_t * const trie, st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset);

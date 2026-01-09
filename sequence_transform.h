@@ -42,5 +42,4 @@ void st_handle_backspace(void);
 #ifdef ST_TESTER
 const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
-st_cursor_t     *st_get_cursor(void);
 #endif
