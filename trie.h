@@ -14,7 +14,7 @@
 #else
 #   define TDATAW(trie, L) ((pgm_read_byte(&trie->data[L]) << 8) + pgm_read_byte(&trie->data[L + 1]))
 #   define TDATA(trie, L)  pgm_read_byte(&trie->data[L])
-#   define CDATA(trie, L)  pgm_read_byte(&trie->completions[L])
+#   define CDATA(trie, L)  pgm_read_byte(&(trie)->completions[L])
 #endif
 
 #define TRIE_MATCH_BIT              0x80

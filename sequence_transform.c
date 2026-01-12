@@ -234,8 +234,9 @@ bool st_handle_completion(st_cursor_t *cursor, uint8_t shift_flags)
     const uint16_t completion_end = completion_start + action->completion_len;
     for (int i = completion_start; i < completion_end; ++i) {
         uint8_t triecode = CDATA(&trie, i);
-        if (st_is_trans_seq_ref_triecode(triecode)) {
-            triecode = st_cursor_get_seq_ascii(cursor, triecode);
+        uint8_t seq_ref_index;
+        if (st_get_seq_ref_index_if_valid(triecode, &seq_ref_index)) {
+            triecode = st_cursor_get_seq_ascii(seq_ref_index);
             st_assert(triecode, "Unable to retrieve seq ref (%d) needed to produce the completion\n", triecode);
             st_key_buffer_push_seq_ref(&key_buffer, triecode);
         }

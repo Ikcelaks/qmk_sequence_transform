@@ -187,33 +187,25 @@ uint8_t st_cursor_get_shift_of_nth(st_cursor_t *cursor, int nth)
     return key_flags;
 }
 //////////////////////////////////////////////////////////////////
-uint8_t st_cursor_get_seq_ascii(st_cursor_t *cursor, uint8_t triecode)
+uint8_t st_cursor_get_seq_ascii(uint8_t seq_ref_index)
 {
-    if (!st_is_trans_seq_ref_triecode(triecode)) {
-        return triecode;
-    }
-    int nth = st_get_seq_ref_triecode_pos(triecode);
-    st_cursor_t original_pos = st_cursor_save(cursor);
-    cursor->as_output = false;
-    cursor->sub_index = 0;
-    while (nth > 0) {
-        if (st_cursor_at_end(cursor)) {
+    st_cursor_t cursor = {0,0,false,0};
+    while (seq_ref_index > 0) {
+        if (st_cursor_at_end(&cursor)) {
             // nth character in the sequence is not currently available
-            st_cursor_restore(cursor, &original_pos);
             return 0;
         }
-        --nth;
-        if (!cursor->as_output && (st_key_buffer_get(_buffer, cursor->index)->key_flags & ST_KEY_FLAG_IS_ANCHOR_MATCH)) {
+        --seq_ref_index;
+        if (!cursor.as_output && (st_key_buffer_get(_buffer, cursor.index)->key_flags & ST_KEY_FLAG_IS_ANCHOR_MATCH)) {
             // reached the anchor of the sequence, move past the match
             // and get the rest of the sequence from the virtual output
-            st_cursor_next(cursor);
-            st_cursor_convert_to_output(cursor);
+            st_cursor_next(&cursor);
+            st_cursor_convert_to_output(&cursor);
         } else {
-            st_cursor_next(cursor);
+            st_cursor_next(&cursor);
         }
     }
-    triecode = st_cursor_get_triecode(cursor);
-    st_cursor_restore(cursor, &original_pos);
+    const uint8_t triecode = st_cursor_get_triecode(&cursor);
     return triecode;
 }
 //////////////////////////////////////////////////////////////////

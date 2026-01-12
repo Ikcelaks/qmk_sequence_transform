@@ -74,9 +74,8 @@ bool st_is_seq_metachar_triecode(uint8_t triecode)
 //////////////////////////////////////////////////////////////////////
 bool st_is_trans_seq_ref_triecode(uint8_t triecode)
 {
-    const uint8_t tok_first = TRIECODE_SEQUENCE_REF_TOKEN_0;
-    const uint8_t tok_last = tok_first + SEQUENCE_REF_TOKEN_COUNT;
-    return (tok_first <= triecode && triecode < tok_last);
+    return (TRIECODE_SEQUENCE_REF_TOKEN_0 <= triecode
+        && triecode < TRIECODE_SEQUENCE_REF_TOKEN_0 + SEQUENCE_REF_TOKEN_COUNT);
 }
 ////////////////////////////////////////////////////////////////////////////////
 // if triecode is a token that can be translated back to its user symbol,
@@ -146,11 +145,14 @@ bool st_match_triecode(uint8_t triecode, uint8_t key_triecode)
     return st_predicate_test_triecode(pred_index, key_triecode);
 }
 ////////////////////////////////////////////////////////////////////////////////
-int st_get_seq_ref_triecode_pos(uint8_t triecode)
+int st_get_seq_ref_index_if_valid(uint8_t triecode, uint8_t *seq_ref_index)
 {
-    st_assert(st_is_trans_seq_ref_triecode(triecode), "triecode (%d) not a valid seq ref", triecode);
-    const uint8_t seq_ref_index = triecode - TRIECODE_SEQUENCE_REF_TOKEN_0;
-    return seq_ref_index;
+    if (st_is_trans_seq_ref_triecode(triecode))
+    {
+        *seq_ref_index = triecode - TRIECODE_SEQUENCE_REF_TOKEN_0;
+        return true;
+    }
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////////
