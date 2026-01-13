@@ -39,6 +39,7 @@ CFLAGS := -Werror -Wundef \
 	$(OSFLAG)
 
 ST_GEN_OUT := ../sequence_transform_data.h \
+	../st_gen_metadata.h \
 	../sequence_transform_test.h
 
 all: gen tester

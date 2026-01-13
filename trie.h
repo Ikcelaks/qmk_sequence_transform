@@ -51,8 +51,7 @@ typedef uint8_t st_trie_node_type_t;
 typedef struct
 {
     int     index;          // buffer index of cursor position
-    int     sub_index;      // Sub-position within the current buffer position
-    uint8_t as_output;      // True if buffer traversing the simulated output
+    int     sub_index;      // Sub-position within the current buffer position (255 for seq char)
     int     seq_ref_index;
 } st_cursor_t;
 

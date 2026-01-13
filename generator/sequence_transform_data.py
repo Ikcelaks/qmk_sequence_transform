@@ -54,11 +54,19 @@ GENERATED_HEADER_C_LIKE = f'''\
 TRIECODE_SEQUENCE_TOKEN_0 = 0x80
 TRIECODE_SEQUENCE_METACHAR_0 = 0xA0
 TRIECODE_TRANSFORM_SEQUENCE_REF_0 = 0x80
+
 TRIE_MATCH_BIT = 0x80
 TRIE_BRANCH_BIT = 0x40
 TRIE_MULTI_BRANCH_BIT = 0x20
+TRIE_ANCHOR_MATCH_BIT = 0x20
+TRIE_EXTENDED_HEADER_BIT = 0x10
+TRIE_SUP_RULE_COUNT_MASK = 0x0F
+TRIE_MATCH_SIZE = 4
+TRIE_CHAINED_MATCH_SIZE = 6
+
 OUTPUT_FUNC_1 = 1
 OUTPUT_FUNC_COUNT_MAX = 7
+
 max_backspaces = 0
 
 class bcolors:
@@ -557,7 +565,7 @@ def serialize_sequence_trie(
         if has_match or chain_match_count > 0:
             node_type = TRIE_MATCH_BIT + \
                             (TRIE_BRANCH_BIT if token_count > 0 else 0) + \
-                            (0x20 if has_match else 0x00)
+                            (TRIE_ANCHOR_MATCH_BIT if has_match else 0x00)
             node_header_data = [node_type]
 
         if chain_match_count > 0:
@@ -567,7 +575,7 @@ def serialize_sequence_trie(
                         f'{err()} Impressive. More than 4095 rules chained at once'
                     )
                 count_code_byte1, count_code_byte2 = divmod(chain_match_count, 0x100)
-                node_header_data = [node_header_data[0] | 0x10 | count_code_byte1, count_code_byte2]
+                node_header_data = [node_header_data[0] | TRIE_EXTENDED_HEADER_BIT | count_code_byte1, count_code_byte2]
             else:
                 node_header_data[0] = node_header_data[0] | chain_match_count
 

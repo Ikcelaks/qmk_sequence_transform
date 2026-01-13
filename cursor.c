@@ -19,7 +19,11 @@ static st_trie_payload_t _cached_action;
 static uint8_t           _cache_valid;
 static st_key_buffer_t * _buffer;           // input buffer this cursor traverses
 static const st_trie_t * _trie;             // trie used for traversing virtual output buffer
-
+//////////////////////////////////////////////////////////////////
+bool cursor_is_output(st_cursor_t *cursor)
+{
+    return cursor->sub_index < 255;
+}
 //////////////////////////////////////////////////////////////////
 bool cursor_advance_to_valid_output(st_cursor_t *cursor)
 {
@@ -85,8 +89,10 @@ bool st_cursor_configure(const st_trie_t * const trie, st_key_buffer_t * const b
 bool st_cursor_init(st_cursor_t *cursor, uint8_t as_output)
 {
     cursor->index = 0;
-    cursor->as_output = as_output;
     cursor->sub_index = 0;
+    if (!as_output) {
+        cursor->sub_index = 255;
+    }
     cursor->seq_ref_index = 0;
     _cache_valid = 255;
     if (as_output && !cursor_advance_to_valid_output(cursor)) {
@@ -109,7 +115,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
     if (!keyaction) {
         return '\0';
     }
-    if (!cursor->as_output
+    if (!cursor_is_output(cursor)
             || keyaction->action_taken == ST_DEFAULT_KEY_ACTION) {
         // we need the actual key that was pressed
         return keyaction->triecode;
@@ -135,7 +141,7 @@ uint8_t st_cursor_get_triecode(st_cursor_t *cursor)
 uint16_t st_cursor_get_matched_rule(st_cursor_t *cursor)
 {
     const st_key_action_t *keyaction = st_key_buffer_get(_buffer, cursor->index);
-    if (cursor->as_output || !keyaction) {
+    if (cursor_is_output(cursor) || !keyaction) {
         return ST_DEFAULT_KEY_ACTION;
     }
     return keyaction->action_taken;
@@ -166,37 +172,34 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
     return action;
 }
 //////////////////////////////////////////////////////////////////
-uint8_t st_cursor_get_shift_of_nth(st_cursor_t *cursor, int nth)
+uint8_t st_cursor_get_shift_of_nth(int nth)
 {
-    st_cursor_t original_pos = st_cursor_save(cursor);
-    st_cursor_init(cursor, true);
-    st_cursor_next_key(cursor);
+    st_cursor_t cursor = {0,255,0};
+    st_cursor_next_key(&cursor);
     for (int i = 0; i < nth - 1; ++i) {
-        if (!st_cursor_next(cursor)) {
-            st_cursor_restore(cursor, &original_pos);
+        if (!st_cursor_next(&cursor)) {
             return 0;
         }
     }
-    const st_trie_payload_t *action = st_cursor_get_action(cursor);
-    uint8_t key_flags = st_key_buffer_get(_buffer, cursor->index)->key_flags;
+    const st_trie_payload_t *action = st_cursor_get_action(&cursor);
+    uint8_t key_flags = st_key_buffer_get(_buffer, cursor.index)->key_flags;
     key_flags &= ~ST_KEY_FLAG_IS_ANCHOR_MATCH;
-    if (action->completion_len > cursor->sub_index + 1) {
+    if (action->completion_len > cursor.sub_index + 1) {
         key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
     }
-    st_cursor_restore(cursor, &original_pos);
     return key_flags;
 }
 //////////////////////////////////////////////////////////////////
 uint8_t st_cursor_get_seq_ascii(uint8_t seq_ref_index)
 {
-    st_cursor_t cursor = {0,0,false,0};
+    st_cursor_t cursor = {0,255,0};
     while (seq_ref_index > 0) {
         if (st_cursor_at_end(&cursor)) {
             // nth character in the sequence is not currently available
             return 0;
         }
         --seq_ref_index;
-        if (!cursor.as_output && (st_key_buffer_get(_buffer, cursor.index)->key_flags & ST_KEY_FLAG_IS_ANCHOR_MATCH)) {
+        if (!cursor_is_output(&cursor) && (st_key_buffer_get(_buffer, cursor.index)->key_flags & ST_KEY_FLAG_IS_ANCHOR_MATCH)) {
             // reached the anchor of the sequence, move past the match
             // and get the rest of the sequence from the virtual output
             st_cursor_next(&cursor);
@@ -228,7 +231,7 @@ bool st_cursor_next_key(st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_next(st_cursor_t *cursor)
 {
-    if (!cursor->as_output) {
+    if (!cursor_is_output(cursor)) {
         return st_cursor_next_key(cursor);
     }
     // Continue processing if simulating output buffer
@@ -270,10 +273,10 @@ bool st_cursor_next(st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 bool st_cursor_convert_to_output(st_cursor_t *cursor)
 {
-    if (cursor->as_output) {
+    if (cursor_is_output(cursor)) {
         return true;
     }
-    cursor->as_output = true;
+    cursor->sub_index = 0;
     return cursor_advance_to_valid_output(cursor);
 }
 //////////////////////////////////////////////////////////////////

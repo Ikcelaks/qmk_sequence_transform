@@ -83,19 +83,6 @@ static const st_trie_t trie = {
 };
 
 //////////////////////////////////////////////////////////////////
-// Trie cursor
-// static st_cursor_t trie_cursor = {
-//     &key_buffer,
-//     &trie,
-//     {
-//         0,
-//         255,
-//         false,
-//         0
-//     },
-// };
-
-//////////////////////////////////////////////////////////////////
 #ifdef ST_TESTER
 const st_trie_t *st_get_trie(void) { return &trie; }
 st_key_buffer_t *st_get_key_buffer(void) { return &key_buffer; }
@@ -266,7 +253,7 @@ void st_handle_result(const st_trie_t *trie,
     // Send completion string
     st_cursor_t cursor;
     st_cursor_init(&cursor, false);
-    const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(&cursor, num_backspaces) : 0;
+    const uint8_t replaced_shift_flags = num_backspaces ? st_cursor_get_shift_of_nth(num_backspaces) : 0;
     if (res->trie_payload.func_code != 2) {
         clear_oneshot_mods();
         current_key->key_flags &= ~ST_KEY_FLAG_IS_ONE_SHOT_SHIFT;
@@ -344,7 +331,6 @@ bool st_perform() {
             {
                 0,
                 0,
-                false,
                 0
             },
             ST_NO_MATCH
