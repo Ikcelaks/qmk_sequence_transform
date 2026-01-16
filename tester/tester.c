@@ -9,8 +9,6 @@
 #include "st_debug.h"
 #include "utils.h"
 #include "triecodes.h"
-// fixme: rule search callback should just pass 2 strings,
-// instead of st_trie_rule_t, which creates unnecessary header depends
 #include "keybuffer.h"
 #include "key_stack.h"
 #include "trie.h"
@@ -34,18 +32,6 @@ static st_test_action_func_t actions[] = {
     0
 };
 
-//////////////////////////////////////////////////////////////////////
-char missed_rule_seq[128] = {0};
-char missed_rule_transform[128] = {0};
-// rule search callback
-// (overriden function)
-void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule)
-{
-    missed_rule_seq[0] = 0;
-    missed_rule_transform[0] = 0;
-    strncat(missed_rule_seq, rule->sequence, sizeof(missed_rule_seq) - 1);
-    strncat(missed_rule_transform, rule->transform, sizeof(missed_rule_transform) - 1);
-}
 //////////////////////////////////////////////////////////////////
 // simulate sending a key to system by adding it to output buffer
 // (overriden function)

@@ -12,23 +12,26 @@
 void test_cursor(const st_test_rule_t *rule, st_test_result_t *res)
 {
     sim_st_perform(rule->sequence);
-    st_cursor_t *cursor = st_get_cursor();
-    st_cursor_init(cursor, 0, false);
+    const st_trie_t * trie = st_get_trie();
+    st_key_buffer_t * buffer = st_get_key_buffer();
+    st_cursor_configure(trie, buffer);
+    st_cursor_t cursor;
+    st_cursor_init(&cursor, false);
     for (int i = 0; i < 200; ++i) {
-        st_cursor_next(cursor);
+        st_cursor_next(&cursor);
     }
-    if (cursor->pos.index != cursor->buffer->size) {
+    if (cursor.index != buffer->size) {
         RES_FAIL("input cursor didn't stop at end: cursor index %d; buffer size: %d",
-                 cursor->pos.index, cursor->buffer->size);
+                 cursor.index, buffer->size);
         return;
     }
-    if (st_cursor_init(cursor, 0, true)) {
+    if (st_cursor_init(&cursor, true)) {
         for (int i = 0; i < 200; ++i) {
-            st_cursor_next(cursor);
+            st_cursor_next(&cursor);
         }
     }
-    if (cursor->pos.index != cursor->buffer->size) {
+    if (cursor.index != buffer->size) {
         RES_FAIL("output cursor didn't stop at end: cursor index %d; buffer size: %d",
-                 cursor->pos.index, cursor->buffer->size);
+                 cursor.index, buffer->size);
     }
 }

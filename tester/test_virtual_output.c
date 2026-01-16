@@ -21,13 +21,13 @@ static st_key_stack_t cursor_vout = {
 void get_cursor_virtual_output(st_key_stack_t *key_stack)
 {
     st_key_stack_reset(key_stack);
-    st_cursor_t *cursor = st_get_cursor();
+    st_cursor_t cursor;
     // init cursor for virtual output
-    if (!st_cursor_init(cursor, 0, true)) {
+    if (!st_cursor_init(&cursor, true)) {
         return;
     }
-    for (; !st_cursor_at_end(cursor); st_cursor_next(cursor)) {
-        const uint8_t code = st_cursor_get_triecode(cursor);
+    for (; !st_cursor_at_end(&cursor); st_cursor_next(&cursor)) {
+        const uint8_t code = st_cursor_get_triecode(&cursor);
         st_key_stack_push(key_stack, code);
         if (!code) {
             break;

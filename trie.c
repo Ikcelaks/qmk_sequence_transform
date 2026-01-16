@@ -14,7 +14,7 @@
 #include "cursor.h"
 
 //////////////////////////////////////////////////////////////////////
-uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
+uint8_t st_get_trie_data_byte(const st_trie_t * const trie, int index)
 {
     st_assert(0 <= index && index < trie->data_size,
         "Tried reading outside trie data! index: %d, size: %d",
@@ -22,7 +22,7 @@ uint8_t st_get_trie_data_byte(const st_trie_t *trie, int index)
     return pgm_read_byte(&trie->data[index]);
 }
 //////////////////////////////////////////////////////////////////////
-uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
+uint16_t st_get_trie_data_word(const st_trie_t * const trie, int index)
 {
     st_assert(0 <= index && index + 1 < trie->data_size,
         "Tried reading outside trie data! index: %d, size: %d",
@@ -30,7 +30,7 @@ uint16_t st_get_trie_data_word(const st_trie_t *trie, int index)
     return (pgm_read_byte(&trie->data[index]) << 8) + pgm_read_byte(&trie->data[index + 1]);
 }
 //////////////////////////////////////////////////////////////////////
-uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
+uint8_t st_get_trie_completion_byte(const st_trie_t * const trie, int index)
 {
     st_assert(0 <= index && index < trie->completions_size,
         "Tried reading outside completion data! index: %d, size: %d",
@@ -38,23 +38,7 @@ uint8_t st_get_trie_completion_byte(const st_trie_t *trie, int index)
     return pgm_read_byte(&trie->completions[index]);
 }
 //////////////////////////////////////////////////////////////////
-bool st_trie_get_completion(st_cursor_t *cursor, st_trie_search_result_t *res)
-{
-    st_cursor_init(cursor, 0, false);
-    st_log_time(st_find_longest_chain(cursor, &res->trie_match, 0));
-    if (res->trie_match.seq_match_pos.segment_len > 0) {
-        st_get_payload_from_match_index(cursor->trie, &res->trie_payload, res->trie_match.trie_match_index);
-        st_debug(ST_DBG_SEQ_MATCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
-            res->trie_payload.completion_index,
-            res->trie_payload.completion_len,
-            res->trie_payload.num_backspaces,
-            res->trie_payload.func_code);
-        return true;
-    }
-    return false;
-}
-//////////////////////////////////////////////////////////////////
-void st_get_payload_from_match_index(const st_trie_t *trie,
+void st_get_payload_from_match_index(const st_trie_t * const trie,
                                      st_trie_payload_t *payload,
                                      uint16_t match_index)
 {
@@ -75,68 +59,78 @@ void st_get_payload_from_code(st_trie_payload_t *payload, uint8_t code_byte1, ui
     payload->completion_index = completion_index;
 }
 //////////////////////////////////////////////////////////////////
-void st_get_node_info(const st_trie_t *trie, st_trie_node_info_t *node_info, uint16_t *offset)
+st_trie_node_type_t st_read_node_type(const st_trie_t * const trie, uint16_t *offset)
 {
     // node info is bit-backed into one or two bytes:
-    // (N: node type, F: func, B: backspaces, C: completion length)
-    // if chain_check_count is less than 16, it will be one byte
-    // 0b NNM0 CCCC
-    // if chain_check_count is 16 or greater, it will be two bytes
-    // 0b NNM1 CCCC CCCC CCCC
-    const uint8_t byte1 = TDATA(trie, (*offset)++);
-    st_debug(ST_DBG_SEQ_MATCH, "Node Info %#04X (%#04X): ", *offset-1, byte1);
-    node_info->has_match = byte1 & TRIE_MATCH_BIT;
-    node_info->has_branch = byte1 & TRIE_BRANCH_BIT;
-    node_info->has_unchained_match = byte1 & TRIE_UNCHAINED_MATCH_BIT;
-    node_info->chain_check_count = byte1 & TRIE_CHAIN_CHECK_COUNT_MASK;
-    if (byte1 & TRIE_EXTENDED_HEADER_BIT) {
-        node_info->chain_check_count = (node_info->chain_check_count << 8) + TDATA(trie, (*offset)++);
+    // (M: match flag, B: branch flag, A: anchor match / multi-match flag, S: sup_rule_count)
+    // if sup_rule_count is less than 16, it will be one byte
+    // 0b MBA0 SSSS
+    // if sup_rule_count is 16 or greater, it will be two bytes
+    // 0b MBA1 SSSS SSSS SSSS
+    return TDATA(trie, (*offset)++);
+}
+//////////////////////////////////////////////////////////////////
+uint16_t st_read_node_sup_rule_count(const st_trie_t * const trie, st_trie_node_type_t node_type, uint16_t *offset)
+{
+    // node info is bit-backed into one or two bytes:
+    // (M: match flag, B: branch flag, A: anchor match / multi-match flag, S: sup_rule_count)
+    // if sup_rule_count is less than 16, it will be one byte
+    // 0b MBA0 SSSS
+    // if sup_rule_count is 16 or greater, it will be two bytes
+    // 0b MBA1 SSSS SSSS SSSS
+    const uint16_t sup_rule_count = node_type & TRIE_SUP_RULE_COUNT_MASK;
+    if (node_type & TRIE_EXTENDED_HEADER_BIT) {
+        return (sup_rule_count << 8) + TDATA(trie, (*offset)++);
     }
-    st_debug(ST_DBG_SEQ_MATCH, "has_match %d, has_branch %d, has_unchained_match %d, chain_match_count %d\n",
-                    node_info->has_match, node_info->has_branch, node_info->has_unchained_match, node_info->chain_check_count);
+    return sup_rule_count;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_get_node_has_match(st_trie_node_type_t node_type)
+{
+    return node_type & TRIE_MATCH_BIT;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_get_node_has_branch(st_trie_node_type_t node_type)
+{
+    return node_type & TRIE_BRANCH_BIT;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_get_node_is_multi_branch(st_trie_node_type_t node_type)
+{
+    return node_type & TRIE_MULTI_BRANCH_BIT;
+}
+//////////////////////////////////////////////////////////////////
+uint8_t st_get_node_has_anchor_match(st_trie_node_type_t node_type)
+{
+    return node_type & TRIE_ANCHOR_MATCH_BIT;
 }
 
 //////////////////////////////////////////////////////////////////////
-bool find_branch_offset(const st_trie_t *trie, st_cursor_t * cursor, uint16_t *offset)
+uint16_t st_trie_next_matching_branch_offset(const st_trie_t * const trie, uint8_t key_triecode, uint16_t *offset)
 {
-    uint8_t key_triecode = st_cursor_get_triecode(cursor);
-    if (!key_triecode) {
-        return false;
-    }
     for (uint8_t code = TDATA(trie, *offset); code; *offset += 3, code = TDATA(trie, *offset)) {
         st_debug(ST_DBG_SEQ_MATCH, " B Offset: %d; Code: %#04X; Key: %#04X\n", *offset, code, key_triecode);
         if (st_match_triecode(code, key_triecode)) {
             // 16bit offset to child node is built from next uint16_t
-            *offset = st_get_trie_data_word(trie, *offset + 1);
-            return true;
+            // First advance offset to next branch for future processing
+            *offset += 3;
+            return TDATAW(trie, *offset - 2);
         }
     }
-    return false;
+    return 0;
 }
 //////////////////////////////////////////////////////////////////////
-bool follow_multi_branches(const st_trie_t *trie, st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
+st_trie_progress_t st_trie_match_next_single_chain(const st_trie_t * const trie, uint8_t key_triecode, uint16_t *offset)
 {
-    st_trie_match_type_t match_type = ST_NO_MATCH;
-    uint8_t key_triecode = st_cursor_get_triecode(cursor);
-    if (!key_triecode) {
-        return false;
+    const uint8_t triecode = TDATA(trie, (*offset)++);
+    st_debug(ST_DBG_SEQ_MATCH, " SC Offset: %d; Code: %#04X; Key: %#04X\n", *offset, triecode, key_triecode);
+    if (!triecode) {
+        return ST_SUCCESS;
     }
-    st_cursor_next(cursor);
-    st_cursor_pos_t pos = st_cursor_save(cursor);
-    for (uint8_t code = TDATA(trie, offset); code; offset += 3, code = TDATA(trie, offset)) {
-        st_debug(ST_DBG_SEQ_MATCH, " Multi-B Offset: %d; Code: %#04X; Key: %#04X\n", offset, code, key_triecode);
-        if (st_match_triecode(code, key_triecode)) {
-            // 16bit offset to child node is built from next uint16_t
-            st_debug(ST_DBG_SEQ_MATCH, " Multi-B MATCH Offset: %d; Code: %#04X; Key: %#04X\n", offset, code, key_triecode);
-            const uint16_t child_offset = st_get_trie_data_word(trie, offset + 1);
-            match_type = st_find_longest_chain(cursor, longest_match, child_offset);
-            if (match_type == ST_FINAL_MATCH) {
-                return ST_FINAL_MATCH;
-            }
-            st_cursor_restore(cursor, &pos);
-        }
+    if (st_match_triecode(triecode, key_triecode)) {
+        return ST_CONTINUE;
     }
-    return match_type;
+    return ST_FAILED;
 }
 
 /**
@@ -148,14 +142,11 @@ bool follow_multi_branches(const st_trie_t *trie, st_cursor_t *cursor, st_trie_m
  * @param depth  current depth in trie
  * @return       true if match found
  */
-st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
+st_trie_match_type_t st_find_longest_chain(const st_trie_t * const trie, st_cursor_t *cursor, st_trie_match_t *longest_match, uint16_t offset)
 {
-    const st_trie_t *trie = cursor->trie;
     st_trie_match_type_t match_type = ST_NO_MATCH;
-    do {
-        st_assert(TDATA(trie, offset), "Unexpected null code! Offset: %d", offset);
-        st_trie_node_info_t node_info;
-        st_get_node_info(trie, &node_info, &offset);
+    while (true) {
+        uint8_t node_type = st_read_node_type(trie, &offset);
 
         uint16_t match_index = st_cursor_get_matched_rule(cursor);
         if (match_index != ST_DEFAULT_KEY_ACTION) {
@@ -164,96 +155,110 @@ st_trie_match_type_t st_find_longest_chain(st_cursor_t *cursor, st_trie_match_t 
             st_cursor_convert_to_output(cursor);
         }
 
-        // Match Node if bit 15 is set
-        if (node_info.has_match) {
-            if (node_info.has_unchained_match) {
-                st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d) %d\n",
-                    cursor->pos.index, cursor->pos.sub_index, cursor->pos.segment_len);
-                st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d) %d\n",
-                    longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index, longest_match->seq_match_pos.segment_len);
-                // record this if it is the longest match
-                if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
-                    match_type = ST_MATCH;
-                    longest_match->trie_match_index = offset;
-                    longest_match->seq_match_pos = st_cursor_save(cursor);
-                }
-                offset += TRIE_MATCH_SIZE;
-            }
+        // Node contains potential anchor and/or sup-rule matches
+        if (st_get_node_has_match(node_type)) {
+            const uint16_t sup_rule_count = st_read_node_sup_rule_count(trie, node_type, &offset);
             if (match_index != ST_DEFAULT_KEY_ACTION) {
-                if (node_info.chain_check_count > 0) {
-                    st_debug(ST_DBG_SEQ_MATCH, "Checking for sub-rule matching %#06X\n", match_index);
-                    for (int i = 0; i < node_info.chain_check_count; i++) {
-                        const uint16_t sub_rule_match_index = st_get_trie_data_word(trie, offset);
-                        st_debug(ST_DBG_SEQ_MATCH, "  sub-rule %#06X\n", sub_rule_match_index);
-                        if (match_index == sub_rule_match_index) {
-                            // This sub-rule was previously matched. This chained rule
+                if (sup_rule_count > 0) {
+                    st_debug(ST_DBG_SEQ_MATCH, "Checking for sup-rule matching %#06X\n", match_index);
+                    for (int i = 0; i < sup_rule_count; i++) {
+                        const uint16_t sup_rule_match_index = TDATAW(trie, offset);
+                        st_debug(ST_DBG_SEQ_MATCH, "  sup-rule %#06X\n", sup_rule_match_index);
+                        if (match_index == sup_rule_match_index) {
+                            // This sup-rule was previously matched. This chained rule
                             // must be the longest match, so we record it and return immediately
                             // The match index is at offset + 2
-                            // (sub-rule-byte1 sub-rule-byte2 match-byte1 match-byte2 match-byte3 match-byte4)
+                            // (sup-rule-byte1 sup-rule-byte2 match-byte1 match-byte2 match-byte3 match-byte4)
                             longest_match->trie_match_index = offset + 2;
                             longest_match->seq_match_pos = st_cursor_save(cursor);
-                            longest_match->is_chained_match = true;
-                            return ST_FINAL_MATCH;
+                            longest_match->match_type = ST_SUB_MATCH;
+                            return ST_SUB_MATCH;
                         }
                         offset += TRIE_CHAINED_MATCH_SIZE;
                     }
                 }
             } else {
-                // The currently focused key was not a match, so no sub-rule couled possibly match
+                // The currently focused key was not a match, so no sup-rule couled possibly match
                 // Skip over all the chain rule checks (each is 6 bytes long)
-                offset += TRIE_CHAINED_MATCH_SIZE * node_info.chain_check_count;
+                offset += TRIE_CHAINED_MATCH_SIZE * sup_rule_count;
             }
-            // If bit 14 is also set, there is a child node after the completion string
-            if (node_info.has_branch) {
-                // move offset to next child node and continue walking the trie
-                // offset += 4;
-                st_debug(ST_DBG_SEQ_MATCH, "  Looking for more: offset %d; code %d\n",
-                    offset, TDATA(trie, offset));
-            } else {
+            if (st_get_node_has_anchor_match(node_type)) {
+                st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d)\n",
+                    cursor->index, cursor->sub_index);
+                st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d)\n",
+                    longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index);
+                // record this if it is the longest match
+                if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
+                    match_type = ST_ANCHOR_MATCH;
+                    longest_match->trie_match_index = offset;
+                    longest_match->seq_match_pos = st_cursor_save(cursor);
+                    longest_match->match_type = ST_ANCHOR_MATCH;
+                }
+                offset += TRIE_MATCH_SIZE;
+            }
+            if (!st_get_node_has_branch(node_type)) {
                 // No more matches; return
                 return match_type;
             }
-        } else if (node_info.has_branch) {
-            // Branch Node (with multiple children) if bit 14 is set
-            // st_debug(ST_DBG_SEQ_MATCH, "Branching Offset: %d; Code: %#04X", offset, code);
-            // code = TDATA(trie, ++offset);
-            // Find child key that matches the search buffer at the current depth
-            if (node_info.is_multibranch) {
+            st_debug(ST_DBG_SEQ_MATCH, "  Looking for more: offset %d\n", offset);
+            continue;
+        }
+
+        uint8_t key_triecode = st_cursor_get_triecode(cursor);
+        if (st_get_node_has_branch(node_type)) {
+            // Branch Node (with multiple children)
+            if (st_get_node_is_multi_branch(node_type)) {
                 // It is possible for a key to match multiple branches, so we recursively
                 // follow all matches
-                return follow_multi_branches(trie, cursor, longest_match, offset) || match_type;
+                st_cursor_next(cursor);
+                st_cursor_t pos = st_cursor_save(cursor);
+                for (uint16_t child_offset; (child_offset = st_trie_next_matching_branch_offset(trie, key_triecode, &offset));) {
+                    switch (st_find_longest_chain(trie, cursor, longest_match, child_offset)) {
+                        case ST_SUB_MATCH:
+                            return ST_SUB_MATCH;
+                        case ST_ANCHOR_MATCH:
+                            match_type = ST_ANCHOR_MATCH;
+                            break;
+                        default:;
+                    }
+                    st_cursor_restore(cursor, &pos);
+                }
+                return match_type;
             }
-            if (!find_branch_offset(trie, cursor, &offset)) {
-                // Couldn't go deeper; return.
+            offset = st_trie_next_matching_branch_offset(trie, key_triecode, &offset);
+            if (!offset) {
                 return match_type;
             }
             st_cursor_next(cursor);
-        } else {
-            // No high bits set, so this is a chain node
-            // Travel down chain until we reach a zero byte, or we no longer match our buffer
-            uint8_t key_triecode;
-            uint8_t code;
-            while ((code = TDATA(trie, offset++)) && (key_triecode = st_cursor_get_triecode(cursor))) {
-                st_debug(ST_DBG_SEQ_MATCH, "Chaining Offset: %d; Code: %#04X; Key: %#04X\n", offset, code, key_triecode);
-                if (!key_triecode || !st_match_triecode(code, key_triecode))
-                    return match_type;
-                st_cursor_next(cursor);
-            }
-            if (!key_triecode) {
-                return match_type;
-            }
-            // After a chain, there should be a match or branch
+            continue;
         }
-    } while (true);
-}
-//////////////////////////////////////////////////////////////////////
-void st_completion_to_str(const st_trie_t *trie,
-                          const st_trie_payload_t *payload,
-                          uint8_t *str)
-{
-    const uint16_t completion_end = payload->completion_index + payload->completion_len;
-    for (uint16_t i = payload->completion_index; i < completion_end; ++i) {
-        *str++ = CDATA(trie, i);
+        // Single-child string
+        // Travel down chain until we reach a zero byte, or we no longer match our buffer
+        st_trie_progress_t progress;
+        while ((progress = st_trie_match_next_single_chain(trie, key_triecode, &offset)) == ST_CONTINUE) {
+            st_cursor_next(cursor);
+            key_triecode = st_cursor_get_triecode(cursor);
+        }
+        if (progress == ST_FAILED) {
+            return match_type;
+        }
     }
-    *str = '\0';
+}
+//////////////////////////////////////////////////////////////////
+bool st_trie_get_completion(const st_trie_t * const trie, st_trie_search_result_t *res)
+{
+    st_cursor_t cursor;
+    st_cursor_init(&cursor, false);
+    st_trie_match_type_t match_type;
+    st_log_time_with_result(st_find_longest_chain(trie, &cursor, &res->trie_match, 0), &match_type);
+    if (match_type == ST_NO_MATCH) {
+        return false;
+    }
+    st_get_payload_from_match_index(trie, &res->trie_payload, res->trie_match.trie_match_index);
+    st_debug(ST_DBG_SEQ_MATCH, "completion search res: index: %d, len: %d, bspaces: %d, func: %d\n",
+        res->trie_payload.completion_index,
+        res->trie_payload.completion_len,
+        res->trie_payload.num_backspaces,
+        res->trie_payload.func_code);
+    return true;
 }

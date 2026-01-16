@@ -21,7 +21,6 @@
 // Public API
 
 bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start);
-void sequence_transform_on_missed_rule_user(const st_trie_rule_t *rule);
 void post_process_sequence_transform(void);
 uint16_t sequence_transform_past_keycode(int index);
 
@@ -43,5 +42,4 @@ void st_handle_backspace(void);
 #ifdef ST_TESTER
 const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
-st_cursor_t     *st_get_cursor(void);
 #endif

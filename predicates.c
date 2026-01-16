@@ -71,10 +71,10 @@ bool st_pred_punct(uint8_t triecode)
     return res;
 }
 //////////////////////////////////////////////////////////////////////
-bool st_pred_nonalpha(uint8_t triecode)
+bool st_pred_not_alphanum(uint8_t triecode)
 {
-    const bool res = triecode < 0x80 && !st_pred_alpha(triecode);
-    st_debug(ST_DBG_SEQ_MATCH, " st_pred_nonalpha: Res: %d; Code: %#04X\n", res, triecode);
+    const bool res = triecode < 0x80 && !st_pred_alpha(triecode) && !st_pred_digit(triecode);
+    st_debug(ST_DBG_SEQ_MATCH, " st_pred_not_alphanum: Res: %d; Code: %#04X\n", res, triecode);
     return res;
 }
 //////////////////////////////////////////////////////////////////////
@@ -92,7 +92,7 @@ static const st_predicate_t st_predicates[ST_PREDICATE_COUNT] = {
     st_pred_terminating_punct,
     st_pred_nonterminating_punct,
     st_pred_punct,
-    st_pred_nonalpha,
+    st_pred_not_alphanum,
     st_pred_any
 };
 //////////////////////////////////////////////////////////////////////

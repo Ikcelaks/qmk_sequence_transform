@@ -21,6 +21,8 @@ void sim_st_perform(const uint8_t *sequence)
     // we don't nec want a space at the start of the buffer
     st_key_buffer_t *buf = st_get_key_buffer();
     buf->size = 0;
+    const st_trie_t * trie = st_get_trie();
+    st_cursor_configure(trie, buf);
     for (uint8_t triecode = *sequence; triecode; triecode = *++sequence) {
         triecode = st_get_metachar_example_triecode(triecode);
         st_key_buffer_push(buf, triecode, 0);

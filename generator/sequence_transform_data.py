@@ -29,6 +29,7 @@ Examples:
   :d@r        -> developer
 """
 
+from dataclasses import dataclass
 import re
 import textwrap
 import json
@@ -54,11 +55,19 @@ GENERATED_HEADER_C_LIKE = f'''\
 TRIECODE_SEQUENCE_TOKEN_0 = 0x80
 TRIECODE_SEQUENCE_METACHAR_0 = 0xA0
 TRIECODE_TRANSFORM_SEQUENCE_REF_0 = 0x80
+
 TRIE_MATCH_BIT = 0x80
 TRIE_BRANCH_BIT = 0x40
 TRIE_MULTI_BRANCH_BIT = 0x20
+TRIE_ANCHOR_MATCH_BIT = 0x20
+TRIE_EXTENDED_HEADER_BIT = 0x10
+TRIE_SUP_RULE_COUNT_MASK = 0x0F
+TRIE_MATCH_SIZE = 4
+TRIE_CHAINED_MATCH_SIZE = 6
+
 OUTPUT_FUNC_1 = 1
-OUTPUT_FUNC_COUNT_MAX = 7
+OUTPUT_FUNC_COUNT_MAX = 3
+
 max_backspaces = 0
 
 class bcolors:
@@ -171,11 +180,35 @@ def create_rules_dict_template_if_missing(
             rf.write(f'{COMMENT_STR}  Output Func OneShot Shift Symbol: {ONE_SHOT_SHIFT_SYMBOL}\n')
             rf.write(f'{COMMENT_STR}  Separator String: {SEP_STR}\n')
 
+@dataclass
+class Rule:
+    sequence: str
+    transformation: str
+    output_func: int
+
+@dataclass
+class Transformation:
+    backspace_count: int
+    defer_count: int
+    output_func: int
+    completion: str
+
+@dataclass
+class RuleMatch:
+    rule: Rule
+    path: str
+    parent: 'RuleMatch'
+    offset: int
+    transformation: Transformation
+
 
 ###############################################################################
-def parse_file(
-    file_name: str, symbol_map: Dict[str, int],
-    separator: str, comment: str
+def add_rules_from_file(
+        rules: List[Tuple[str, str]],
+        file_name: str,
+        symbol_map: Dict[str, int],
+        separator: str,
+        comment: str
 ) -> List[Tuple[str, str]]:
     """Parses sequence dictionary file.
     Each line of the file defines one "sequence -> transformation" pair.
@@ -187,7 +220,6 @@ def parse_file(
     file_lines = parse_file_lines(file_name, separator, comment)
     sequence_set = set()
     duplicated_rules = []
-    rules = []
 
     for line_number, sequence, transform in file_lines:
         if sequence in sequence_set:
@@ -228,7 +260,7 @@ def parse_files(
     rules = []
     for file_name in file_names:
         create_rules_dict_template_if_missing(file_name)
-        rules.extend(parse_file(file_name, symbol_map, separator, comment))
+        add_rules_from_file(rules, file_name, symbol_map, separator, comment)
     return rules
 
 ###############################################################################
@@ -557,7 +589,7 @@ def serialize_sequence_trie(
         if has_match or chain_match_count > 0:
             node_type = TRIE_MATCH_BIT + \
                             (TRIE_BRANCH_BIT if token_count > 0 else 0) + \
-                            (0x20 if has_match else 0x00)
+                            (TRIE_ANCHOR_MATCH_BIT if has_match else 0x00)
             node_header_data = [node_type]
 
         if chain_match_count > 0:
@@ -567,7 +599,7 @@ def serialize_sequence_trie(
                         f'{err()} Impressive. More than 4095 rules chained at once'
                     )
                 count_code_byte1, count_code_byte2 = divmod(chain_match_count, 0x100)
-                node_header_data = [node_header_data[0] | 0x10 | count_code_byte1, count_code_byte2]
+                node_header_data = [node_header_data[0] | TRIE_EXTENDED_HEADER_BIT | count_code_byte1, count_code_byte2]
             else:
                 node_header_data[0] = node_header_data[0] | chain_match_count
 
@@ -632,13 +664,13 @@ def serialize_sequence_trie(
         if 'node_header_data' in node:
             data = data + node['node_header_data']
 
-        if 'match_data' in node:
-            data = data + node['match_data']
-
         if 'chain_data' in node:
             for cmatch, _ in node['chain_data']:
                 data = data + encode_link(cmatch['SUB_RULE']) + \
                     cmatch['DATA']
+
+        if 'match_data' in node:
+            data = data + node['match_data']
 
         if 'str' in node:  # Handle a chain table entry.
             return data + [1] + [symbol_map[c] for c in node['str']] + [0]
@@ -662,14 +694,14 @@ def serialize_sequence_trie(
     for table_entry in table:
         table_entry['node']['OFFSET'] = uint16_offset
         temp_uint16_offset = uint16_offset + len(table_entry.get('node_header_data', []))
-        if 'match_data' in table_entry:
-            table_entry['match_node']['OFFSET'] = temp_uint16_offset
-            temp_uint16_offset += len(table_entry['match_data'])
         if 'chain_data' in table_entry:
             # print(f"offset chain_data {table_entry['chain_data']}")
             for cmatch, cnode in table_entry['chain_data']:
                 cnode['OFFSET'] = temp_uint16_offset + 2
                 temp_uint16_offset += 2 + len(cmatch['DATA'])
+        if 'match_data' in table_entry:
+            table_entry['match_node']['OFFSET'] = temp_uint16_offset
+            temp_uint16_offset += len(table_entry['match_data'])
 
         uint16_offset += len(serialize(table_entry))
 
@@ -734,7 +766,7 @@ def create_triecode_array_c_string(
 
 
 ###############################################################################
-def generate_sequence_transform_data(data_header_file, test_header_file):
+def generate_sequence_transform_data(data_header_file, metadata_header_file, test_header_file):
     symbol_map = generate_sequence_symbol_map(SEQ_TOKEN_SYMBOLS, WORDBREAK_SYMBOL)
     output_func_symbol_map = generate_output_func_symbol_map(OUTPUT_FUNC_SYMBOLS)
 
@@ -856,14 +888,21 @@ def generate_sequence_transform_data(data_header_file, test_header_file):
     sequence_transform_data_h_lines = [
         *header_lines,
         '',
-        *trie_stats_lines,
-        '',
         *tranforms_lines,
         '',
         *trie_data_lines,
     ]
     with open(data_header_file, "w", encoding="utf-8") as file:
         file.write("\n".join(sequence_transform_data_h_lines))
+
+    # Write metadata header file
+    st_gen_metadata_h_lines = [
+        *header_lines,
+        '',
+        *trie_stats_lines,
+    ]
+    with open(metadata_header_file, "w", encoding="utf-8") as file:
+        file.write("\n".join(st_gen_metadata_h_lines))
 
     # Write test header file
     sequence_transform_test_h_lines = [
@@ -903,6 +942,7 @@ if __name__ == '__main__':
     THIS_FOLDER = Path(__file__).parent
 
     data_header_file = THIS_FOLDER / "../sequence_transform_data.h"
+    metadata_header_file = THIS_FOLDER / "../st_gen_metadata.h"
     test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
     default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
     user_config_file = THIS_FOLDER / cli_args.config
@@ -944,4 +984,4 @@ if __name__ == '__main__':
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug
-    generate_sequence_transform_data(data_header_file, test_header_file)
+    generate_sequence_transform_data(data_header_file, metadata_header_file, test_header_file)

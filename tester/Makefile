@@ -33,12 +33,11 @@ CFLAGS := -Werror -Wundef \
 	-DST_TESTER \
 	-DSEQUENCE_TRANSFORM_DEBUG=1 \
 	-DSEQUENCE_TRANSFORM_ENHANCED_BACKSPACE=1 \
-	-DSEQUENCE_TRANSFORM_RULE_SEARCH=0 \
-	-DSEQUENCE_TRANSFORM_FALLBACK_BUFFER=1 \
 	-D_CONSOLE \
 	$(OSFLAG)
 
 ST_GEN_OUT := ../sequence_transform_data.h \
+	../st_gen_metadata.h \
 	../sequence_transform_test.h
 
 all: gen tester
