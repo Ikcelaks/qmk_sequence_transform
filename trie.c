@@ -158,20 +158,6 @@ st_trie_match_type_t st_find_longest_chain(const st_trie_t * const trie, st_curs
         // Node contains potential anchor and/or sup-rule matches
         if (st_get_node_has_match(node_type)) {
             const uint16_t sup_rule_count = st_read_node_sup_rule_count(trie, node_type, &offset);
-            if (st_get_node_has_anchor_match(node_type)) {
-                st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d)\n",
-                    cursor->index, cursor->sub_index);
-                st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d)\n",
-                    longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index);
-                // record this if it is the longest match
-                if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
-                    match_type = ST_ANCHOR_MATCH;
-                    longest_match->trie_match_index = offset;
-                    longest_match->seq_match_pos = st_cursor_save(cursor);
-                    longest_match->match_type = ST_ANCHOR_MATCH;
-                }
-                offset += TRIE_MATCH_SIZE;
-            }
             if (match_index != ST_DEFAULT_KEY_ACTION) {
                 if (sup_rule_count > 0) {
                     st_debug(ST_DBG_SEQ_MATCH, "Checking for sup-rule matching %#06X\n", match_index);
@@ -195,6 +181,20 @@ st_trie_match_type_t st_find_longest_chain(const st_trie_t * const trie, st_curs
                 // The currently focused key was not a match, so no sup-rule couled possibly match
                 // Skip over all the chain rule checks (each is 6 bytes long)
                 offset += TRIE_CHAINED_MATCH_SIZE * sup_rule_count;
+            }
+            if (st_get_node_has_anchor_match(node_type)) {
+                st_debug(ST_DBG_SEQ_MATCH, "New Match found: (%d, %d)\n",
+                    cursor->index, cursor->sub_index);
+                st_debug(ST_DBG_SEQ_MATCH, "Previous Match: (%d, %d)\n",
+                    longest_match->seq_match_pos.index, longest_match->seq_match_pos.sub_index);
+                // record this if it is the longest match
+                if (st_cursor_longer_than(cursor, &longest_match->seq_match_pos)) {
+                    match_type = ST_ANCHOR_MATCH;
+                    longest_match->trie_match_index = offset;
+                    longest_match->seq_match_pos = st_cursor_save(cursor);
+                    longest_match->match_type = ST_ANCHOR_MATCH;
+                }
+                offset += TRIE_MATCH_SIZE;
             }
             if (!st_get_node_has_branch(node_type)) {
                 // No more matches; return

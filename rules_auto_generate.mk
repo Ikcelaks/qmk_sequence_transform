@@ -2,7 +2,7 @@
 all: st_build
 
 st_build:
-	python3 $(mkfile_dir)/sequence_transform/generator/sequence_transform_data.py
+	python3 $(KEYMAP_PATH)/sequence_transform/generator/sequence_transform_data.py
 
 LIB_SRC += sequence_transform/sequence_transform.c
 LIB_SRC += sequence_transform/utils.c

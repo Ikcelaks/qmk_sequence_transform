@@ -29,6 +29,7 @@ Examples:
   :d@r        -> developer
 """
 
+from dataclasses import dataclass
 import re
 import textwrap
 import json
@@ -65,7 +66,7 @@ TRIE_MATCH_SIZE = 4
 TRIE_CHAINED_MATCH_SIZE = 6
 
 OUTPUT_FUNC_1 = 1
-OUTPUT_FUNC_COUNT_MAX = 7
+OUTPUT_FUNC_COUNT_MAX = 3
 
 max_backspaces = 0
 
@@ -179,11 +180,35 @@ def create_rules_dict_template_if_missing(
             rf.write(f'{COMMENT_STR}  Output Func OneShot Shift Symbol: {ONE_SHOT_SHIFT_SYMBOL}\n')
             rf.write(f'{COMMENT_STR}  Separator String: {SEP_STR}\n')
 
+@dataclass
+class Rule:
+    sequence: str
+    transformation: str
+    output_func: int
+
+@dataclass
+class Transformation:
+    backspace_count: int
+    defer_count: int
+    output_func: int
+    completion: str
+
+@dataclass
+class RuleMatch:
+    rule: Rule
+    path: str
+    parent: 'RuleMatch'
+    offset: int
+    transformation: Transformation
+
 
 ###############################################################################
-def parse_file(
-    file_name: str, symbol_map: Dict[str, int],
-    separator: str, comment: str
+def add_rules_from_file(
+        rules: List[Tuple[str, str]],
+        file_name: str,
+        symbol_map: Dict[str, int],
+        separator: str,
+        comment: str
 ) -> List[Tuple[str, str]]:
     """Parses sequence dictionary file.
     Each line of the file defines one "sequence -> transformation" pair.
@@ -195,7 +220,6 @@ def parse_file(
     file_lines = parse_file_lines(file_name, separator, comment)
     sequence_set = set()
     duplicated_rules = []
-    rules = []
 
     for line_number, sequence, transform in file_lines:
         if sequence in sequence_set:
@@ -236,7 +260,7 @@ def parse_files(
     rules = []
     for file_name in file_names:
         create_rules_dict_template_if_missing(file_name)
-        rules.extend(parse_file(file_name, symbol_map, separator, comment))
+        add_rules_from_file(rules, file_name, symbol_map, separator, comment)
     return rules
 
 ###############################################################################
@@ -640,13 +664,13 @@ def serialize_sequence_trie(
         if 'node_header_data' in node:
             data = data + node['node_header_data']
 
-        if 'match_data' in node:
-            data = data + node['match_data']
-
         if 'chain_data' in node:
             for cmatch, _ in node['chain_data']:
                 data = data + encode_link(cmatch['SUB_RULE']) + \
                     cmatch['DATA']
+
+        if 'match_data' in node:
+            data = data + node['match_data']
 
         if 'str' in node:  # Handle a chain table entry.
             return data + [1] + [symbol_map[c] for c in node['str']] + [0]
@@ -670,14 +694,14 @@ def serialize_sequence_trie(
     for table_entry in table:
         table_entry['node']['OFFSET'] = uint16_offset
         temp_uint16_offset = uint16_offset + len(table_entry.get('node_header_data', []))
-        if 'match_data' in table_entry:
-            table_entry['match_node']['OFFSET'] = temp_uint16_offset
-            temp_uint16_offset += len(table_entry['match_data'])
         if 'chain_data' in table_entry:
             # print(f"offset chain_data {table_entry['chain_data']}")
             for cmatch, cnode in table_entry['chain_data']:
                 cnode['OFFSET'] = temp_uint16_offset + 2
                 temp_uint16_offset += 2 + len(cmatch['DATA'])
+        if 'match_data' in table_entry:
+            table_entry['match_node']['OFFSET'] = temp_uint16_offset
+            temp_uint16_offset += len(table_entry['match_data'])
 
         uint16_offset += len(serialize(table_entry))
 
