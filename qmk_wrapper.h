@@ -66,4 +66,14 @@ void    clear_oneshot_mods(void);
 uint8_t get_mods(void);
 void    tap_code16(uint16_t k);
 
+enum {
+    // From module: sequence_transform
+    ST_MAG1 = QK_COMMUNITY_MODULE,
+    ST_MAG2,
+    ST_MAG3,
+    ST_MAG4,
+
+    LAST_COMMUNITY_MODULE_KEY
+};
+
 #endif // ST_TESTER

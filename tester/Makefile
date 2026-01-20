@@ -3,8 +3,8 @@ PYTHON		:= python3
 ODIR		:= build
 QMKPATH		?= /home/qmk/qmk_firmware
 ST_GEN_PY	?= ../generator/sequence_transform_data.py
-ST_DICT 	?= ../../sequence_transform_dict.txt
-ST_CONFIG	?= ../../sequence_transform_config.json
+ST_DICT 	?= sequence_transform_dict.txt
+ST_CONFIG	?= sequence_transform_config.json
 ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT) $(ST_GEN_PY)
 
 LIB_DIR			:= ../
@@ -44,7 +44,7 @@ all: gen tester
 
 $(ST_GEN_OUT): $(ST_GEN_IN)
 	@echo Running generator
-	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
+	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG) --keymappath $(TESTER_DIR)
 
 gen: $(ST_GEN_OUT)
 

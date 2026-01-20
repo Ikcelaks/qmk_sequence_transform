@@ -933,10 +933,12 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-c", "--config", type=str,
-        help="config file path", default="../../sequence_transform_config.json"
+        help="config file", default="sequence_transform_config.json"
     )
 
     parser.add_argument("-d", "--debug", action="store_true", default=False)
+    parser.add_argument("-u", "--userpath", type=Path)
+    parser.add_argument("-m", "--keymappath", type=Path)
     cli_args = parser.parse_args()
 
     THIS_FOLDER = Path(__file__).parent
@@ -945,7 +947,7 @@ if __name__ == '__main__':
     metadata_header_file = THIS_FOLDER / "../st_gen_metadata.h"
     test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
     default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
-    user_config_file = THIS_FOLDER / cli_args.config
+    user_config_file = cli_args.keymappath / cli_args.config
     config = json.load(open(default_config_file, 'rt', encoding="utf-8"))
     if user_config_file.is_file():
         user_config = json.load(open(user_config_file, 'rt', encoding="utf-8"))
@@ -973,7 +975,7 @@ if __name__ == '__main__':
         if 'rules_file_name' in config:
             RULES_FILES = [config['rules_file_name']]
         else:
-            RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
+            RULES_FILES = [cli_args.keymappath / fn for fn in config['rules_file_name_list']]
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 

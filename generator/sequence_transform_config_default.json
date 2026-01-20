@@ -4,7 +4,8 @@
         "👆": "*",
         "👍": "@",
         "★":  "#",
-        "✪":  "&"
+        "✪":  "&",
+        "✦":  "$"
     },
     "transform_sequence_reference_symbols": "◯⑴⑵⑶⑷⑸⑹⑺",
     "space_symbol": "⎵",
