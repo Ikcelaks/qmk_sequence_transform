@@ -17,7 +17,7 @@ Future steps will depend on a path to your QMK directory (referred to as `{qmk_p
 
 If you're using a QMK external userspace, the directory will be named `qmk_userspace`, otherwise, it will be named `qmk_firmware`.
 
-> [!Example]
+> [!Tip]
 > If you're using the external userspace installed directly into your home directory on either Linux or WSL, your `qmk_path` will be `~/qmk_userspace`
 
 ### Step 2: Clone the library into your `modules` folder
@@ -45,9 +45,6 @@ into your keymap root folder. **DO NOT** make any changes to any files in the `s
 ### Generator Configuration File `sequence_transform_confg.json`
 This file is used to tell the rules generator script how to interpret your `sequence_transform_dict.txt` file.
 A full description of each setting is provided in the Wiki (TODO).
-
-> [!IMPORTANT]
-> The number of `Sequence Token keys` defined in [step 3](#step-3) of the setup, **must** match the number of `sequence_token_symbols` defined in the config.
 
 ### Rule Set File `sequence_transform_dict.txt`
 This file contains a list of all the rules that the generator script will encode into the trie structure.
