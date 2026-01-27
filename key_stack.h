@@ -14,7 +14,7 @@ typedef struct
 void    st_key_stack_reset(st_key_stack_t *s);
 void    st_key_stack_push(st_key_stack_t *s, uint8_t key);
 void    st_key_stack_pop(st_key_stack_t *s);
-void    st_key_stack_to_str(const st_key_stack_t *s, char *str);
+// void    st_key_stack_to_str(const st_key_stack_t *s, char *str);
 bool    st_stack_has_unexpanded_seq(const st_key_stack_t *s);
 
 #ifdef ST_TESTER

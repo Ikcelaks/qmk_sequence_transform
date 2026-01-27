@@ -34,7 +34,7 @@ void st_handle_backspace(void);
 
 #ifdef ST_TESTER
 bool process_record_sequence_transform(uint16_t keycode, keyrecord_t *record);
-void post_process_sequence_transform(uint16_t keycode, keyrecord_t *record);
+void post_process_record_sequence_transform(uint16_t keycode, keyrecord_t *record);
 const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
 #endif
