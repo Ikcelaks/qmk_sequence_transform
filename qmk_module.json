@@ -1,0 +1,15 @@
+{
+    "module_name": "Sequence Transform",
+    "maintainer": "ikcelaks",
+    "url": "https://github.com/Ikcelaks/qmk_sequence_transform",
+    "features": {
+        "combo": true
+    },
+    "keycodes": [
+        { "key": "ST_MAG1" },
+        { "key": "ST_MAG2" },
+        { "key": "ST_MAG3" },
+        { "key": "ST_MAG4" },
+        { "key": "ST_MAG5" }
+    ]
+}

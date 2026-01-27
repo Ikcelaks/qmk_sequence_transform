@@ -21,14 +21,7 @@
 // Public API
 
 bool process_sequence_transform(uint16_t keycode, keyrecord_t *record, uint16_t sequence_token_start);
-void post_process_sequence_transform(void);
 uint16_t sequence_transform_past_keycode(int index);
-
-#if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
-void sequence_transform_task(void);
-#else
-static inline void sequence_transform_task(void) {}
-#endif
 
 //////////////////////////////////////////////////////////////////
 // Internal
@@ -40,6 +33,8 @@ bool st_perform(void);
 void st_handle_backspace(void);
 
 #ifdef ST_TESTER
+bool process_record_sequence_transform(uint16_t keycode, keyrecord_t *record);
+void post_process_record_sequence_transform(uint16_t keycode, keyrecord_t *record);
 const st_trie_t *st_get_trie(void);
 st_key_buffer_t *st_get_key_buffer(void);
 #endif

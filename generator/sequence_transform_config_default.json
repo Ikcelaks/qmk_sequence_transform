@@ -1,10 +1,10 @@
 {
-    "rules_file_name_list": ["sequence_transform_dict.txt"],
     "sequence_token_symbols": {
         "👆": "*",
         "👍": "@",
         "★":  "#",
-        "✪":  "&"
+        "✪":  "&",
+        "✦":  "$"
     },
     "transform_sequence_reference_symbols": "◯⑴⑵⑶⑷⑸⑹⑺",
     "space_symbol": "⎵",
@@ -17,7 +17,6 @@
     "punct_symbol": "•",
     "any_symbol": "∀",
     "output_func_one_shot_shift_symbol": "⇑",
-    "output_func_capitalize_first_character_symbol": "∁",
     "comment_str": "//",
     "separator_str": "⇒",
     "implicit_transform_leading_wordbreak": false

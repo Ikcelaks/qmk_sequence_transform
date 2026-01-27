@@ -929,23 +929,26 @@ def get_symbol_config(config, key: str) -> str:
 
 ###############################################################################
 if __name__ == '__main__':
+    THIS_FOLDER = Path(__file__).parent
     parser = ArgumentParser()
 
     parser.add_argument(
         "-c", "--config", type=str,
-        help="config file path", default="../../sequence_transform_config.json"
+        help="config file", default="sequence_transform_config.json"
     )
 
     parser.add_argument("-d", "--debug", action="store_true", default=False)
+    parser.add_argument("-u", "--userpath", type=Path)
+    parser.add_argument("-m", "--keymappath", type=Path)
+    parser.add_argument("-o", "--outputpath", type=Path, default = THIS_FOLDER / "../")
     cli_args = parser.parse_args()
 
-    THIS_FOLDER = Path(__file__).parent
-
-    data_header_file = THIS_FOLDER / "../sequence_transform_data.h"
-    metadata_header_file = THIS_FOLDER / "../st_gen_metadata.h"
-    test_header_file = THIS_FOLDER / "../sequence_transform_test.h"
+    output_path = cli_args.outputpath
+    data_header_file = output_path / "sequence_transform_data.h"
+    metadata_header_file = output_path / "st_gen_metadata.h"
+    test_header_file = output_path / "sequence_transform_test.h"
     default_config_file = THIS_FOLDER / "sequence_transform_config_default.json"
-    user_config_file = THIS_FOLDER / cli_args.config
+    user_config_file = cli_args.keymappath / cli_args.config
     config = json.load(open(default_config_file, 'rt', encoding="utf-8"))
     if user_config_file.is_file():
         user_config = json.load(open(user_config_file, 'rt', encoding="utf-8"))
@@ -966,21 +969,20 @@ if __name__ == '__main__':
         TERMINATING_PUNCT_SYMBOL = get_symbol_config(config, 'terminating_punct_symbol')
         ANY_SYMBOL = get_symbol_config(config, 'any_symbol')
         ONE_SHOT_SHIFT_SYMBOL = config['output_func_one_shot_shift_symbol']
-        CAPITALIZE_FIRST_CHARACTER_SYMBOL = config['output_func_capitalize_first_character_symbol']
         TRANSFORM_SEQUENCE_REFERENCE_SYMBOLS = config['transform_sequence_reference_symbols']
         COMMENT_STR = config['comment_str']
         SEP_STR = config['separator_str']
         if 'rules_file_name' in config:
             RULES_FILES = [config['rules_file_name']]
         else:
-            RULES_FILES = [THIS_FOLDER / "../../" / fn for fn in config['rules_file_name_list']]
+            RULES_FILES = [cli_args.keymappath / fn for fn in config['rules_file_name_list']]
     except KeyError as e:
         raise SystemExit(f"Incorrect config! {cyan(*e.args)} key is missing.")
 
     IMPLICIT_TRANSFORM_LEADING_WORDBREAK = config.get('implicit_transform_leading_wordbreak', False)
     SEQ_TOKEN_ASCII_CHARS = list(config['sequence_token_symbols'].values())
     SEQ_METACHAR_SYMBOLS = [UPPER_ALPHA_SYMBOL, ALPHA_SYMBOL, DIGIT_SYMBOL, TERMINATING_PUNCT_SYMBOL, NONTERMINATING_PUNCT_SYMBOL, PUNCT_SYMBOL, WORDBREAK_SYMBOL, ANY_SYMBOL]
-    OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL, CAPITALIZE_FIRST_CHARACTER_SYMBOL]
+    OUTPUT_FUNC_SYMBOLS = [ONE_SHOT_SHIFT_SYMBOL]
     TRANFORM_SYMBOL_MAP = generate_transform_symbol_map()
 
     IS_QUIET = not cli_args.debug

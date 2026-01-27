@@ -2,9 +2,10 @@ CC			:= gcc
 PYTHON		:= python3
 ODIR		:= build
 QMKPATH		?= /home/qmk/qmk_firmware
+ST_GEN_SRC_PATH := $(ODIR)/src
 ST_GEN_PY	?= ../generator/sequence_transform_data.py
-ST_DICT 	?= ../../sequence_transform_dict.txt
-ST_CONFIG	?= ../../sequence_transform_config.json
+ST_DICT 	?= sequence_transform_dict.txt
+ST_CONFIG	?= sequence_transform_config.json
 ST_GEN_IN 	:= $(ST_CONFIG) $(ST_DICT) $(ST_GEN_PY)
 
 LIB_DIR			:= ../
@@ -30,21 +31,22 @@ CFLAGS := -Werror -Wundef \
 	-I$(QMKPATH)/quantum/logging \
 	-I$(QMKPATH)/quantum/keymap_extras \
 	-I.. \
+	-I$(ST_GEN_SRC_PATH) \
 	-DST_TESTER \
 	-DSEQUENCE_TRANSFORM_DEBUG=1 \
 	-DSEQUENCE_TRANSFORM_ENHANCED_BACKSPACE=1 \
 	-D_CONSOLE \
 	$(OSFLAG)
 
-ST_GEN_OUT := ../sequence_transform_data.h \
-	../st_gen_metadata.h \
-	../sequence_transform_test.h
+ST_GEN_OUT := $(ST_GEN_SRC_PATH)/sequence_transform_data.h \
+	$(ST_GEN_SRC_PATH)/st_gen_metadata.h \
+	$(ST_GEN_SRC_PATH)/sequence_transform_test.h
 
 all: gen tester
 
-$(ST_GEN_OUT): $(ST_GEN_IN)
+$(ST_GEN_OUT): $(ST_GEN_IN) | $(ST_GEN_SRC_PATH)
 	@echo Running generator
-	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG)
+	$(PYTHON) $(ST_GEN_PY) -c $(ST_CONFIG) --keymappath $(TESTER_DIR) --outputpath $(ST_GEN_SRC_PATH)
 
 gen: $(ST_GEN_OUT)
 
@@ -61,7 +63,10 @@ $(ODIR)/%.o: %.c | $(ODIR)
 $(ODIR):
 	@mkdir -p $@
 
+$(ST_GEN_SRC_PATH): | $(ODIR)
+	@mkdir -p $@
+
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o $(ODIR)/*.d
+	rm -f $(ODIR)/*.o $(ODIR)/*.d $(ST_GEN_SRC_PATH)/*.h

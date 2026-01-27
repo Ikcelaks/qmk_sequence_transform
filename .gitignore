@@ -60,3 +60,6 @@ dkms.conf
 /tester/tester
 /tester/tester.vcxproj.filters
 /tester/tester.vcxproj.user
+
+/tester/sequence_transform_dict*
+/tester/sequence_transform_config.json

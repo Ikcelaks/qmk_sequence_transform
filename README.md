@@ -7,71 +7,36 @@ without which we would not have even conceived this idea!
 # User Guide
 THIS LIBRARY IS NOT FINALIZED. A user who isn't looking to get involved in development should only use this right now if they want to test things out and are
 willing to deal with frequent breaking design changes.
-## Setup
-Here is a [working example](https://github.com/Ikcelaks/qmk_userspace/tree/main/keyboards/moonlander/keymaps/ikcelaks) of a fairly minimal keymap that is using this library.
-### Step 1
-From a terminal with the current working directory set to your keymap directory (example: `qmk_userspace/keyboard/moonlander/keymaps/ikcelaks`), run this
-command to add the library as a git submodule (no need to create a fork first):<br/>
-`git submodule add https://github.com/ikcelaks/qmk_sequence_transform.git sequence_transform`
+## Installation
+This library is now implemented as a QMK [Community Module](https://docs.qmk.fm/features/community_modules).
 
-### Step 2
-At the end of the `rules.mk` file in your keymap folder, add the following lines:</br>
-```makefile
-# sequence_transform setup
-mkfile_dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-include $(mkfile_dir)/sequence_transform/rules_auto_generate.mk
-# end sequence_transform setup
-```
-> [!CAUTION]
-> If your keymap folder doesn't already contain a `rules.mk` file, create an new `rules.mk` file there that just has the snippet from above. DO NOT instead paste the snippet into a `rules.mk` file at another location, because the paths won't be correct.
+This [working example](https://github.com/Ikcelaks/qmk_userspace/tree/main/keyboards/moonlander/keymaps/ikcelaks) is a fairly minimal keymap that is using this library.
 
-### Step 3
-Define custom keycodes for your Sequence Token keys (commonly referred to as "magic keys") consecutively. Example:
-```c
-enum custom_keycodes {
-    US_MAG1 = SAFE_RANGE,
-    US_MAG2,
-    US_MAG3,
-    US_MAG4,
-    US_D_UND, // other custom keycodes start here
-    US_QUOT_S,
-};
-```
+### Step 1: Determine your QMK directory
+Future steps will depend on a path to your QMK directory (referred to as `{qmk_path}`). This will vary depending on how you installed QMK.
 
-### Step 4
-Add the following to the list of includes in your `keymap.c` file.
-```c
-#include "sequence_transform/sequence_transform.h"
-```
+If you're using a QMK external userspace, the directory will be named `qmk_userspace`, otherwise, it will be named `qmk_firmware`.
 
-### Step 5
-In the `process_record_user` function of your `keymap.c` file, add the following (or equivalent) (Replace `US_MAG1` with whatever your first Sequence Token key is named):<br/>
-```c
-if (!process_sequence_transform(keycode, record, US_MAG1)) return false;
-```
+> [!Tip]
+> If you're using the external userspace installed directly into your home directory on either Linux or WSL, your `qmk_path` will be `~/qmk_userspace`
 
-### Step 6
-Add this line to your `post_process_record_user` function in `keymap.c`:<br/>
-```c
-void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
-    post_process_sequence_transform();  // Add this line
-}
-```
-
-### Step 7
-Add this line to your `matrix_scan_user` function in `keymap.c`:<br/>
-```c
-void matrix_scan_user(void)
-{
-    sequence_transform_task();  // Add this line
-}
-```
-
-### Step 8
-Compile your keymap as usual. The first time you do this, an empty `sequence_transform_config.json` and `sequence_transform_dict.txt` file will be automatically generated in the correct locations (the root of your keymap folder).
-Example:
+### Step 2: Clone the library into your `modules` folder
+In a terminal run the following commands to clone (first replace `{qmk_path}` with the path determined in step 1):
 ```bash
-qmk compile -kb moonlander -km ikcelaks
+cd {qmk_path}
+mkdir -p modules
+git submodule add https://github.com/ikcelaks/qmk_sequence_transform.git modules/ikcelaks/sequence_transform
+git submodule update --init --recursive
+```
+
+### Step 3: Add `ikcelaks/sequence_transform` to your `keymap.json`
+Add `"ikcelaks/sequence_transform"` to the `modules` array in your `keymap.json` file.
+
+If you don't yet have a `keymap.json` file, create one and add the following contents:
+```json
+{
+    "modules": ["ikcelaks/sequence_transform"]
+}
 ```
 
 ## Configuration
@@ -80,9 +45,6 @@ into your keymap root folder. **DO NOT** make any changes to any files in the `s
 ### Generator Configuration File `sequence_transform_confg.json`
 This file is used to tell the rules generator script how to interpret your `sequence_transform_dict.txt` file.
 A full description of each setting is provided in the Wiki (TODO).
-
-> [!IMPORTANT]
-> The number of `Sequence Token keys` defined in [step 3](#step-3) of the setup, **must** match the number of `sequence_token_symbols` defined in the config.
 
 ### Rule Set File `sequence_transform_dict.txt`
 This file contains a list of all the rules that the generator script will encode into the trie structure.
@@ -94,7 +56,7 @@ The symbols that you will need to use when constructing your rules are included 
 > For ideas on what rules you can write, take a look at the [sample dictionary](generator/sequence_transform_dict_sample.txt).
 
 ### Add Sequence Tokens to your keymap
-You should add the custom keys you defined in [step 3](#step-3) of the setup to your keymap. These custom keys will be matched one to one with the `sequence_token_symbols` defined in your `sequence_transform_config.json` file. That is, the custom key that you pass to `process_sequence_transform` in [step 5](#step-5) of the setup will correspond to the first symbol defined in `sequence_token_symbols`, and each following custom key will be matched with the next symbol. (This is why you **must** have the same number of each).
+This library defines five custom keycodes (`ST_MAG1, ST_MAG2 .. ST_MAG5`) to be used as Sequence Tokens. These keys will be matched one to one with the `sequence_token_symbols` defined in your `sequence_transform_config.json` file. That is, `ST_MAG1` will correspond to the first symbol defined in `sequence_token_symbols`, and each following `ST_MAGX` will be matched with the next symbol.
 
 Symbols chosen can be any utf-8 symbol you like. The sample config and dictionary use a pointing finger and thumb emoji to aid in remembering which `Sequence Token key` is being used, which you may find helpful.
 

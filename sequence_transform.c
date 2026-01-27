@@ -54,7 +54,7 @@ uint16_t sequence_transform_past_keycode(int index) {
 // Reset buffer on timeout
 #if SEQUENCE_TRANSFORM_IDLE_TIMEOUT > 0
 static uint32_t sequence_timer = 0;
-void sequence_transform_task(void) {
+void housekeeping_task_sequence_transform(void) {
     if (key_buffer.size > 1 &&
         timer_elapsed32(sequence_timer) > SEQUENCE_TRANSFORM_IDLE_TIMEOUT) {
         st_key_buffer_reset(&key_buffer);
@@ -185,7 +185,7 @@ bool st_process_check(uint16_t *keycode,
             return false;
 #endif
     }
-    // Disable autocorrect while a mod other than shift is active.
+    // Disable sequence_transform while a mod other than shift is active.
     if (((*mods | QK_MODS_GET_MODS(*keycode)) & ~MOD_MASK_SHIFT) != 0) {
         st_debug(ST_DBG_GENERAL, "clearing buffer (mods: 0x%04X)\n", *mods);
         st_key_buffer_reset(&key_buffer);
@@ -463,11 +463,22 @@ bool process_sequence_transform(uint16_t keycode,
 }
 
 /**
+ * @brief Attempts to process the current keypress.
+ *
+ * Automatically executed by the process_record pipeline
+ */
+
+bool process_record_sequence_transform(uint16_t keycode, keyrecord_t *record)
+{
+    return process_sequence_transform(keycode, record, ST_MAG1);
+}
+
+/**
  * @brief Performs sequence transform related actions that must occur after normal processing
  *
- * Should be called from the `post_process_record_user` function
+ * Automatically executed by the post_process_record pipeline
  */
-void post_process_sequence_transform()
+void post_process_record_sequence_transform(uint16_t keycode, keyrecord_t *record)
 {
 #if SEQUENCE_TRANSFORM_ENHANCED_BACKSPACE
     if (post_process_do_enhanced_backspace) {

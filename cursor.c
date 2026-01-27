@@ -174,7 +174,7 @@ const st_trie_payload_t *st_cursor_get_action(st_cursor_t *cursor)
 //////////////////////////////////////////////////////////////////
 uint8_t st_cursor_get_shift_of_nth(int nth)
 {
-    st_cursor_t cursor = {0,255,0};
+    st_cursor_t cursor = {0,0,0};
     st_cursor_next_key(&cursor);
     for (int i = 0; i < nth - 1; ++i) {
         if (!st_cursor_next(&cursor)) {

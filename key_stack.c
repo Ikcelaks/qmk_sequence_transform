@@ -29,14 +29,14 @@ void st_key_stack_pop(st_key_stack_t *s)
     s->size = st_max(0, s->size - 1);
 }
 //////////////////////////////////////////////////////////////////////
-void st_key_stack_to_str(const st_key_stack_t *s, char *str)
-{
-    char *dst = str;
-    for (int i = s->size - 1; i >= 0; --i) {
-        *dst++ = st_triecode_to_ascii(s->buffer[i]);
-    }
-    str[s->size] = 0;
-}
+// void st_key_stack_to_str(const st_key_stack_t *s, char *str)
+// {
+//     char *dst = str;
+//     for (int i = s->size - 1; i >= 0; --i) {
+//         *dst++ = st_triecode_to_ascii(s->buffer[i]);
+//     }
+//     str[s->size] = 0;
+// }
 //////////////////////////////////////////////////////////////////////
 // returns true if there are any sequence tokens in the stack
 // before the most recent key
