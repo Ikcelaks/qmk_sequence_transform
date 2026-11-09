@@ -72,6 +72,7 @@ enum {
     ST_MAG2,
     ST_MAG3,
     ST_MAG4,
+    ST_MAG5,
 
     LAST_COMMUNITY_MODULE_KEY
 };

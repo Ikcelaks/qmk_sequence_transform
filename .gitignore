@@ -63,3 +63,4 @@ dkms.conf
 
 /tester/sequence_transform_dict*
 /tester/sequence_transform_config.json
+/tester/sequence_transform_config
