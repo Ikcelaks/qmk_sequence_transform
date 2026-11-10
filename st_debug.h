@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <stdbool.h>
 #include "st_defaults.h"
 
 typedef enum

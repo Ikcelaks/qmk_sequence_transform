@@ -13,8 +13,8 @@
 #include "st_assert.h"
 #include "triecodes.h"
 #include "sequence_transform.h"
-#include "st_gen_metadata.h"
-#include "sequence_transform_data.h"
+#include <st_gen_metadata.h>
+#include <sequence_transform_data.h>
 #include "utils.h"
 
 #ifndef SEQUENCE_TRANSFORM_GENERATOR_VERSION_3_2

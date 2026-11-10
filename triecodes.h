@@ -4,6 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 bool        st_is_seq_token_keycode(uint16_t keycode, uint16_t kc_seq_token_0);
 bool        st_is_seq_token_triecode(uint8_t triecode);
 bool        st_is_seq_metachar_triecode(uint8_t triecode);

@@ -4,6 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define ST_PREDICATE_COUNT 8
 
 typedef bool (*st_predicate_t)(uint8_t triecode);

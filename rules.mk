@@ -9,7 +9,7 @@ all: $(ST_GEN_OUT)
 
 $(ST_GEN_OUT): $(ST_GEN_IN) $(ST_GEN_PY)
 	@echo Running sequence_transform generator
-	python3 $(ST_GEN_PY) --keymappath $(KEYMAP_PATH) --config $(KEYMAP_PATH)/sequence_transform_config.json --outputpath $(INTERMEDIATE_OUTPUT)/src/
+	python3 $(ST_GEN_PY) --keymappath $(KEYMAP_PATH) --config sequence_transform_config.json --outputpath $(INTERMEDIATE_OUTPUT)/src/
 
 LIB_SRC += utils.c
 LIB_SRC += trie.c
